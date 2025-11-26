@@ -1,0 +1,32 @@
+﻿  Building Custom Rule C:/Code/VulkanTutorialsInternal/NCLCoreClasses/CMakeLists.txt
+  Assets.cpp
+  SimpleFont.cpp
+  TextureLoader.cpp
+  TextureWriter.cpp
+  Maths.cpp
+  Matrix2.cpp
+  Matrix3.cpp
+  Matrix4.cpp
+  Plane.cpp
+  Quaternion.cpp
+  Vector2.cpp
+  Vector3.cpp
+  Vector4.cpp
+  MeshAnimation.cpp
+  MeshGeometry.cpp
+  MeshMaterial.cpp
+  RendererBase.cpp
+  ShaderBase.cpp
+  TextureBase.cpp
+  Camera.cpp
+  Generating Code...
+  Compiling...
+  GameTimer.cpp
+  Keyboard.cpp
+  Mouse.cpp
+  Window.cpp
+  Win32Keyboard.cpp
+  Win32Mouse.cpp
+  Win32Window.cpp
+  Generating Code...
+  Common.vcxproj -> C:\Code\VulkanTutorialsInternal\x64\Debug\Common.lib

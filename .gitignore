@@ -1,0 +1,15 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+*.vsidx
+*.ipch
+.db
+/.vs/CSC8503/FileContentIndex/read.lock
+/.vs
+/build/
+/out/build/x64-Debug
+/out/
+/x64/
+**/.dir
+CMakeFiles/
