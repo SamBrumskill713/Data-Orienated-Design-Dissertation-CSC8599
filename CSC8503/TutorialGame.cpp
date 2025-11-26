@@ -30,7 +30,6 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 	renderer(inRenderer),
 	physics(inPhysics)
 {
-	//comment here
 	forceMagnitude = 10.0f;
 	useGravity = false;
 	inSelectionMode = false;
@@ -48,8 +47,6 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
-
-	//comment here
 
 	cubeMesh = renderer.LoadMesh("cube.msh");
 	sphereMesh = renderer.LoadMesh("sphere.msh");
