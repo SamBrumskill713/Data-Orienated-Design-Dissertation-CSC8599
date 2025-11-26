@@ -30,7 +30,7 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 	renderer(inRenderer),
 	physics(inPhysics)
 {
-
+	//comment here
 	forceMagnitude = 10.0f;
 	useGravity = false;
 	inSelectionMode = false;
