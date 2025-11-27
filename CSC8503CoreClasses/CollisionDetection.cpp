@@ -123,7 +123,7 @@ bool CollisionDetection::RaySphereIntersection(const Ray& r, const Transform& wo
 		return false;
 	}
 
-	Vector3 point = r.GetPosition() + (r.GetDirection() * spherePos);
+	Vector3 point = r.GetPosition() + (r.GetDirection() * sphereProj);
 
 	float sphereDist = Vector::Length(point - spherePos);
 
