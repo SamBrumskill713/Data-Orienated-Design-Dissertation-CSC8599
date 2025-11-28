@@ -42,6 +42,8 @@ namespace NCL {
 			void DebugObjectMovement();
 			void LockedObjectMovement();
 
+			void BridgeConstraintTest();
+
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position);
 			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, float inverseMass = 10.0f);
 			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f);

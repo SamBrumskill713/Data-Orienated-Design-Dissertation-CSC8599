@@ -192,6 +192,8 @@ void TutorialGame::InitWorld() {
 	InitGameExamples();
 
 	AddFloorToWorld(Vector3(0, -20, 0));
+
+	BridgeConstraintTest();
 }
 
 /*
@@ -491,6 +493,34 @@ void TutorialGame::LockedObjectMovement() {
 	if (Window::GetKeyboard()->KeyDown(KeyCodes::NEXT)) {
 		selectionObject->GetPhysicsObject()->AddForce(Vector3(0, -10, 0));
 	}
+}
+
+void NCL::CSC8503::TutorialGame::BridgeConstraintTest()
+{
+	Vector3 cubeSize = Vector3(8, 8, 8);
+
+	float invCubeMass = 5;//How heavy the middle pieces are
+	int numLinks = 10;
+	float maxDistance = 30;//constraint distance
+	float cubeDistance = 20;//distance between links
+
+	Vector3 startPos = Vector3(50, 50, 50);
+
+	GameObject* start = AddCubeToWorld(startPos + Vector3(0, 0, 0), cubeSize, 0);
+	GameObject* end = AddCubeToWorld(startPos + Vector3((numLinks + 2) * cubeDistance, 0, 0), 
+		cubeSize, 0);
+
+	GameObject* previous = start;
+
+	for (int i = 0; i < numLinks; ++i) {
+		GameObject* block = AddCubeToWorld(startPos + Vector3((i + 1) * cubeDistance, 0, 0), 
+			cubeSize, invCubeMass);
+		PositionConstraint* constraint = new PositionConstraint(previous, block, maxDistance);
+		world.AddConstraint(constraint);
+		previous = block;
+	}
+	PositionConstraint* constraint = new PositionConstraint(previous, end, maxDistance);
+	world.AddConstraint(constraint);
 }
 
 void TutorialGame::DebugObjectMovement() {
