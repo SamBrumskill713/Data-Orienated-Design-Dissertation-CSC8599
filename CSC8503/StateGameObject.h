@@ -12,6 +12,9 @@ namespace NCL {
 
             virtual void Update(float dt);
 
+            StateGameObject* AddStateObjectToWorld(const Vector3& position);
+            StateGameObject* testStateObject;
+
         protected:
             void MoveLeft(float dt);
             void MoveRight(float dt);

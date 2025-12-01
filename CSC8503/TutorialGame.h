@@ -13,6 +13,7 @@ namespace NCL {
 		class PhysicsSystem;
 		class GameWorld;
 		class GameObject;
+		class StateGameObject;
 
 		class TutorialGame {
 		public:
@@ -90,6 +91,7 @@ namespace NCL {
 			}
 
 			GameObject* objClosest = nullptr;
+			StateGameObject* testStateObject = nullptr;
 		};
 	}
 }
