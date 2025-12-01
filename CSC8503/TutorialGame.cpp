@@ -340,6 +340,27 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
 	return apple;
 }
 
+StateGameObject* NCL::CSC8503::StateGameObject::AddStateObjectToWorld(const Vector3& position)
+{
+	StateGameObject* stateObj = new StateGameObject();
+
+	SphereVolume* volume = new SphereVolume(0.5f);
+	stateObj->SetBoundingVolume(volume);
+	stateObj->GetTransform()
+		.SetScale(Vector3(2, 2, 2))
+		.SetPosition(position);
+
+	stateObj->SetRenderObject(new RenderObject(stateObj->GetTransform(), bonusMesh, glassMaterial));
+	stateObj->SetPhysicsObject(new PhysicsObject(stateObj->GetTransform(), stateObj->GetBoundingVolume()));
+
+	stateObj->GetPhysicsObject()->SetInverseMass(1.0f);
+	stateObj->GetPhysicsObject()->InitSphereInertia();
+
+	world.AddGameObject(stateObj);
+
+	return stateObj;
+}
+
 void TutorialGame::InitGameExamples() {
 	AddPlayerToWorld(Vector3(0, 5, 0));
 	AddEnemyToWorld(Vector3(5, 5, 0));

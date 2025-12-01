@@ -52,6 +52,7 @@ namespace NCL {
 			GameObject* AddPlayerToWorld(const NCL::Maths::Vector3& position);
 			GameObject* AddEnemyToWorld(const NCL::Maths::Vector3& position);
 			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position);
+			StateGameObject* AddStateObjectToWorld(const Vector3& position);
 
 			GameWorld& world;
 			GameTechRendererInterface& renderer;

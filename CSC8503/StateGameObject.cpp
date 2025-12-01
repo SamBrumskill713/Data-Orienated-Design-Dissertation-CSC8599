@@ -3,6 +3,7 @@
 #include "StateMachine.h"
 #include "State.h"
 #include "PhysicsObject.h"
+#include "CollisionDetection.h"
 
 using namespace NCL;
 using namespace CSC8503;
@@ -41,27 +42,6 @@ StateGameObject::~StateGameObject() {
 
 void StateGameObject::Update(float dt) {
 	stateMachine->Update(dt);
-}
-
-StateGameObject* NCL::CSC8503::StateGameObject::AddStateObjectToWorld(const Vector3& position)
-{
-	/*GameObject* apple = new StateGameObject();
-
-	SphereVolume* volume = new SphereVolume(0.5f);
-	apple->SetBoundingVolume(volume);
-	apple->GetTransform()
-		.SetScale(Vector3(2, 2, 2))
-		.SetPosition(position);
-
-	apple->SetRenderObject(new RenderObject(apple->GetTransform(), bonusMesh, glassMaterial));
-	apple->SetPhysicsObject(new PhysicsObject(apple->GetTransform(), apple->GetBoundingVolume()));
-
-	apple->GetPhysicsObject()->SetInverseMass(1.0f);
-	apple->GetPhysicsObject()->InitSphereInertia();
-
-	world.AddGameObject(apple);
-
-	return apple;*/
 }
 
 void StateGameObject::MoveLeft(float dt) {
