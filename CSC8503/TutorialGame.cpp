@@ -172,6 +172,10 @@ void TutorialGame::UpdateGame(float dt) {
 			o->Update(dt);
 		}
 	);
+
+	if (testStateObject) {
+		testStateObject->Update(dt);
+	}
 }
 
 void TutorialGame::InitCamera() {
@@ -194,6 +198,8 @@ void TutorialGame::InitWorld() {
 	AddFloorToWorld(Vector3(0, -20, 0));
 
 	BridgeConstraintTest();
+
+	testStateObject = AddStateObjectToWorld(Vector3(20, 10, -20));
 }
 
 /*
@@ -340,7 +346,7 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
 	return apple;
 }
 
-StateGameObject* NCL::CSC8503::StateGameObject::AddStateObjectToWorld(const Vector3& position)
+StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position)
 {
 	StateGameObject* stateObj = new StateGameObject();
 
@@ -353,7 +359,7 @@ StateGameObject* NCL::CSC8503::StateGameObject::AddStateObjectToWorld(const Vect
 	stateObj->SetRenderObject(new RenderObject(stateObj->GetTransform(), bonusMesh, glassMaterial));
 	stateObj->SetPhysicsObject(new PhysicsObject(stateObj->GetTransform(), stateObj->GetBoundingVolume()));
 
-	stateObj->GetPhysicsObject()->SetInverseMass(1.0f);
+	stateObj->GetPhysicsObject()->SetInverseMass(0.2f);
 	stateObj->GetPhysicsObject()->InitSphereInertia();
 
 	world.AddGameObject(stateObj);

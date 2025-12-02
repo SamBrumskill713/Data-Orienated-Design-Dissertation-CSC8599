@@ -149,6 +149,7 @@ int main() {
 		renderer->Render();
 		
 		Debug::UpdateRenderables(dt);
+		//TestStateMachine();
 	}
 	Window::DestroyGameWindow();
 }
