@@ -103,6 +103,118 @@ void TestStateMachine() {
 	}
 }
 
+void TestBehaviourTree() {
+	float behaviourTimer;
+	float distanceToTarget;
+	BehaviourAction* findKey = new BehaviourAction("Find Key",
+		[&](float dt, BehaviourState state)->BehaviourState {
+			if (state == Initialise) {
+				behaviourTimer = rand() % 100;
+				state = Ongoing;
+			}
+			else if (state == Ongoing) {
+				behaviourTimer -= dt;
+				if (behaviourTimer <= 0.0f) {
+					std::cout << "Found the key!\n";
+					return Success;
+				}
+			}
+			return state;
+		});
+	BehaviourAction* goToRoom = new BehaviourAction("Go To Room",
+		[&](float dt, BehaviourState state)->BehaviourState {
+			if (state == Initialise) {
+				std::cout << "Going to the room!\n";
+				state = Ongoing;
+			}
+			else if (state == Ongoing) {
+				distanceToTarget -= dt;
+				if (distanceToTarget <= 0.0f) {
+					std::cout << "Reached the room!\n";
+					return Success;
+				}
+			}
+			return state;
+		});
+
+	BehaviourAction* openDoor = new BehaviourAction("Open Door",
+		[&](float dt, BehaviourState state)->BehaviourState {
+			if (state == Initialise) {
+				std::cout << "Opening the door!\n";
+				return Success;
+			}
+			return state;
+		});
+
+	BehaviourAction* lookForTresure = new BehaviourAction("Look For Treasure",
+		[&](float dt, BehaviourState state)->BehaviourState {
+			if (state == Initialise) {
+				std::cout << "Looking for treasure!\n";
+				return Ongoing;
+			}
+			else if (state == Ongoing) {
+				bool found = rand() % 2;
+				if (found) {
+					std::cout << "Found the treasure!\n";
+					return Success;
+				}
+			}
+			return state;
+		});
+
+	BehaviourAction* lookForItems = new BehaviourAction("Look For Items",
+		[&](float dt, BehaviourState state)->BehaviourState {
+			if (state == Initialise) {
+				std::cout << "Looking for items!\n";
+				return Ongoing;
+			}
+			else if (state == Ongoing) {
+				bool found = rand() % 2;
+				if (found) {
+					std::cout << "Found some items!\n";
+					return Success;
+				}
+				std::cout << "No items here...\n";
+				return Failure;
+			}
+			return state;
+		});
+
+	BehaviourSequence* sequence = 
+		new BehaviourSequence("Room Sequence");
+	sequence->AddChild(findKey);
+	sequence->AddChild(goToRoom);
+	sequence->AddChild(openDoor);
+
+	BehaviourSelector* selection =
+		new BehaviourSelector("Loot Selection");
+	selection->AddChild(lookForTresure);
+	selection->AddChild(lookForItems);
+
+	BehaviourSequence* rootSequence =
+		new BehaviourSequence("Root Sequence");
+	rootSequence->AddChild(sequence);
+	rootSequence->AddChild(selection);
+
+	for (int i = 0; i < 5; ++i) {
+		rootSequence->Reset();
+		behaviourTimer = 0.0f;
+		distanceToTarget = rand() % 250;
+		BehaviourState state = Ongoing;
+		std::cout << "We're Going on an Adventure!\n";
+		while (state == Ongoing) {
+			state = rootSequence->Execute(1.0f);
+		}
+		if (state == Success) {
+			std::cout << "What a successful adventure!\n";
+		}
+		else if (state == Failure) {
+			std::cout << "What a waste of time!\n";
+		}
+	}
+	std::cout << "All Done!\n";
+}
+
 /*
 
 The main function should look pretty familar to you!
@@ -116,6 +228,7 @@ hide or show the
 
 */
 int main() {
+	TestBehaviourTree();
 	WindowInitialisation initInfo;
 	initInfo.width = 1280;
 	initInfo.height = 720;
