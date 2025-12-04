@@ -283,6 +283,80 @@ void TestPushdownAutomata(Window* w) {
 	}
 }
 
+class TestPacketReceiver : public PacketReceiver {
+public:
+	TestPacketReceiver(std::string name) {
+		this->name = name;
+	}
+	void ReceivePacket(int type, GamePacket* payload, int source = -1) override {
+		if (type == String_Message) {
+			StringPacket* realPacket = (StringPacket*)payload;
+
+			std::string msg = realPacket->GetStringFromData();
+
+			std::cout << name << " received message: " << msg << std::endl;
+		}
+	}
+
+protected:
+	std::string name;
+};
+
+void TestNetworking() {
+	NetworkBase::Initialise();
+
+	TestPacketReceiver serverReceiver("Server");
+	TestPacketReceiver clientReceiver("Client");
+
+	int port = NetworkBase::GetDefaultPort();
+
+	GameServer* server = new GameServer(port, 1);
+	GameClient* client = new GameClient();
+
+	server->RegisterPacketHandler(String_Message, &serverReceiver);
+	client->RegisterPacketHandler(String_Message, &clientReceiver);
+
+	// Start server
+	if (!server->Initialise()) {
+		std::cout << "Server failed to initialise\n";
+		NetworkBase::Destroy();
+		return;
+	}
+
+	bool canConnect = client->Connect(127, 0, 0, 1, port);
+	if (!canConnect) {
+		std::cout << "Client failed to connect\n";
+		NetworkBase::Destroy();
+		return;
+	}
+
+	// Give ENet time to establish the connection
+	for (int warmup = 0; warmup < 50; ++warmup) {
+		server->UpdateServer();
+		client->UpdateClient();
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
+	for (int i = 0; i < 100; ++i) {
+		GamePacket* packet = new StringPacket("Server says hello! " + std::to_string(i));
+		GamePacket* packet2 = new StringPacket("Client says hello! " + std::to_string(i));
+
+		server->SendGlobalPacket(*packet);
+		client->SendPacket(*packet2);
+
+		// Process network events
+		server->UpdateServer();
+		client->UpdateClient();
+
+		delete packet;
+		delete packet2;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
+	NetworkBase::Destroy();
+}
+
 /*
 
 The main function should look pretty familar to you!
@@ -296,7 +370,7 @@ hide or show the
 
 */
 int main() {
-	TestBehaviourTree();
+	//TestBehaviourTree();
 	WindowInitialisation initInfo;
 	initInfo.width = 1280;
 	initInfo.height = 720;
@@ -304,7 +378,8 @@ int main() {
 
 	Window* w = Window::CreateGameWindow(initInfo);
 
-	TestPushdownAutomata(w);
+	//TestPushdownAutomata(w);
+	TestNetworking();
 
 	if (!w->HasInitialised()) {
 		return -1;
