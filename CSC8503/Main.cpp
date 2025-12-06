@@ -302,7 +302,9 @@ protected:
 	std::string name;
 };
 
-void TestNetworking() {
+void TestNetworking()
+{
+	///*
 	NetworkBase::Initialise();
 
 	TestPacketReceiver serverReceiver("Server");
@@ -316,44 +318,21 @@ void TestNetworking() {
 	server->RegisterPacketHandler(String_Message, &serverReceiver);
 	client->RegisterPacketHandler(String_Message, &clientReceiver);
 
-	// Start server
-	if (!server->Initialise()) {
-		std::cout << "Server failed to initialise\n";
-		NetworkBase::Destroy();
-		return;
-	}
-
 	bool canConnect = client->Connect(127, 0, 0, 1, port);
-	if (!canConnect) {
-		std::cout << "Client failed to connect\n";
-		NetworkBase::Destroy();
-		return;
-	}
 
-	// Give ENet time to establish the connection
-	for (int warmup = 0; warmup < 50; ++warmup) {
-		server->UpdateServer();
-		client->UpdateClient();
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
+	for (int i = 0; i < 100; i++)
+	{
+		StringPacket p("Server says hello! " + std::to_string(i));
+		server->SendGlobalPacket(p);
 
-	for (int i = 0; i < 100; ++i) {
-		GamePacket* packet = new StringPacket("Server says hello! " + std::to_string(i));
-		GamePacket* packet2 = new StringPacket("Client says hello! " + std::to_string(i));
+		p = StringPacket("Client says hello! " + std::to_string(i));
+		client->SendPacket(p);
 
-		server->SendGlobalPacket(*packet);
-		client->SendPacket(*packet2);
-
-		// Process network events
 		server->UpdateServer();
 		client->UpdateClient();
 
-		delete packet;
-		delete packet2;
-
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
-
 	NetworkBase::Destroy();
 }
 
