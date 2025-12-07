@@ -34,6 +34,8 @@ namespace NCL {
 			*/
 			void InitGameExamples();
 
+			void InitCourseworkGame();
+
 			void CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
 			void CreatedMixedGrid(int numRows, int numCols, float rowSpacing, float colSpacing);
 			void CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const NCL::Maths::Vector3& cubeDims);

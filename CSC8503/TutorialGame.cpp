@@ -191,9 +191,10 @@ void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
 
-	CreatedMixedGrid(15, 15, 3.5f, 3.5f);
+	//CreatedMixedGrid(15, 15, 3.5f, 3.5f);
 
-	InitGameExamples();
+	//InitGameExamples();
+	InitCourseworkGame();
 
 	AddFloorToWorld(Vector3(0, -20, 0));
 
@@ -291,7 +292,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	character->SetRenderObject(new RenderObject(character->GetTransform(), catMesh, notexMaterial));
+	character->SetRenderObject(new RenderObject(character->GetTransform(), enemyMesh, notexMaterial));
 	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
 
 	character->GetPhysicsObject()->SetInverseMass(inverseMass);
@@ -371,6 +372,11 @@ void TutorialGame::InitGameExamples() {
 	AddPlayerToWorld(Vector3(0, 5, 0));
 	AddEnemyToWorld(Vector3(5, 5, 0));
 	AddBonusToWorld(Vector3(10, 5, 0));
+}
+
+void NCL::CSC8503::TutorialGame::InitCourseworkGame()
+{
+	AddEnemyToWorld(Vector3(0, 5, 0));
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
