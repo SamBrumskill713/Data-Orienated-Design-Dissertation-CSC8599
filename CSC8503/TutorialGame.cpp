@@ -191,16 +191,10 @@ void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
 
-	//CreatedMixedGrid(15, 15, 3.5f, 3.5f);
-
-	//InitGameExamples();
-	InitCourseworkGame();
+	InitGameExamples();
+	//InitCourseworkGame();
 
 	AddFloorToWorld(Vector3(0, -20, 0));
-
-	BridgeConstraintTest();
-
-	testStateObject = AddStateObjectToWorld(Vector3(20, 10, -20));
 }
 
 /*
@@ -279,8 +273,9 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 	return cube;
 }
 
-GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
-	float meshSize = 1.0f;
+GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
+	const float scale) {
+	float meshSize = scale;
 	float inverseMass = 0.5f;
 
 	GameObject* character = new GameObject();
@@ -292,7 +287,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	character->SetRenderObject(new RenderObject(character->GetTransform(), enemyMesh, notexMaterial));
+	character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
 	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
 
 	character->GetPhysicsObject()->SetInverseMass(inverseMass);
@@ -303,8 +298,9 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	return character;
 }
 
-GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
-	float meshSize = 3.0f;
+GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
+	float scale) {
+	float meshSize = scale;
 	float inverseMass = 0.5f;
 
 	GameObject* character = new GameObject();
@@ -316,7 +312,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	character->SetRenderObject(new RenderObject(character->GetTransform(), enemyMesh, notexMaterial));
+	character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
 	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
 
 	character->GetPhysicsObject()->SetInverseMass(inverseMass);
@@ -327,16 +323,17 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 	return character;
 }
 
-GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
+GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
+	float scale) {
 	GameObject* apple = new GameObject();
 
 	SphereVolume* volume = new SphereVolume(0.5f);
 	apple->SetBoundingVolume(volume);
 	apple->GetTransform()
-		.SetScale(Vector3(2, 2, 2))
+		.SetScale(Vector3(scale, scale, scale))
 		.SetPosition(position);
 
-	apple->SetRenderObject(new RenderObject(apple->GetTransform(), bonusMesh, glassMaterial));
+	apple->SetRenderObject(new RenderObject(apple->GetTransform(), characterMesh, glassMaterial));
 	apple->SetPhysicsObject(new PhysicsObject(apple->GetTransform(), apple->GetBoundingVolume()));
 
 	apple->GetPhysicsObject()->SetInverseMass(1.0f);
@@ -347,17 +344,17 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
 	return apple;
 }
 
-StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position)
+StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
+	float scale)
 {
 	StateGameObject* stateObj = new StateGameObject();
-
 	SphereVolume* volume = new SphereVolume(0.5f);
 	stateObj->SetBoundingVolume(volume);
 	stateObj->GetTransform()
-		.SetScale(Vector3(2, 2, 2))
+		.SetScale(Vector3(scale, scale, scale))
 		.SetPosition(position);
 
-	stateObj->SetRenderObject(new RenderObject(stateObj->GetTransform(), bonusMesh, glassMaterial));
+	stateObj->SetRenderObject(new RenderObject(stateObj->GetTransform(), characterMesh, glassMaterial));
 	stateObj->SetPhysicsObject(new PhysicsObject(stateObj->GetTransform(), stateObj->GetBoundingVolume()));
 
 	stateObj->GetPhysicsObject()->SetInverseMass(0.2f);
@@ -369,14 +366,17 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position)
 }
 
 void TutorialGame::InitGameExamples() {
-	AddPlayerToWorld(Vector3(0, 5, 0));
-	AddEnemyToWorld(Vector3(5, 5, 0));
-	AddBonusToWorld(Vector3(10, 5, 0));
+	CreatedMixedGrid(15, 15, 3.5f, 3.5f);
+	AddPlayerToWorld(Vector3(0, 5, 0), catMesh, 1.0f);
+	AddEnemyToWorld(Vector3(5, 5, 0), enemyMesh, 3.0f);
+	AddBonusToWorld(Vector3(10, 5, 0), bonusMesh, 2.0);
+	BridgeConstraintTest();
+	testStateObject = AddStateObjectToWorld(Vector3(20, 10, -20), bonusMesh, 2.0);
 }
 
 void NCL::CSC8503::TutorialGame::InitCourseworkGame()
 {
-	AddEnemyToWorld(Vector3(0, 5, 0));
+	AddPlayerToWorld(Vector3(5, 5, 0), enemyMesh, 3.0f);
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {

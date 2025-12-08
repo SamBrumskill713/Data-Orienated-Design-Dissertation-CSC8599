@@ -51,10 +51,14 @@ namespace NCL {
 			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, float inverseMass = 10.0f);
 			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f);
 
-			GameObject* AddPlayerToWorld(const NCL::Maths::Vector3& position);
-			GameObject* AddEnemyToWorld(const NCL::Maths::Vector3& position);
-			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position);
-			StateGameObject* AddStateObjectToWorld(const Vector3& position);
+			GameObject* AddPlayerToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
+			const float scale);
+			GameObject* AddEnemyToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
+				const float scale);
+			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
+				const float scale);
+			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
+				const float scale);
 
 			GameWorld& world;
 			GameTechRendererInterface& renderer;
