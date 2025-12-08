@@ -191,8 +191,8 @@ void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
 
-	InitGameExamples();
-	//InitCourseworkGame();
+	//InitGameExamples();
+	InitCourseworkGame();
 
 	AddFloorToWorld(Vector3(0, -20, 0));
 }

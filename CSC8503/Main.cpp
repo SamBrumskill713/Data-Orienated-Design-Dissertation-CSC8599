@@ -304,7 +304,6 @@ protected:
 
 void TestNetworking()
 {
-	///*
 	NetworkBase::Initialise();
 
 	TestPacketReceiver serverReceiver("Server");
@@ -377,7 +376,7 @@ int main() {
 #endif
 
 	TutorialGame* g = new TutorialGame(*world, *renderer, *physics);
-	TestPathfinding();
+	//TestPathfinding();
 	w->GetTimer().GetTimeDeltaSeconds(); //Clear the timer so we don't get a larget first dt!
 	while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
 		float dt = w->GetTimer().GetTimeDeltaSeconds();
@@ -407,7 +406,7 @@ int main() {
 		
 		Debug::UpdateRenderables(dt);
 		//TestStateMachine();
-		DisplayPathfinding();
+		//DisplayPathfinding();
 	}
 	Window::DestroyGameWindow();
 }
