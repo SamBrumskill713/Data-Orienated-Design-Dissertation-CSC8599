@@ -9,57 +9,57 @@ namespace NCL::CSC8503 {
 	class RenderObject;
 	class PhysicsObject;
 
-	class GameObject	{
+	class GameObject {
 	public:
 		GameObject(const std::string& name = "");
 		~GameObject();
 
-		void SetBoundingVolume(CollisionVolume* vol) 
+		void SetBoundingVolume(CollisionVolume* vol)
 		{
 			boundingVolume = vol;
 		}
 
-		const CollisionVolume* GetBoundingVolume() const 
+		const CollisionVolume* GetBoundingVolume() const
 		{
 			return boundingVolume;
 		}
 
-		bool IsActive() const 
+		bool IsActive() const
 		{
 			return isActive;
 		}
 
-		Transform& GetTransform() 
+		Transform& GetTransform()
 		{
 			return transform;
 		}
 
-		RenderObject* GetRenderObject() const 
+		RenderObject* GetRenderObject() const
 		{
 			return renderObject;
 		}
 
-		PhysicsObject* GetPhysicsObject() const 
+		PhysicsObject* GetPhysicsObject() const
 		{
 			return physicsObject;
 		}
 
-		NetworkObject* GetNetworkObject() const 
+		NetworkObject* GetNetworkObject() const
 		{
 			return networkObject;
 		}
 
-		void SetRenderObject(RenderObject* newObject) 
+		void SetRenderObject(RenderObject* newObject)
 		{
 			renderObject = newObject;
 		}
 
-		void SetPhysicsObject(PhysicsObject* newObject) 
+		void SetPhysicsObject(PhysicsObject* newObject)
 		{
 			physicsObject = newObject;
 		}
 
-		const std::string& GetName() const 
+		const std::string& GetName() const
 		{
 			return name;
 		}
@@ -72,21 +72,21 @@ namespace NCL::CSC8503 {
 			//std::cout << "OnCollisionEnd event occured!\n";
 		}
 
-		virtual void Update(float dt) 
+		virtual void Update(float dt)
 		{
 
 		}
 
-		bool GetBroadphaseAABB(Vector3&outsize) const;
+		bool GetBroadphaseAABB(Vector3& outsize) const;
 
 		void UpdateBroadphaseAABB();
 
-		void SetWorldID(int newID) 
+		void SetWorldID(int newID)
 		{
 			worldID = newID;
 		}
 
-		int		GetWorldID() const 
+		int		GetWorldID() const
 		{
 			return worldID;
 		}
@@ -94,16 +94,20 @@ namespace NCL::CSC8503 {
 	protected:
 		Transform			transform;
 
-		CollisionVolume*	boundingVolume;
-		PhysicsObject*		physicsObject;
-		RenderObject*		renderObject;
-		NetworkObject*		networkObject;
+		CollisionVolume* boundingVolume;
+		PhysicsObject* physicsObject;
+		RenderObject* renderObject;
+		NetworkObject* networkObject;
 
 		bool				isActive;
 		int					worldID;
 		std::string			name;
 
 		Vector3				broadphaseAABB;
+	};
+
+	class playerObject : public GameObject {
+	
 	};
 }
 

@@ -25,6 +25,8 @@ namespace NCL {
 		protected:
 			void InitCamera();
 
+			void attachCameraToPlayer();
+
 			void InitWorld();
 
 			/*
@@ -57,6 +59,7 @@ namespace NCL {
 				const float scale);
 			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale);
+			//playerObject* initalisePlayerObject()
 			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale);
 
@@ -89,6 +92,10 @@ namespace NCL {
 			GameTechMaterial checkerMaterial;
 			GameTechMaterial glassMaterial;
 			GameTechMaterial notexMaterial;
+
+			GameObject* playerObj = nullptr;
+			Quaternion* playerOrientation = nullptr;
+
 
 			//Coursework Additional functionality	
 			GameObject* lockedObject = nullptr;

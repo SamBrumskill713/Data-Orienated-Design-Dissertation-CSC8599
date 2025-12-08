@@ -58,7 +58,7 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 	bonusMesh = renderer.LoadMesh("19463_Kitten_Head_v1.msh");
 	capsuleMesh = renderer.LoadMesh("capsule.msh");
 
-	defaultTex = renderer.LoadTexture("Default.png");
+	//defaultTex = renderer.LoadTexture("Default.png");
 	checkerTex = renderer.LoadTexture("checkerboard.png");
 	glassTex = renderer.LoadTexture("stainedglass.tga");
 
@@ -155,8 +155,8 @@ void TutorialGame::UpdateGame(float dt) {
 	}
 
 	//This year we can draw debug textures as well!
-	Debug::DrawTex(*defaultTex, Vector2(10, 10), Vector2(5, 5), Debug::WHITE);
-	Debug::DrawLine(Vector3(), Vector3(0, 100, 0), Vector4(1, 0, 0, 1));
+	//Debug::DrawTex(*defaultTex, Vector2(10, 10), Vector2(5, 5), Debug::WHITE);
+	//Debug::DrawLine(Vector3(), Vector3(0, 100, 0), Vector4(1, 0, 0, 1));
 	if (useGravity) {
 		Debug::Print("(G)ravity on", Vector2(5, 95), Debug::RED);
 	}
@@ -187,12 +187,17 @@ void TutorialGame::InitCamera() {
 	lockedObject = nullptr;
 }
 
+void NCL::CSC8503::TutorialGame::attachCameraToPlayer()
+{
+
+}
+
 void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
 
-	//InitGameExamples();
-	InitCourseworkGame();
+	InitGameExamples();
+	//InitCourseworkGame();
 
 	AddFloorToWorld(Vector3(0, -20, 0));
 }
