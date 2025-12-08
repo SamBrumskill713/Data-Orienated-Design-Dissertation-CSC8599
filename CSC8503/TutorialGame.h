@@ -14,6 +14,7 @@ namespace NCL {
 		class GameWorld;
 		class GameObject;
 		class StateGameObject;
+		class playerObject;
 
 		class TutorialGame {
 		public:
@@ -26,6 +27,8 @@ namespace NCL {
 			void InitCamera();
 
 			void attachCameraToPlayer();
+
+			void movePlayerObject(float dt);
 
 			void InitWorld();
 
@@ -53,7 +56,7 @@ namespace NCL {
 			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, float inverseMass = 10.0f);
 			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f);
 
-			GameObject* AddPlayerToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
+			playerObject* AddPlayerToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 			const float scale);
 			GameObject* AddEnemyToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale);
@@ -62,6 +65,7 @@ namespace NCL {
 			//playerObject* initalisePlayerObject()
 			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale);
+			//GameObject* setLockedObject();
 
 			GameWorld& world;
 			GameTechRendererInterface& renderer;
@@ -93,8 +97,8 @@ namespace NCL {
 			GameTechMaterial glassMaterial;
 			GameTechMaterial notexMaterial;
 
-			GameObject* playerObj = nullptr;
-			Quaternion* playerOrientation = nullptr;
+			playerObject* playerObj = nullptr;
+			Quaternion* playerOrientation;
 
 
 			//Coursework Additional functionality	
