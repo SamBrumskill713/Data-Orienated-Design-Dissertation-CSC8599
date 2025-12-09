@@ -77,24 +77,15 @@ TutorialGame::~TutorialGame() {
 
 void TutorialGame::UpdateGame(float dt) {
 	world.GetMainCamera().UpdateCamera(dt);
+	if (useGravity) physics.UseGravity(useGravity);
 
-	if (useGravity) {
-		//useGravity = !useGravity; //Toggle gravity!
-		physics.UseGravity(useGravity);
-	}
-
-	attachCameraToPlayer();
 	movePlayerObject(dt);
 
-	world.OperateOnContents(
-		[dt](GameObject* o) {
-			o->Update(dt);
-		}
-	);
+	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
 
-	if (testStateObject) {
-		testStateObject->Update(dt);
-	}
+	if (testStateObject) testStateObject->Update(dt);
+
+	attachCameraToPlayer();
 	/*if (!inSelectionMode) {
 		world.GetMainCamera().UpdateCamera(dt);
 	}*/
@@ -195,27 +186,21 @@ void TutorialGame::InitCamera() {
 void NCL::CSC8503::TutorialGame::attachCameraToPlayer() {
 	if (!playerObj) return;
 
-	const Transform& pt = playerObj->GetTransform();
-	const Vector3 playerPos = pt.GetPosition();
-	const Quaternion playerOri = pt.GetOrientation();
+	const float camYaw = world.GetMainCamera().GetYaw();
+	const Quaternion newPlayerOri = Quaternion::EulerAnglesToQuaternion(0.0f, camYaw, 0.0f);
+	playerObj->GetTransform().SetOrientation(newPlayerOri);
 
-	// Place camera behind/above player (3rd person)
-	const Vector3 playerFwd = playerOri * Vector3(0, 0, -1);
-	const Vector3 playerUp = playerOri * Vector3(0, 1, 0);
+	// 2) Place camera behind/above using the updated orientation
+	const Transform& playerTransform = playerObj->GetTransform();
+	const Vector3    playerPos = playerTransform.GetPosition();
+	const Vector3    playerFwd = newPlayerOri * Vector3(0, 0, -1);
+	const Vector3    playerUp = newPlayerOri * Vector3(0, 1, 0);
 
 	const float followDistance = 10.0f;
 	const float followHeight = 4.0f;
 
 	const Vector3 camPos = playerPos - playerFwd * followDistance + playerUp * followHeight;
 	world.GetMainCamera().SetPosition(camPos);
-
-	// Use camera yaw/pitch to orient player
-	const float camYaw = world.GetMainCamera().GetYaw();
-	const float camPitch = std::clamp(world.GetMainCamera().GetPitch(), -89.0f, 89.0f);
-
-	// If you only want horizontal facing, set pitch to 0
-	Quaternion newPlayerOri = Quaternion::EulerAnglesToQuaternion(0.0f, camYaw, 0.0f);
-	playerObj->GetTransform().SetOrientation(newPlayerOri);
 }
 
 void NCL::CSC8503::TutorialGame::movePlayerObject(float dt)
@@ -240,7 +225,7 @@ void NCL::CSC8503::TutorialGame::movePlayerObject(float dt)
 	camFwdAxis = Vector::Normalise(camFwdAxis);
 
 	Vector3 moveDir = Vector3(0, 0, 0);
-	float  speed = 10000.0f * dt;
+	float  speed = 20.0f * dt;
 
 	if (Window::GetKeyboard()->KeyDown(KeyCodes::W)) {
 		moveDir = (fwdAxis);
@@ -360,7 +345,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
 	const float scale) {
 	float meshSize = scale;
-	float inverseMass = 0.5f;
+	float inverseMass = 50.0f;
 
 	playerObject* character = new playerObject();
 	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize);
@@ -375,7 +360,7 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
 
 	character->GetPhysicsObject()->SetInverseMass(inverseMass);
-	character->GetPhysicsObject()->InitSphereInertia();
+	character->GetPhysicsObject()->InitCubeInertia();
 
 	world.AddGameObject(character);
 

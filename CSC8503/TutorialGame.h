@@ -41,6 +41,12 @@ namespace NCL {
 
 			void InitCourseworkGame();
 
+			//TODO: When implementing AI, use this to test
+			void initAITes();
+
+			//TODO: When implementing a feature, use this to test
+			void initUnkonwTest();
+
 			void CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
 			void CreatedMixedGrid(int numRows, int numCols, float rowSpacing, float colSpacing);
 			void CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const NCL::Maths::Vector3& cubeDims);
