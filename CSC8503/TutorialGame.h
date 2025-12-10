@@ -42,7 +42,7 @@ namespace NCL {
 			void InitCourseworkGame();
 
 			//TODO: When implementing AI, use this to test
-			void initAITes();
+			void initAITest();
 
 			//TODO: When implementing a feature, use this to test
 			void initUnkonwTest();
@@ -59,15 +59,19 @@ namespace NCL {
 			void BridgeConstraintTest();
 
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position);
-			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, float inverseMass = 10.0f);
-			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f);
+			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, float inverseMass = 10.0f, 
+				bool isCollided = true, int collisionLayer = defaultLayer, bool isRendered);
+			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f,
+				bool isCollided = true, int collisionLayer = defaultLayer);
 
 			playerObject* AddPlayerToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
-			const float scale);
+			const float scale, bool isCollided = true, int collisionLayer = playerLayer);
 			GameObject* AddEnemyToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
-				const float scale);
+				const float scale, bool isCollided = true, int collisionLayer = enemyLayer);
 			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
-				const float scale);
+				const float scale, bool isCollided = true);
+			GameObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
+				const float scale, bool isCollided = true, int pointvalue, int collisionLayer = pickupLayer);
 			//playerObject* initalisePlayerObject()
 			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale);
@@ -105,6 +109,7 @@ namespace NCL {
 
 			playerObject* playerObj = nullptr;
 			Quaternion* playerOrientation;
+			GameObject* playerGroundCollision = nullptr;
 
 
 			//Coursework Additional functionality	

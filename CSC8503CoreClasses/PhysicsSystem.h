@@ -32,6 +32,8 @@ namespace NCL {
 
 			void ClearForces();
 
+			void ClearIsCollided();
+
 			void IntegrateAccel(float dt);
 			void IntegrateVelocity(float dt);
 

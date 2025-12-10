@@ -440,6 +440,14 @@ void PhysicsSystem::ClearForces()
 	);
 }
 
+void PhysicsSystem::ClearIsCollided()
+{
+	gameWorld.OperateOnContents(
+		[](GameObject* o) {
+			o->setIsCollided(false);
+		}
+	);
+}
 
 /*
 

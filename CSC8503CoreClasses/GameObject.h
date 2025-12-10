@@ -91,6 +91,14 @@ namespace NCL::CSC8503 {
 			return worldID;
 		}
 
+		void setIsCollided(bool colliding) {
+			isCollided = colliding;
+		}
+
+		bool getIsCollided() const {
+			return isCollided;
+		}
+
 	protected:
 		Transform			transform;
 
@@ -100,6 +108,7 @@ namespace NCL::CSC8503 {
 		NetworkObject* networkObject;
 
 		bool				isActive;
+		bool				isCollided;
 		int					worldID;
 		std::string			name;
 

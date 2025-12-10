@@ -42,6 +42,14 @@ namespace NCL {
 				return inverseMass;
 			}
 
+			void setIsCollider(bool colliding) {
+				isCollided = colliding;
+			}
+
+			bool getIsCollider() {
+				return isCollided;
+			}
+
 			void ApplyAngularImpulse(const Vector3& force);
 			void ApplyLinearImpulse(const Vector3& force);
 			
@@ -81,6 +89,7 @@ namespace NCL {
 			float inverseMass;
 			float elasticity;
 			float friction;
+			bool isCollided;
 
 			//linear stuff
 			Vector3 linearVelocity;

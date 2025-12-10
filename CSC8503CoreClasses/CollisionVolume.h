@@ -1,5 +1,11 @@
 #pragma once
 namespace NCL {
+	const int defaultLayer = 0;
+	const int playerLayer = 1;
+	const int enemyLayer = 2;
+	const int pickupLayer = 3;
+	const int terrainLayer = 4;
+
 	enum class VolumeType 
 	{
 		AABB	= 1,
@@ -21,5 +27,6 @@ namespace NCL {
 		~CollisionVolume() = default;
 
 		VolumeType type;
+		int collisionLayer;
 	};
 }

@@ -247,6 +247,12 @@ void NCL::CSC8503::TutorialGame::movePlayerObject(float dt)
 		//selectionObject->GetPhysicsObject()->AddForce(rightAxis);
 	}
 
+	//TODO: Add jump
+
+	if (Window::GetKeyboard()->KeyDown(KeyCodes::SPACE)) {
+		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, -20, 0) * dt);
+	}
+
 	playerObj->GetPhysicsObject()->AddForce(moveDir * speed);
 
 	/*if (Window::GetKeyboard()->KeyDown(KeyCodes::NEXT)) {
@@ -299,7 +305,8 @@ rigid body representation. This and the cube function will let you build a lot o
 physics worlds. You'll probably need another function for the creation of OBB cubes too.
 
 */
-GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass) {
+GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass,
+	bool isCollided = true, int collisionLayer = defaultLayer, bool isRendered) {
 	GameObject* sphere = new GameObject();
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
@@ -310,7 +317,10 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 		.SetScale(sphereSize)
 		.SetPosition(position);
 
-	sphere->SetRenderObject(new RenderObject(sphere->GetTransform(), sphereMesh, checkerMaterial));
+	if (isRendered) {
+		sphere->SetRenderObject(new RenderObject(sphere->GetTransform(), sphereMesh, checkerMaterial));
+	}
+
 	sphere->SetPhysicsObject(new PhysicsObject(sphere->GetTransform(), sphere->GetBoundingVolume()));
 
 	sphere->GetPhysicsObject()->SetInverseMass(inverseMass);
@@ -321,11 +331,13 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 	return sphere;
 }
 
-GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
+GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass,
+	bool isCollided = true, int collisionLayer = defaultLayer) {
 	GameObject* cube = new GameObject();
 
 	AABBVolume* volume = new AABBVolume(dimensions);
 	cube->SetBoundingVolume(volume);
+	cube->setIsCollided(isCollided);
 
 	cube->GetTransform()
 		.SetPosition(position)
@@ -343,7 +355,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 }
 
 playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
-	const float scale) {
+	const float scale, bool isCollided = true, int collisionLayer = playerLayer) {
 	float meshSize = scale;
 	float inverseMass = 50.0f;
 
@@ -368,7 +380,7 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 }
 
 GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
-	float scale) {
+	float scale, bool isCollided = true, int collisionLayer = enemyLayer) {
 	float meshSize = scale;
 	float inverseMass = 0.5f;
 
@@ -393,7 +405,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Me
 }
 
 GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
-	float scale) {
+	float scale, bool isCollided = true) {
 	GameObject* apple = new GameObject();
 
 	SphereVolume* volume = new SphereVolume(0.5f);
@@ -446,6 +458,14 @@ void TutorialGame::InitGameExamples() {
 void NCL::CSC8503::TutorialGame::InitCourseworkGame()
 {
 	playerObj = AddPlayerToWorld(Vector3(5, -10, 0), enemyMesh, 3.0f);
+}
+
+void NCL::CSC8503::TutorialGame::initAITest()
+{
+}
+
+void NCL::CSC8503::TutorialGame::initUnkonwTest()
+{
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
