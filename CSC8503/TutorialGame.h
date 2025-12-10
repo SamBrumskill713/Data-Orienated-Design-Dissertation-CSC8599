@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderObject.h"
+#include "../CSC8503CoreClasses/CollisionVolume.h"
 namespace NCL {
 	class Controller;
 
@@ -59,8 +60,8 @@ namespace NCL {
 			void BridgeConstraintTest();
 
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position);
-			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, float inverseMass = 10.0f, 
-				bool isCollided = true, int collisionLayer = defaultLayer, bool isRendered);
+			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, bool isRendered, float inverseMass = 10.0f,
+			 bool isCollided = true, int collisionLayer = defaultLayer);
 			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f,
 				bool isCollided = true, int collisionLayer = defaultLayer);
 
@@ -71,7 +72,7 @@ namespace NCL {
 			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale, bool isCollided = true);
 			GameObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
-				const float scale, bool isCollided = true, int pointvalue, int collisionLayer = pickupLayer);
+				const float scale, int pointvalue, bool isCollided = true, int collisionLayer = pickupLayer);
 			//playerObject* initalisePlayerObject()
 			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale);

@@ -305,8 +305,8 @@ rigid body representation. This and the cube function will let you build a lot o
 physics worlds. You'll probably need another function for the creation of OBB cubes too.
 
 */
-GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass,
-	bool isCollided = true, int collisionLayer = defaultLayer, bool isRendered) {
+GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, bool isRendered, float inverseMass,
+	bool isCollided, int collisionLayer) {
 	GameObject* sphere = new GameObject();
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
@@ -332,7 +332,7 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 }
 
 GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass,
-	bool isCollided = true, int collisionLayer = defaultLayer) {
+	bool isCollided, int collisionLayer) {
 	GameObject* cube = new GameObject();
 
 	AABBVolume* volume = new AABBVolume(dimensions);
@@ -355,7 +355,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 }
 
 playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
-	const float scale, bool isCollided = true, int collisionLayer = playerLayer) {
+	const float scale, bool isCollided, int collisionLayer) {
 	float meshSize = scale;
 	float inverseMass = 50.0f;
 
@@ -380,7 +380,7 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 }
 
 GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
-	float scale, bool isCollided = true, int collisionLayer = enemyLayer) {
+	float scale, bool isCollided, int collisionLayer) {
 	float meshSize = scale;
 	float inverseMass = 0.5f;
 
@@ -405,7 +405,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Me
 }
 
 GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
-	float scale, bool isCollided = true) {
+	float scale, bool isCollided) {
 	GameObject* apple = new GameObject();
 
 	SphereVolume* volume = new SphereVolume(0.5f);
@@ -490,7 +490,7 @@ void TutorialGame::CreatedMixedGrid(int numRows, int numCols, float rowSpacing, 
 				AddCubeToWorld(position, cubeDims);
 			}
 			else {
-				AddSphereToWorld(position, sphereRadius);
+				AddSphereToWorld(position, sphereRadius, true);
 			}
 		}
 	}
