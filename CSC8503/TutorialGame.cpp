@@ -79,6 +79,10 @@ void TutorialGame::UpdateGame(float dt) {
 	world.GetMainCamera().UpdateCamera(dt);
 	if (useGravity) physics.UseGravity(useGravity);
 
+	if (playerObj && playerGroundCollision) {
+		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
+	}
+
 	movePlayerObject(dt);
 
 	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
@@ -247,13 +251,13 @@ void NCL::CSC8503::TutorialGame::movePlayerObject(float dt)
 		//selectionObject->GetPhysicsObject()->AddForce(rightAxis);
 	}
 
-	//TODO: Add jump
+	playerObj->GetPhysicsObject()->AddForce(moveDir * speed);
 
-	if (Window::GetKeyboard()->KeyDown(KeyCodes::SPACE)) {
-		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, -20, 0) * dt);
+	if (Window::GetKeyboard()->KeyDown(KeyCodes::SPACE) && playerGroundCollision->getIsCollided() == true) {
+		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, 20.0f, 0) * dt);
 	}
 
-	playerObj->GetPhysicsObject()->AddForce(moveDir * speed);
+	playerGroundCollision->GetPhysicsObject()->SetLinearVelocity(playerObj->GetPhysicsObject()->GetLinearVelocity());
 
 	/*if (Window::GetKeyboard()->KeyDown(KeyCodes::NEXT)) {
 		selectionObject->GetPhysicsObject()->AddForce(Vector3(0, -10, 0));
@@ -458,6 +462,7 @@ void TutorialGame::InitGameExamples() {
 void NCL::CSC8503::TutorialGame::InitCourseworkGame()
 {
 	playerObj = AddPlayerToWorld(Vector3(5, -10, 0), enemyMesh, 3.0f);
+	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, true);
 }
 
 void NCL::CSC8503::TutorialGame::initAITest()
