@@ -80,7 +80,7 @@ void TutorialGame::UpdateGame(float dt) {
 	if (useGravity) physics.UseGravity(useGravity);
 
 	if (playerObj && playerGroundCollision) {
-		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
+		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -1.75f, 0));
 	}
 
 	movePlayerObject(dt);
@@ -90,6 +90,8 @@ void TutorialGame::UpdateGame(float dt) {
 	if (testStateObject) testStateObject->Update(dt);
 
 	attachCameraToPlayer();
+	//Debug::debugDrawAABBs(Vector3(20, 20, 20), Vector3(5, 5, 5), Debug::RED, 0.0f);
+	Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.01f, 16);
 	/*if (!inSelectionMode) {
 		world.GetMainCamera().UpdateCamera(dt);
 	}*/
@@ -462,7 +464,8 @@ void TutorialGame::InitGameExamples() {
 void NCL::CSC8503::TutorialGame::InitCourseworkGame()
 {
 	playerObj = AddPlayerToWorld(Vector3(5, -10, 0), enemyMesh, 3.0f);
-	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, true);
+	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, true, 0.1f, false, defaultLayer);
+	//AddSphereToWorld(Vector3(10, -10, 0), 0.5f, true);
 }
 
 void NCL::CSC8503::TutorialGame::initAITest()

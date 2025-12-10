@@ -66,6 +66,68 @@ void Debug::DrawAxisLines(const Matrix4& modelMatrix, float scaleBoost, float ti
 	DrawLine(worldPos, worldPos + (fwd * scaleBoost), Debug::BLUE, time);
 }
 
+void NCL::Debug::debugDrawAABBs(const Vector3& center, const Vector3& halfSizes, const Vector4& colour, float time)
+{
+	// Compute min/max corners
+	const Vector3 min = center - halfSizes;
+	const Vector3 max = center + halfSizes;
+
+	// 8 corners
+	const Vector3 c[8] = {
+		Vector3(min.x, min.y, min.z), // 0
+		Vector3(min.x, min.y, max.z), // 1
+		Vector3(min.x, max.y, min.z), // 2
+		Vector3(min.x, max.y, max.z), // 3
+		Vector3(max.x, min.y, min.z), // 4
+		Vector3(max.x, min.y, max.z), // 5
+		Vector3(max.x, max.y, min.z), // 6
+		Vector3(max.x, max.y, max.z)  // 7
+	};
+
+	// 12 edges (pairs of corner indices)
+	const int edges[12][2] = {
+		{0,1}, {0,2}, {0,4},
+		{7,5}, {7,6}, {7,3},
+		{1,3}, {1,5},
+		{2,3}, {2,6},
+		{4,5}, {4,6}
+	};
+
+	for (const auto& e : edges) {
+		DrawLine(c[e[0]], c[e[1]], colour, time);
+	}
+}
+
+void NCL::Debug::debugDrawSphere(const Vector3& center, float radius, const Vector4& colour, float time, int segments)
+{
+	if (segments < 8) segments = 8; // ensure reasonable tessellation
+	const float twoPi = 6.28318530717958647692f;
+
+	// Helper: closed polyline (ring) approximated by 'segments' straight lines
+	auto drawRing = [&](auto pointAtAngle) {
+		Vector3 prev = pointAtAngle(0.0f);
+		for (int i = 1; i <= segments; ++i) {
+			float a = (twoPi * i) / static_cast<float>(segments);
+			Vector3 curr = pointAtAngle(a);
+			DrawLine(prev, curr, colour, time);
+			prev = curr;
+		}
+		};
+
+	// XY plane ring
+	drawRing([&](float a) {
+		return center + Vector3(std::cos(a) * radius, std::sin(a) * radius, 0.0f);
+		});
+	// XZ plane ring
+	drawRing([&](float a) {
+		return center + Vector3(std::cos(a) * radius, 0.0f, std::sin(a) * radius);
+		});
+	// YZ plane ring
+	drawRing([&](float a) {
+		return center + Vector3(0.0f, std::cos(a) * radius, std::sin(a) * radius);
+		});
+}
+
 void Debug::UpdateRenderables(float dt) {
 	int trim = 0;
 	for (int i = 0; i < lineEntries.size(); ) {
