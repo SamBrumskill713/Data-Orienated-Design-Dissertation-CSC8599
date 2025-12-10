@@ -80,7 +80,7 @@ void TutorialGame::UpdateGame(float dt) {
 	if (useGravity) physics.UseGravity(useGravity);
 
 	if (playerObj && playerGroundCollision) {
-		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -1.75f, 0));
+		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
 	}
 
 	movePlayerObject(dt);
@@ -90,8 +90,14 @@ void TutorialGame::UpdateGame(float dt) {
 	if (testStateObject) testStateObject->Update(dt);
 
 	attachCameraToPlayer();
-	//Debug::debugDrawAABBs(Vector3(20, 20, 20), Vector3(5, 5, 5), Debug::RED, 0.0f);
+	Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(), Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.01f);
+	Debug::debugDrawAABBs(Vector3(0, -20, 0), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
 	Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.01f, 16);
+	Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
+	Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
+	Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
+	
 	/*if (!inSelectionMode) {
 		world.GetMainCamera().UpdateCamera(dt);
 	}*/
@@ -256,8 +262,12 @@ void NCL::CSC8503::TutorialGame::movePlayerObject(float dt)
 	playerObj->GetPhysicsObject()->AddForce(moveDir * speed);
 
 	if (Window::GetKeyboard()->KeyDown(KeyCodes::SPACE) && playerGroundCollision->getIsCollided() == true) {
-		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, 20.0f, 0) * dt);
+		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, 2.0f, 0) * dt);
 	}
+
+	/*if (Window::GetKeyboard()->KeyDown(KeyCodes::SPACE) && playerGroundCollision->getIsCollided() == false) {
+		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, 5.0f, 0) * dt);
+	}*/
 
 	playerGroundCollision->GetPhysicsObject()->SetLinearVelocity(playerObj->GetPhysicsObject()->GetLinearVelocity());
 
@@ -275,7 +285,7 @@ void TutorialGame::InitWorld() {
 	//InitGameExamples();
 	InitCourseworkGame();
 
-	AddFloorToWorld(Vector3(0, -20, 0));
+	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 }
 
 /*
@@ -283,11 +293,13 @@ void TutorialGame::InitWorld() {
 A single function to add a large immoveable cube to the bottom of our world
 
 */
-GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
+GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength,
+	int collisionLayer) {
 	GameObject* floor = new GameObject();
-
-	Vector3 floorSize = Vector3(200, 2, 200);
+	
+	Vector3 floorSize = Vector3(floorHeight, 2, floorLength);
 	AABBVolume* volume = new AABBVolume(floorSize);
+	volume->collisionLayer = collisionLayer;
 	floor->SetBoundingVolume(volume);
 	floor->GetTransform()
 		.SetScale(floorSize * 2.0f)
@@ -318,7 +330,8 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 	Vector3 sphereSize = Vector3(radius, radius, radius);
 	SphereVolume* volume = new SphereVolume(radius);
 	sphere->SetBoundingVolume(volume);
-
+	volume->collisionLayer = collisionLayer;
+	sphere->setIsCollided(isCollided);
 	sphere->GetTransform()
 		.SetScale(sphereSize)
 		.SetPosition(position);
@@ -367,18 +380,27 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 
 	playerObject* character = new playerObject();
 	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize);
-
 	character->SetBoundingVolume(volume);
+	volume->collisionLayer = collisionLayer;
+
+	// If mesh pivot is at feet, lower the transform so the mesh center aligns with AABB center
+	const float halfHeight = 0.9f * meshSize;
+	const Vector3 visualPivotOffset(0.0f, -halfHeight, 0.0f);
 
 	character->GetTransform()
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
+	//character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
 	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
-
 	character->GetPhysicsObject()->SetInverseMass(inverseMass);
 	character->GetPhysicsObject()->InitCubeInertia();
+
+	character->GetTransform()
+		.SetScale(Vector3(meshSize, meshSize, meshSize))
+		.SetPosition(position + visualPivotOffset);
+
+	character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
 
 	world.AddGameObject(character);
 
@@ -394,6 +416,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Me
 
 	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize);
 	character->SetBoundingVolume(volume);
+	volume->collisionLayer = collisionLayer;
 
 	character->GetTransform()
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
@@ -416,6 +439,7 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Me
 
 	SphereVolume* volume = new SphereVolume(0.5f);
 	apple->SetBoundingVolume(volume);
+	//volume->collisionLayer = collisionLayer;
 	apple->GetTransform()
 		.SetScale(Vector3(scale, scale, scale))
 		.SetPosition(position);
@@ -463,8 +487,9 @@ void TutorialGame::InitGameExamples() {
 
 void NCL::CSC8503::TutorialGame::InitCourseworkGame()
 {
-	playerObj = AddPlayerToWorld(Vector3(5, -10, 0), enemyMesh, 3.0f);
-	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, true, 0.1f, false, defaultLayer);
+	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
+	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false, 
+		playerColliderLayer);
 	//AddSphereToWorld(Vector3(10, -10, 0), 0.5f, true);
 }
 
@@ -483,7 +508,7 @@ void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, 
 			AddSphereToWorld(position, radius, 1.0f);
 		}
 	}
-	AddFloorToWorld(Vector3(0, -2, 0));
+	//AddFloorToWorld(Vector3(0, -2, 0));
 }
 
 void TutorialGame::CreatedMixedGrid(int numRows, int numCols, float rowSpacing, float colSpacing) {

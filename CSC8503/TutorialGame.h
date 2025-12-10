@@ -59,7 +59,8 @@ namespace NCL {
 
 			void BridgeConstraintTest();
 
-			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position);
+			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength, 
+				int collisionLayer = terrainLayer);
 			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, bool isRendered, float inverseMass = 10.0f,
 			 bool isCollided = true, int collisionLayer = defaultLayer);
 			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f,

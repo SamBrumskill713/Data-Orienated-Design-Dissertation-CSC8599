@@ -5,6 +5,7 @@ namespace NCL {
 	const int enemyLayer = 2;
 	const int pickupLayer = 3;
 	const int terrainLayer = 4;
+	const int playerColliderLayer = 5;
 
 	enum class VolumeType 
 	{
@@ -17,6 +18,17 @@ namespace NCL {
 		Invalid = 256
 	};
 
+	constexpr int LayerCount = 6;
+
+	constexpr bool CollisionMatrix[LayerCount][LayerCount] = {
+		/* defaultLayer(0) */ { true,  true,  true,  true,  true,  true  },
+		/* playerLayer (1) */ { true,  true,  true,  true,  true,  false },
+		/* enemyLayer  (2) */ { true,  true,  true,  false, true,  false },
+		/* pickupLayer (3) */ { true,  true,  false, true,  true,  false },
+		/* terrainLayer(4) */ { true,  true,  true,  true,  true,  false },
+		/* playerColl(5)  */  { true,  false, false, false, true, false }
+	};
+
 	class CollisionVolume
 	{
 	public:
@@ -25,6 +37,13 @@ namespace NCL {
 			type = VolumeType::Invalid;
 		}
 		~CollisionVolume() = default;
+
+		static bool layerMask(int a, int b) {
+			if (a < 0 || a >= LayerCount || b < 0 || b >= LayerCount) {
+				return false;
+			}
+			return CollisionMatrix[a][b] || CollisionMatrix[b][a];
+		}
 
 		VolumeType type;
 		int collisionLayer;

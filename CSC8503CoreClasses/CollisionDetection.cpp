@@ -41,7 +41,6 @@ bool CollisionDetection::RayIntersection(const Ray& r, GameObject& object, RayCo
 	case VolumeType::AABB:		hasCollided = RayAABBIntersection(r, worldTransform, (const AABBVolume&)*volume, collision); break;
 	case VolumeType::OBB:		hasCollided = RayOBBIntersection(r, worldTransform, (const OBBVolume&)*volume, collision); break;
 	case VolumeType::Sphere:	hasCollided = RaySphereIntersection(r, worldTransform, (const SphereVolume&)*volume, collision); break;
-
 	case VolumeType::Capsule:	hasCollided = RayCapsuleIntersection(r, worldTransform, (const CapsuleVolume&)*volume, collision); break;
 	}
 
@@ -151,6 +150,10 @@ bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, Collis
 		return false;
 	}
 
+	if (!NCL::CollisionVolume::layerMask(volA->collisionLayer, volB->collisionLayer)) {
+		return false;
+	}
+
 	collisionInfo.a = a;
 	collisionInfo.b = b;
 
@@ -242,7 +245,7 @@ bool CollisionDetection::AABBIntersection(const AABBVolume& volumeA, const Trans
 		{
 			Vector3(-1,  0,  0), Vector3(1, 0,  0),
 			Vector3(0, -1,  0), Vector3(0, 1,  0),
-			Vector3(0,  0, -1), Vector3(0, 0, -1),
+			Vector3(0,  0, -1), Vector3(0, 0, 1),
 		};
 
 		Vector3 maxA = boxAPos + boxASize;
