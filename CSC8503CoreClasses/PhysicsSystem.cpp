@@ -217,7 +217,12 @@ void PhysicsSystem::BasicCollisionDetection()
 			if (CollisionDetection::ObjectIntersection(*i, *j, info)) {
 				/*std::cout << "Collision between " << (*i)->GetName() << " and " 
 					<< (*j)->GetName() << std::endl;*/
-				ImpulseResolveCollision(*info.a, *info.b, info.point);
+				(*i)->setIsCollided(true);
+				(*j)->setIsCollided(true);
+				if (!(*i)->GetBoundingVolume()->isTrigger && !(*j)->GetBoundingVolume()->isTrigger) {
+					ImpulseResolveCollision(*info.a, *info.b, info.point);
+				}
+				
 				info.framesLeft = numCollisionFrames;
 				allCollisions.insert(info);
 			}
@@ -334,8 +339,12 @@ void PhysicsSystem::NarrowPhase()
 		i != broadphaseCollisions.end(); ++i) {
 		CollisionDetection::CollisionInfo info = *i;
 		if (CollisionDetection::ObjectIntersection(info.a, info.b, info)) {
+			info.a->setIsCollided(true);
+			info.b->setIsCollided(true);
+			if (!info.a->GetBoundingVolume()->isTrigger && !info.b->GetBoundingVolume()->isTrigger) {
+				ImpulseResolveCollision(*info.a, *info.b, info.point);
+			}
 			info.framesLeft = numCollisionFrames;
-			ImpulseResolveCollision(*info.a, *info.b, info.point);
 			allCollisions.insert(info);
 		}
 	}

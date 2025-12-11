@@ -60,24 +60,32 @@ namespace NCL {
 			void BridgeConstraintTest();
 
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength, 
-				int collisionLayer = terrainLayer);
-			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, bool isRendered, float inverseMass = 10.0f,
-			 bool isCollided = true, int collisionLayer = defaultLayer);
-			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, float inverseMass = 10.0f,
-				bool isCollided = true, int collisionLayer = defaultLayer);
+				bool isTrigger = false, int collisionLayer = terrainLayer);
+
+			GameObject* AddSphereToWorld(const NCL::Maths::Vector3& position, float radius, bool isRendered, 
+				float inverseMass = 10.0f, bool isTrigger = false, int collisionLayer = defaultLayer);
+
+			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, 
+				float inverseMass = 10.0f,bool isTrigger = false, int collisionLayer = defaultLayer);
 
 			playerObject* AddPlayerToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
-			const float scale, bool isCollided = true, int collisionLayer = playerLayer);
+			const float scale, bool isTrigger = false, int collisionLayer = playerLayer);
+
 			GameObject* AddEnemyToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
-				const float scale, bool isCollided = true, int collisionLayer = enemyLayer);
+				const float scale, bool isTrigger = false, int collisionLayer = enemyLayer);
+
 			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
-				const float scale, bool isCollided = true);
+				const float scale, bool isTrigger = false);
+
 			GameObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
-				const float scale, int pointvalue, bool isCollided = true, int collisionLayer = pickupLayer);
+				const float scale, int pointvalue, bool isTrigger = true, int collisionLayer = pickupLayer);
+
 			//playerObject* initalisePlayerObject()
 			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale);
 			//GameObject* setLockedObject();
+
+			void setRespawnPoint(GameObject* gameObj, Vector3& position);
 
 			GameWorld& world;
 			GameTechRendererInterface& renderer;
@@ -112,6 +120,7 @@ namespace NCL {
 			playerObject* playerObj = nullptr;
 			Quaternion* playerOrientation;
 			GameObject* playerGroundCollision = nullptr;
+			GameObject* testTrigger = nullptr;
 
 
 			//Coursework Additional functionality	

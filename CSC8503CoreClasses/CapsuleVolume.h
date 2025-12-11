@@ -5,7 +5,7 @@ namespace NCL {
     class CapsuleVolume : public CollisionVolume
     {
     public:
-        CapsuleVolume(float halfHeight, float radius) {
+        CapsuleVolume(float halfHeight, float radius, bool isTrigger) {
             this->halfHeight    = halfHeight;
             this->radius        = radius;
             this->type          = VolumeType::Capsule;

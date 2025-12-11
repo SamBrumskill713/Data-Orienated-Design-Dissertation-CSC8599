@@ -35,6 +35,7 @@ namespace NCL {
 		CollisionVolume() 
 		{
 			type = VolumeType::Invalid;
+			isTrigger = false;
 		}
 		~CollisionVolume() = default;
 
@@ -47,5 +48,6 @@ namespace NCL {
 
 		VolumeType type;
 		int collisionLayer;
+		bool isTrigger;
 	};
 }

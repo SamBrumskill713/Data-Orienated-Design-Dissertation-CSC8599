@@ -97,6 +97,10 @@ void TutorialGame::UpdateGame(float dt) {
 	Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
 	Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
 	Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
+	Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
+	Debug::Print("trigger isCollided: " + std::to_string(testTrigger->getIsCollided()), Vector2(0, 35), Debug::WHITE);
+	Debug::Print("trigger isTrigger: " + std::to_string(testTrigger->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
+	Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
 	
 	/*if (!inSelectionMode) {
 		world.GetMainCamera().UpdateCamera(dt);
@@ -293,12 +297,12 @@ void TutorialGame::InitWorld() {
 A single function to add a large immoveable cube to the bottom of our world
 
 */
-GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength,
-	int collisionLayer) {
+GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, 
+	bool isTrigger, int collisionLayer) {
 	GameObject* floor = new GameObject();
 	
 	Vector3 floorSize = Vector3(floorHeight, 2, floorLength);
-	AABBVolume* volume = new AABBVolume(floorSize);
+	AABBVolume* volume = new AABBVolume(floorSize, isTrigger);
 	volume->collisionLayer = collisionLayer;
 	floor->SetBoundingVolume(volume);
 	floor->GetTransform()
@@ -324,14 +328,19 @@ physics worlds. You'll probably need another function for the creation of OBB cu
 
 */
 GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, bool isRendered, float inverseMass,
-	bool isCollided, int collisionLayer) {
+	bool isTrigger, int collisionLayer) {
 	GameObject* sphere = new GameObject();
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
-	SphereVolume* volume = new SphereVolume(radius);
+	SphereVolume* volume = new SphereVolume(isTrigger, radius);
 	sphere->SetBoundingVolume(volume);
 	volume->collisionLayer = collisionLayer;
-	sphere->setIsCollided(isCollided);
+	if (isTrigger) {
+		sphere->setIsCollided(false);
+	}
+	else {
+		sphere->setIsCollided(true);
+	}
 	sphere->GetTransform()
 		.SetScale(sphereSize)
 		.SetPosition(position);
@@ -354,7 +363,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 	bool isCollided, int collisionLayer) {
 	GameObject* cube = new GameObject();
 
-	AABBVolume* volume = new AABBVolume(dimensions);
+	AABBVolume* volume = new AABBVolume(dimensions, isCollided);
 	cube->SetBoundingVolume(volume);
 	cube->setIsCollided(isCollided);
 
@@ -374,12 +383,12 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 }
 
 playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
-	const float scale, bool isCollided, int collisionLayer) {
+	const float scale, bool isTrigger, int collisionLayer) {
 	float meshSize = scale;
 	float inverseMass = 50.0f;
 
 	playerObject* character = new playerObject();
-	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize);
+	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
 	character->SetBoundingVolume(volume);
 	volume->collisionLayer = collisionLayer;
 
@@ -390,6 +399,13 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 	character->GetTransform()
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
+
+	if (isTrigger) {
+		character->setIsCollided(false);
+	}
+	else {
+		character->setIsCollided(true);
+	}
 
 	//character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
 	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
@@ -408,19 +424,26 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 }
 
 GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
-	float scale, bool isCollided, int collisionLayer) {
+	float scale, bool isTrigger, int collisionLayer) {
 	float meshSize = scale;
 	float inverseMass = 0.5f;
 
 	GameObject* character = new GameObject();
 
-	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize);
+	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
 	character->SetBoundingVolume(volume);
 	volume->collisionLayer = collisionLayer;
 
 	character->GetTransform()
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
+
+	if (isTrigger) {
+		character->setIsCollided(false);
+	}
+	else {
+		character->setIsCollided(true);
+	}
 
 	character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
 	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
@@ -455,6 +478,37 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Me
 	return apple;
 }
 
+GameObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh, 
+	const float scale, int pointvalue, bool isTrigger, int collisionLayer)
+{
+	GameObject* testTrigger = new GameObject();
+	AABBVolume* volume = new AABBVolume(Vector3(1, 1, 1), isTrigger);
+	volume->collisionLayer = collisionLayer;
+
+	testTrigger->SetBoundingVolume(volume);
+	testTrigger->GetTransform()
+		.SetScale(Vector3(scale, scale, scale))
+		.SetPosition(position);
+
+	if (isTrigger) {
+		testTrigger->setIsCollided(false);
+	}
+	else {
+		testTrigger->setIsCollided(true);
+	}
+
+	testTrigger->SetRenderObject(new RenderObject(testTrigger->GetTransform(), pickupMesh, glassMaterial));
+	testTrigger->SetPhysicsObject(new PhysicsObject(testTrigger->GetTransform(), testTrigger->GetBoundingVolume()));
+
+	testTrigger->GetPhysicsObject()->SetInverseMass(0.0f);
+	testTrigger->GetPhysicsObject()->InitCubeInertia();
+
+	testTrigger->setIsCollided(false);
+
+	world.AddGameObject(testTrigger);
+	return testTrigger;
+}
+
 StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
 	float scale)
 {
@@ -476,6 +530,11 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Re
 	return stateObj;
 }
 
+void NCL::CSC8503::TutorialGame::setRespawnPoint(GameObject* gameObj, Vector3& position)
+{
+	gameObj->GetTransform().SetPosition(Vector3(5, -11.5, 0));
+}
+
 void TutorialGame::InitGameExamples() {
 	CreatedMixedGrid(15, 15, 3.5f, 3.5f);
 	AddPlayerToWorld(Vector3(0, 5, 0), catMesh, 1.0f);
@@ -490,6 +549,7 @@ void NCL::CSC8503::TutorialGame::InitCourseworkGame()
 	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false, 
 		playerColliderLayer);
+	testTrigger = AddPickupToWorld(Vector3(10, -11.5, 0), cubeMesh, 1.0f, 1);
 	//AddSphereToWorld(Vector3(10, -10, 0), 0.5f, true);
 }
 

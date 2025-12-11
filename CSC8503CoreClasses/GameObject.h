@@ -65,8 +65,13 @@ namespace NCL::CSC8503 {
 		}
 
 		virtual void OnCollisionBegin(GameObject* otherObject) {
+			//setIsCollided(true);
+			/*const CollisionVolume* colInitalObject = GetBoundingVolume();
+			const CollisionVolume* colOtherObject = GetBoundingVolume();
+			if ((colInitalObject && colOtherObject->isTrigger) || (colInitalObject->isTrigger && colOtherObject)) {
+				
+			}*/
 			//std::cout << "OnCollisionBegin event occured!\n";
-			setIsCollided(true);
 		}
 
 		virtual void OnCollisionEnd(GameObject* otherObject) {

@@ -34,6 +34,8 @@ namespace NCL {
 
 			void ClearIsCollided();
 
+			//void ClearTriggers();
+
 			void IntegrateAccel(float dt);
 			void IntegrateVelocity(float dt);
 
