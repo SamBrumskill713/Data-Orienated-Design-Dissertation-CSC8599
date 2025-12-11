@@ -478,10 +478,10 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Me
 	return apple;
 }
 
-GameObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh, 
+pickUpObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh, 
 	const float scale, int pointvalue, bool isTrigger, int collisionLayer)
 {
-	GameObject* testTrigger = new GameObject();
+	pickUpObject* testTrigger = new pickUpObject();
 	AABBVolume* volume = new AABBVolume(Vector3(1, 1, 1), isTrigger);
 	volume->collisionLayer = collisionLayer;
 
@@ -490,12 +490,7 @@ GameObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vecto
 		.SetScale(Vector3(scale, scale, scale))
 		.SetPosition(position);
 
-	if (isTrigger) {
-		testTrigger->setIsCollided(false);
-	}
-	else {
-		testTrigger->setIsCollided(true);
-	}
+	testTrigger->setIsCollided(isTrigger ? false : true);
 
 	testTrigger->SetRenderObject(new RenderObject(testTrigger->GetTransform(), pickupMesh, glassMaterial));
 	testTrigger->SetPhysicsObject(new PhysicsObject(testTrigger->GetTransform(), testTrigger->GetBoundingVolume()));

@@ -16,6 +16,7 @@ namespace NCL {
 		class GameObject;
 		class StateGameObject;
 		class playerObject;
+		class pickUpObject;
 
 		class TutorialGame {
 		public:
@@ -77,7 +78,7 @@ namespace NCL {
 			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale, bool isTrigger = false);
 
-			GameObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
+			pickUpObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
 				const float scale, int pointvalue, bool isTrigger = true, int collisionLayer = pickupLayer);
 
 			//playerObject* initalisePlayerObject()
@@ -118,7 +119,7 @@ namespace NCL {
 			playerObject* playerObj = nullptr;
 			Quaternion* playerOrientation;
 			GameObject* playerGroundCollision = nullptr;
-			GameObject* testTrigger = nullptr;
+			pickUpObject* testTrigger = nullptr;
 
 
 			//Coursework Additional functionality	

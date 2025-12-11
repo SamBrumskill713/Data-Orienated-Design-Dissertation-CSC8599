@@ -60,12 +60,29 @@ void GameObject::UpdateBroadphaseAABB()
 	}
 }
 
-void NCL::CSC8503::playerObject::setRespawn(Vector3& position)
+void NCL::CSC8503::playerObject::setRespawn(const Vector3& position)
 {
 	playerPos = position;
+	GetTransform().SetPosition(playerPos);
+	if (auto* phys = GetPhysicsObject()) {
+		phys->ClearForces();
+		phys->SetLinearVelocity(Vector3(0, 0, 0));
+		phys->SetAngularVelocity(Vector3(0, 0, 0));
+	}
 }
 
 void NCL::CSC8503::playerObject::pickUpItem(GameObject* pickup)
 {
 	pickUps.emplace_back(pickup);
+}
+
+void NCL::CSC8503::pickUpObject::OnCollisionBegin(GameObject* other)
+{
+	if (other->GetBoundingVolume()->collisionLayer == NCL::playerLayer) {
+		if (auto* player = dynamic_cast<playerObject*>(other)) {
+			player->setRespawn(Vector3(5, -11.5, 0));
+			std::cout << "collision \n";
+		}
+		//std::cout << "collision \n";
+	}
 }
