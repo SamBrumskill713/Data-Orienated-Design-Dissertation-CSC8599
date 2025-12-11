@@ -122,11 +122,23 @@ namespace NCL::CSC8503 {
 		Vector3				broadphaseAABB;
 	};
 
+	class pickUpObject : public GameObject {
+
+	};
+
 	class playerObject : public GameObject {
 	public:
 		void setRespawn(const Vector3& position);
 
-		void pickUpItem(GameObject* pickup);
+		void pickUpItem(pickUpObject* pickup);
+
+		void OnCollisionBegin(GameObject* other) override;
+
+		void updateItemTransforms(const float dt);
+
+		void Update(float dt) override {
+			updateItemTransforms(dt);
+		}
 
 	protected:
 		bool hasPickup = false;
@@ -134,12 +146,6 @@ namespace NCL::CSC8503 {
 		Vector3 playerPos;
 
 		std::vector<GameObject*> pickUps;
-	};
-
-	class pickUpObject : public GameObject {
-	public:
-		void OnCollisionBegin(GameObject* other) override;
-	protected:
 	};
 }
 
