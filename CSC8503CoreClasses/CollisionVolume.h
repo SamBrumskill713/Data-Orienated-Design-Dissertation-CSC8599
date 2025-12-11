@@ -6,6 +6,7 @@ namespace NCL {
 	const int pickupLayer = 3;
 	const int terrainLayer = 4;
 	const int playerColliderLayer = 5;
+	const int itemInventoryLayer = 6;
 
 	enum class VolumeType 
 	{
@@ -18,15 +19,15 @@ namespace NCL {
 		Invalid = 256
 	};
 
-	constexpr int LayerCount = 6;
+	constexpr int LayerCount = 7;
 
 	constexpr bool CollisionMatrix[LayerCount][LayerCount] = {
-		/* defaultLayer(0) */ { true,  true,  true,  true,  true,  true  },
-		/* playerLayer (1) */ { true,  true,  true,  true,  true,  false },
-		/* enemyLayer  (2) */ { true,  true,  true,  false, true,  false },
-		/* pickupLayer (3) */ { true,  true,  false, true,  true,  false },
-		/* terrainLayer(4) */ { true,  true,  true,  true,  true,  false },
-		/* playerColl(5)  */  { true,  false, false, false, true, false }
+		/* defaultLayer(0) */ { true,  true,  true,  true,  true,  true,  false},
+		/* playerLayer (1) */ { true,  true,  true,  true,  true,  false, false },
+		/* enemyLayer  (2) */ { true,  true,  true,  false, true,  false, false },
+		/* pickupLayer (3) */ { true,  true,  false, true,  true,  false, false },
+		/* terrainLayer(4) */ { true,  true,  true,  true,  true,  false, false },
+		/* playerColl(5)  */  { true,  false, false, false, true,  false, false }
 	};
 
 	class CollisionVolume

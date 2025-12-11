@@ -115,7 +115,7 @@ namespace NCL::CSC8503 {
 		NetworkObject* networkObject;
 
 		bool				isActive;
-		bool				isCollided;
+		bool				isCollided = false;
 		int					worldID;
 		std::string			name;
 
@@ -133,6 +133,10 @@ namespace NCL::CSC8503 {
 		void pickUpItem(pickUpObject* pickup);
 
 		void OnCollisionBegin(GameObject* other) override;
+
+		int getpickUpSize() {
+			return pickUps.size();
+		}
 
 		void updateItemTransforms(const float dt);
 

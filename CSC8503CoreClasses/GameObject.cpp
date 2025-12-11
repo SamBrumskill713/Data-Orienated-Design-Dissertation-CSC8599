@@ -74,6 +74,12 @@ void NCL::CSC8503::playerObject::setRespawn(const Vector3& position)
 void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
 {
 	pickUps.emplace_back(pickup);
+
+	// Make picked item non-blocking and move it to inventory layer
+	if (auto* vol = const_cast<CollisionVolume*>(pickup->GetBoundingVolume())) {
+		vol->isTrigger = true;
+		vol->collisionLayer = NCL::itemInventoryLayer; 
+	}
 }
 
 void NCL::CSC8503::playerObject::OnCollisionBegin(GameObject* other)
@@ -81,6 +87,7 @@ void NCL::CSC8503::playerObject::OnCollisionBegin(GameObject* other)
 	if (other->GetBoundingVolume()->collisionLayer == NCL::pickupLayer) {
 		if (auto* itemPickUp = dynamic_cast<pickUpObject*>(other)) {
 			pickUpItem(itemPickUp);
+			itemPickUp->setIsCollided(false);
 		}
 	}
 }
@@ -93,16 +100,14 @@ void NCL::CSC8503::playerObject::updateItemTransforms(const float dt)
 	}
 	hasPickup = true;
 
-	// Tune these to your game
-	const float baseHeightOffset = 1.5f;   // height above player head for the first item
-	const float itemSpacing = 0.5f;   // additional height per stacked item
+	const float baseHeightOffset = 4.0f;
+	const float itemSpacing = 1.0f;
 	const Vector3 playerPos = this->GetTransform().GetPosition();
 
 	for (size_t i = 0; i < pickUps.size(); ++i) {
 		const float yOffset = baseHeightOffset + (itemSpacing * static_cast<float>(i));
 		const Vector3 targetPos = playerPos + Vector3(0.0f, yOffset, 0.0f);
 
-		// If items have physics, keep them stable while floating
 		if (auto* phys = pickUps[i]->GetPhysicsObject()) {
 			phys->ClearForces();
 			phys->SetLinearVelocity(Vector3(0, 0, 0));
@@ -110,5 +115,6 @@ void NCL::CSC8503::playerObject::updateItemTransforms(const float dt)
 		}
 
 		pickUps[i]->GetTransform().SetPosition(targetPos);
+		pickUps[i]->UpdateBroadphaseAABB();
 	}
 }

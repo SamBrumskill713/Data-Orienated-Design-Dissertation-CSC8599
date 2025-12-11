@@ -81,26 +81,48 @@ void TutorialGame::UpdateGame(float dt) {
 
 	if (playerObj && playerGroundCollision) {
 		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
+		movePlayerObject(dt);
+		attachCameraToPlayer();
+		Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(), Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.01f);
+		Debug::debugDrawAABBs(Vector3(0, -20, 0), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
+		Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.01f, 16);
+		Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
+		Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
+		Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
+		Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
+		Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
+		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
+		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);
 	}
 
-	movePlayerObject(dt);
+	if (testTrigger) {
+		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
+		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);
+		Debug::Print("trigger isCollided: " + std::to_string(testTrigger->getIsCollided()), Vector2(0, 35), Debug::WHITE);
+		Debug::Print("trigger isTrigger: " + std::to_string(testTrigger->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
+	}
+
+	if (Window::GetKeyboard()->KeyDown(KeyCodes::F)) {
+		world.Clear();
+		physics.Clear();
+		initAITest();
+	}
+	
+	if (Window::GetKeyboard()->KeyDown(KeyCodes::I)) {
+		world.Clear();
+		physics.Clear();
+		InitTriggerTest();
+	}
+
+	if (Window::GetKeyboard()->KeyDown(KeyCodes::B)) {
+		world.Clear();
+		physics.Clear();
+		initObstacleTest();
+	}
 
 	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
 
 	if (testStateObject) testStateObject->Update(dt);
-
-	attachCameraToPlayer();
-	Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(), Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.01f);
-	Debug::debugDrawAABBs(Vector3(0, -20, 0), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
-	Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.01f, 16);
-	Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
-	Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
-	Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
-	Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
-	Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
-	Debug::Print("trigger isCollided: " + std::to_string(testTrigger->getIsCollided()), Vector2(0, 35), Debug::WHITE);
-	Debug::Print("trigger isTrigger: " + std::to_string(testTrigger->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
-	Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
 	
 	/*if (!inSelectionMode) {
 		world.GetMainCamera().UpdateCamera(dt);
@@ -287,9 +309,7 @@ void TutorialGame::InitWorld() {
 	physics.Clear();
 
 	//InitGameExamples();
-	InitCourseworkGame();
-
-	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
+	InitTriggerTest();
 }
 
 /*
@@ -527,28 +547,39 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Re
 
 void TutorialGame::InitGameExamples() {
 	CreatedMixedGrid(15, 15, 3.5f, 3.5f);
-	AddPlayerToWorld(Vector3(0, 5, 0), catMesh, 1.0f);
+	playerObj = AddPlayerToWorld(Vector3(0, 5, 0), catMesh, 1.0f);
 	AddEnemyToWorld(Vector3(5, 5, 0), enemyMesh, 3.0f);
 	AddBonusToWorld(Vector3(10, 5, 0), bonusMesh, 2.0);
 	BridgeConstraintTest();
 	testStateObject = AddStateObjectToWorld(Vector3(20, 10, -20), bonusMesh, 2.0);
 }
 
-void NCL::CSC8503::TutorialGame::InitCourseworkGame()
+void NCL::CSC8503::TutorialGame::InitTriggerTest()
 {
 	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false, 
 		playerColliderLayer);
-	testTrigger = AddPickupToWorld(Vector3(10, -11.5, 0), cubeMesh, 1.0f, 1);
+	testTrigger = AddPickupToWorld(Vector3(10, -15, 0), cubeMesh, 1.0f, 1);
+	testTrigger = AddPickupToWorld(Vector3(15, -15, 0), cubeMesh, 1.0f, 1);
+	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
+	
 	//AddSphereToWorld(Vector3(10, -10, 0), 0.5f, true);
 }
 
 void NCL::CSC8503::TutorialGame::initAITest()
 {
+	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
+	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
+		playerColliderLayer);
+	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 }
 
-void NCL::CSC8503::TutorialGame::initUnkonwTest()
+void NCL::CSC8503::TutorialGame::initObstacleTest()
 {
+	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
+	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
+		playerColliderLayer);
+	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {

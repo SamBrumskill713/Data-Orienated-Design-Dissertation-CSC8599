@@ -41,13 +41,13 @@ namespace NCL {
 			*/
 			void InitGameExamples();
 
-			void InitCourseworkGame();
+			void InitTriggerTest();
 
 			//TODO: When implementing AI, use this to test
 			void initAITest();
 
 			//TODO: When implementing a feature, use this to test
-			void initUnkonwTest();
+			void initObstacleTest();
 
 			void CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
 			void CreatedMixedGrid(int numRows, int numCols, float rowSpacing, float colSpacing);
@@ -120,6 +120,7 @@ namespace NCL {
 			Quaternion* playerOrientation;
 			GameObject* playerGroundCollision = nullptr;
 			pickUpObject* testTrigger = nullptr;
+			pickUpObject* testTrigger2 = nullptr;
 
 
 			//Coursework Additional functionality	
