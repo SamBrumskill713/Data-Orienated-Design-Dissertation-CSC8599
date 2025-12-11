@@ -85,8 +85,6 @@ namespace NCL {
 				const float scale);
 			//GameObject* setLockedObject();
 
-			void setRespawnPoint(GameObject* gameObj, Vector3& position);
-
 			GameWorld& world;
 			GameTechRendererInterface& renderer;
 			PhysicsSystem& physics;

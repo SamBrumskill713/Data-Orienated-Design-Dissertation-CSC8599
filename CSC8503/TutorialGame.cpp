@@ -528,12 +528,7 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Re
 	world.AddGameObject(stateObj);
 
 	return stateObj;
-}
-
-void NCL::CSC8503::TutorialGame::setRespawnPoint(GameObject* gameObj, Vector3& position)
-{
-	gameObj->GetTransform().SetPosition(Vector3(5, -11.5, 0));
-}
+}	
 
 void TutorialGame::InitGameExamples() {
 	CreatedMixedGrid(15, 15, 3.5f, 3.5f);

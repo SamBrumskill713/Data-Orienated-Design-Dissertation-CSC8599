@@ -123,7 +123,23 @@ namespace NCL::CSC8503 {
 	};
 
 	class playerObject : public GameObject {
-	
+	public:
+		void setRespawn(Vector3& position);
+
+		void pickUpItem(GameObject* pickup);
+
+	protected:
+		bool hasPickup = false;
+
+		Vector3 playerPos;
+
+		std::vector<GameObject*> pickUps;
+	};
+
+	class pickUpObject : public GameObject {
+	public:
+		void OnCollisionBegin(GameObject* other) override;
+	protected:
 	};
 }
 

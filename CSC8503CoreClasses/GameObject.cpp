@@ -59,3 +59,13 @@ void GameObject::UpdateBroadphaseAABB()
 		}
 	}
 }
+
+void NCL::CSC8503::playerObject::setRespawn(Vector3& position)
+{
+	playerPos = position;
+}
+
+void NCL::CSC8503::playerObject::pickUpItem(GameObject* pickup)
+{
+	pickUps.emplace_back(pickup);
+}

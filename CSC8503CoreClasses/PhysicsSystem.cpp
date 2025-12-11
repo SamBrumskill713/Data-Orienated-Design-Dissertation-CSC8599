@@ -223,6 +223,7 @@ void PhysicsSystem::BasicCollisionDetection()
 					ImpulseResolveCollision(*info.a, *info.b, info.point);
 				}
 				
+
 				info.framesLeft = numCollisionFrames;
 				allCollisions.insert(info);
 			}
