@@ -23,12 +23,14 @@ namespace NCL {
 	constexpr int LayerCount = 8;
 
 	constexpr bool CollisionMatrix[LayerCount][LayerCount] = {
-		/* defaultLayer(0) */ { true,  true,  true,  true,  true,  true,  false, false },
-		/* playerLayer (1) */ { true,  true,  true,  true,  true,  false, false, true  },
-		/* enemyLayer  (2) */ { true,  true,  true,  false, true,  false, false, true  },
-		/* pickupLayer (3) */ { true,  true,  false, true,  true,  false, false, false },
-		/* terrainLayer(4) */ { true,  true,  true,  true,  true,  false, false, false },
-		/* playerColl(5)  */  { true,  false, false, false, true,  false, false, false }
+		/* default(0) */ { true,  true,  true,  true,  true,  true,  false, false },
+		/* player (1) */ { true,  true,  true,  true,  true,  false, false, true  },
+		/* enemy  (2) */ { true,  true,  true,  false, true,  false, false, true  },
+		/* pickup (3) */ { true,  true,  false, true,  true,  false, false, false },
+		/* terrain(4) */ { true,  true,  true,  true,  true,  false, false, false },
+		/* playerC(5) */ { true,  false, false, false, true,  false, false, false },
+		/* itemInv(6) */ { false, false, false, false, false, false, false, false },
+		/* trigger(7) */ { false, true,  true,  false, false, false, false, false }
 	};
 
 	class CollisionVolume
@@ -45,7 +47,7 @@ namespace NCL {
 			if (a < 0 || a >= LayerCount || b < 0 || b >= LayerCount) {
 				return false;
 			}
-			return CollisionMatrix[a][b] || CollisionMatrix[b][a];
+			return CollisionMatrix[a][b];
 		}
 
 		VolumeType type;
