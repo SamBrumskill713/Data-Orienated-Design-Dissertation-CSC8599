@@ -17,6 +17,7 @@ namespace NCL {
 		class StateGameObject;
 		class playerObject;
 		class pickUpObject;
+		class obstacleObject;
 
 		class TutorialGame {
 		public:
@@ -60,7 +61,7 @@ namespace NCL {
 
 			void BridgeConstraintTest();
 
-			void pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength);
+			obstacleObject* pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength);
 
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength, 
 				bool isTrigger = false, int collisionLayer = terrainLayer);
@@ -123,6 +124,7 @@ namespace NCL {
 			GameObject* playerGroundCollision = nullptr;
 			pickUpObject* testTrigger = nullptr;
 			pickUpObject* testTrigger2 = nullptr;
+			obstacleObject* pendulum = nullptr;
 
 
 			//Coursework Additional functionality	

@@ -82,6 +82,11 @@ void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
 	}
 }
 
+void NCL::CSC8503::playerObject::removeItem()
+{
+	pickUps.pop_back();
+}
+
 void NCL::CSC8503::playerObject::OnCollisionBegin(GameObject* other)
 {
 	if (other->GetBoundingVolume()->collisionLayer == NCL::pickupLayer) {
@@ -116,5 +121,17 @@ void NCL::CSC8503::playerObject::updateItemTransforms(const float dt)
 
 		pickUps[i]->GetTransform().SetPosition(targetPos);
 		pickUps[i]->UpdateBroadphaseAABB();
+	}
+}
+
+void NCL::CSC8503::obstacleObject::OnCollisionBegin(GameObject* other)
+{
+	if (other->GetBoundingVolume()->collisionLayer == playerLayer) {
+		std::cout << "hit player\n";
+		if (auto* playerObj = dynamic_cast<playerObject*>(other)) {
+			auto playerPhys = playerObj->GetPhysicsObject();
+			playerPhys->ApplyLinearImpulse(Vector3(0.5f, 0, 0));
+			std::cout << "hit player\n";
+		}
 	}
 }

@@ -102,6 +102,10 @@ void TutorialGame::UpdateGame(float dt) {
 		Debug::Print("trigger isTrigger: " + std::to_string(testTrigger->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
 	}
 
+	if (pendulum) {
+		Debug::Print("Obstacle isCollided" + std::to_string(pendulum->getIsCollided()), Vector2(0, 35), Debug::WHITE);
+	}
+
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
 		world.Clear();
 		physics.Clear();
@@ -356,12 +360,6 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 	SphereVolume* volume = new SphereVolume(isTrigger, radius);
 	sphere->SetBoundingVolume(volume);
 	volume->collisionLayer = collisionLayer;
-	if (isTrigger) {
-		sphere->setIsCollided(false);
-	}
-	else {
-		sphere->setIsCollided(true);
-	}
 	sphere->GetTransform()
 		.SetScale(sphereSize)
 		.SetPosition(position);
@@ -581,7 +579,7 @@ void NCL::CSC8503::TutorialGame::initObstacleTest()
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
 	Vector3 penPos = Vector3(0, 0, 0);
-	pendulumConstraint(penPos, 6, 2);
+	pendulum = pendulumConstraint(penPos, 6, 2);
 	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 }
 
@@ -762,7 +760,7 @@ void NCL::CSC8503::TutorialGame::BridgeConstraintTest()
 	world.AddConstraint(constraint);
 }
 
-void NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength)
+obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength)
 {
 	GameObject* anchor = AddCubeToWorld(anchorPos, Vector3(0.5f, 0.5f, 0.5f), 0.0f, true, terrainLayer);
 
@@ -780,17 +778,29 @@ void NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& anchorPos, in
 		prev = link;
 	}
 
-	Vector3 bobPos = anchorPos + Vector3(0.0f, -(numLinks + 1) * linkLength, 0.0f);
-	GameObject* bob = AddSphereToWorld(bobPos, 2.0f, true, 1.0f, false, defaultLayer);
+	// Create bob as obstacleObject so OnCollisionBegin override and cast work
+	obstacleObject* bob = new obstacleObject();
+	SphereVolume* bobVol = new SphereVolume(/*isTrigger*/false, /*radius*/2.0f);
+	bobVol->collisionLayer = defaultLayer;
+	bob->SetBoundingVolume(bobVol);
+	bob->GetTransform()
+		.SetScale(Vector3(2.0f, 2.0f, 2.0f))
+		.SetPosition(anchorPos + Vector3(0, -(numLinks + 1) * linkLength, 0.0f));
+	bob->SetRenderObject(new RenderObject(bob->GetTransform(), sphereMesh, checkerMaterial));
+	bob->SetPhysicsObject(new PhysicsObject(bob->GetTransform(), bob->GetBoundingVolume()));
+	bob->GetPhysicsObject()->SetInverseMass(1.0f);
+	bob->GetPhysicsObject()->InitSphereInertia();
+
+	world.AddGameObject(bob);
 
 	world.AddConstraint(new PositionConstraint(prev, bob, linkLength));
 	world.AddConstraint(new OrientationConstraint(prev, bob, swingAxis));
 
-	// Start swing by applying an angular impulse about the allowed axis
-	if (auto* phys = bob->GetPhysicsObject()) {
-		bob->GetPhysicsObject()->ApplyLinearImpulse(Vector3(60.0f, 0.0f, 0.0f));
-		phys->ApplyAngularImpulse(swingAxis * 5.0f); // small kick; tune magnitude
-	}
+	// Kick to start motion
+	bob->GetPhysicsObject()->ApplyLinearImpulse(Vector3(60.0f, 0, 0));
+	bob->GetPhysicsObject()->ApplyAngularImpulse(swingAxis * 5.0f);
+
+	return bob;
 }
 
 void TutorialGame::DebugObjectMovement() {

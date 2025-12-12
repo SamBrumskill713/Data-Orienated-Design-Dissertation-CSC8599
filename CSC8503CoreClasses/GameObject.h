@@ -8,6 +8,7 @@ namespace NCL::CSC8503 {
 	class NetworkObject;
 	class RenderObject;
 	class PhysicsObject;
+	class playerObject;
 
 	class GameObject {
 	public:
@@ -122,8 +123,11 @@ namespace NCL::CSC8503 {
 		Vector3				broadphaseAABB;
 	};
 
-	class pickUpObject : public GameObject {
+	class triggerObject : public GameObject {
 
+	};
+
+	class pickUpObject : public GameObject {
 	};
 
 	class playerObject : public GameObject {
@@ -131,6 +135,8 @@ namespace NCL::CSC8503 {
 		void setRespawn(const Vector3& position);
 
 		void pickUpItem(pickUpObject* pickup);
+
+		void removeItem();
 
 		void OnCollisionBegin(GameObject* other) override;
 
@@ -150,6 +156,19 @@ namespace NCL::CSC8503 {
 		Vector3 playerPos;
 
 		std::vector<GameObject*> pickUps;
+	};
+
+	class enemyObject : public GameObject {
+		
+	};
+
+	class obstacleObject : public GameObject {
+	public:
+		void OnCollisionBegin(GameObject* other) override;
+	};
+
+	class movingPlatformObject : public GameObject {
+
 	};
 }
 
