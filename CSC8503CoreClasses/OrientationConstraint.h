@@ -8,7 +8,7 @@ namespace NCL {
 		class OrientationConstraint : public Constraint
 		{
 		public:
-			OrientationConstraint(GameObject* a, GameObject* b);
+			OrientationConstraint(GameObject* a, GameObject* b, const NCL::Maths::Vector3& allowedAxis);
 			~OrientationConstraint() = default;
 
 			void UpdateConstraint(float dt) override;
@@ -16,7 +16,7 @@ namespace NCL {
 		protected:
 			GameObject* objectA;
 			GameObject* objectB;
-
+			NCL::Maths::Vector3 hingeAxis;
 			float distance;
 		};
 	}

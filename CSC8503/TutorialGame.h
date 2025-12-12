@@ -60,6 +60,8 @@ namespace NCL {
 
 			void BridgeConstraintTest();
 
+			void pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength);
+
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength, 
 				bool isTrigger = false, int collisionLayer = terrainLayer);
 

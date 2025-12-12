@@ -102,19 +102,19 @@ void TutorialGame::UpdateGame(float dt) {
 		Debug::Print("trigger isTrigger: " + std::to_string(testTrigger->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
 	}
 
-	if (Window::GetKeyboard()->KeyDown(KeyCodes::F)) {
+	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
 		world.Clear();
 		physics.Clear();
 		initAITest();
 	}
 	
-	if (Window::GetKeyboard()->KeyDown(KeyCodes::I)) {
+	if (Window::GetKeyboard()->KeyPressed(KeyCodes::I)) {
 		world.Clear();
 		physics.Clear();
 		InitTriggerTest();
 	}
 
-	if (Window::GetKeyboard()->KeyDown(KeyCodes::B)) {
+	if (Window::GetKeyboard()->KeyPressed(KeyCodes::B)) { 
 		world.Clear();
 		physics.Clear();
 		initObstacleTest();
@@ -309,7 +309,8 @@ void TutorialGame::InitWorld() {
 	physics.Clear();
 
 	//InitGameExamples();
-	InitTriggerTest();
+	//InitTriggerTest();
+	initObstacleTest();
 }
 
 /*
@@ -576,9 +577,11 @@ void NCL::CSC8503::TutorialGame::initAITest()
 
 void NCL::CSC8503::TutorialGame::initObstacleTest()
 {
-	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
+	playerObj = AddPlayerToWorld(Vector3(0.18, -11.5, 18.72), enemyMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
+	Vector3 penPos = Vector3(0, 0, 0);
+	pendulumConstraint(penPos, 6, 2);
 	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 }
 
@@ -757,6 +760,37 @@ void NCL::CSC8503::TutorialGame::BridgeConstraintTest()
 	}
 	PositionConstraint* constraint = new PositionConstraint(previous, end, maxDistance);
 	world.AddConstraint(constraint);
+}
+
+void NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength)
+{
+	GameObject* anchor = AddCubeToWorld(anchorPos, Vector3(0.5f, 0.5f, 0.5f), 0.0f, true, terrainLayer);
+
+	// Allow rotation around Z so it swings in X-Y plane (choose axis to match your desired swing plane)
+	const Vector3 swingAxis = Vector3(0, 0, 1); // or Vector3(1,0,0) to swing in Z-Y
+
+	GameObject* prev = anchor;
+	for (int i = 0; i < numLinks; ++i) {
+		Vector3 linkPos = anchorPos + Vector3(0.0f, -(i + 1) * linkLength, 0.0f);
+		GameObject* link = AddCubeToWorld(linkPos, Vector3(0.25f, 0.25, 0.25f), 1.0f, true, defaultLayer);
+
+		world.AddConstraint(new PositionConstraint(prev, link, linkLength));
+		world.AddConstraint(new OrientationConstraint(prev, link, swingAxis)); // allow rotation only around swingAxis
+
+		prev = link;
+	}
+
+	Vector3 bobPos = anchorPos + Vector3(0.0f, -(numLinks + 1) * linkLength, 0.0f);
+	GameObject* bob = AddSphereToWorld(bobPos, 2.0f, true, 1.0f, false, defaultLayer);
+
+	world.AddConstraint(new PositionConstraint(prev, bob, linkLength));
+	world.AddConstraint(new OrientationConstraint(prev, bob, swingAxis));
+
+	// Start swing by applying an angular impulse about the allowed axis
+	if (auto* phys = bob->GetPhysicsObject()) {
+		bob->GetPhysicsObject()->ApplyLinearImpulse(Vector3(60.0f, 0.0f, 0.0f));
+		phys->ApplyAngularImpulse(swingAxis * 5.0f); // small kick; tune magnitude
+	}
 }
 
 void TutorialGame::DebugObjectMovement() {
