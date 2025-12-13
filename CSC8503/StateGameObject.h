@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObject.h"
+#include "GameWorld.h"
 
 namespace NCL {
     namespace CSC8503 {
@@ -30,7 +31,12 @@ namespace NCL {
 
         protected:
             float moveSpeed = 10.0f;
-
+            GameWorld* gameWorld;
+            playerObject* player;
+            Vector3 targetPosition;
+            std::string navigationGridFile;
+            bool searchingForNextSpot;
+            std::vector<Vector3> pathFindingNodes;
         };
     }
 }
