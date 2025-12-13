@@ -312,9 +312,9 @@ void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
 
-	//InitGameExamples();
+	InitGameExamples();
 	//InitTriggerTest();
-	initObstacleTest();
+	//initObstacleTest();
 }
 
 /*

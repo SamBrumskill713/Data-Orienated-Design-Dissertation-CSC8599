@@ -22,5 +22,15 @@ namespace NCL {
             StateMachine* stateMachine;
             float counter;
         };
+
+        class EnemyObject : public StateGameObject {
+        public:
+            EnemyObject();
+            ~EnemyObject();
+
+        protected:
+            float moveSpeed = 10.0f;
+
+        };
     }
 }
