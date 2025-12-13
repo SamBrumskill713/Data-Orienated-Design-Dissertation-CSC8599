@@ -30,7 +30,7 @@ namespace NCL {
 		/* terrain(4) */ { true,  true,  true,  true,  true,  false, false, false },
 		/* playerC(5) */ { true,  false, false, false, true,  false, false, false },
 		/* itemInv(6) */ { false, false, false, false, false, false, false, false },
-		/* trigger(7) */ { false, true,  true,  false, false, false, false, false }
+		/* trigger(7) */ { true,  true,  true,  false, false, false, false, false }
 	};
 
 	class CollisionVolume
@@ -47,7 +47,7 @@ namespace NCL {
 			if (a < 0 || a >= LayerCount || b < 0 || b >= LayerCount) {
 				return false;
 			}
-			return CollisionMatrix[a][b] || CollisionMatrix[a][b];
+			return CollisionMatrix[a][b] || CollisionMatrix[b][a];
 		}
 
 		VolumeType type;

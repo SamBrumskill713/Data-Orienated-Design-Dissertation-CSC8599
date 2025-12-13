@@ -18,6 +18,9 @@ namespace NCL {
 		class playerObject;
 		class pickUpObject;
 		class obstacleObject;
+		class triggerObject;
+		class EnemyObject;
+		class levelElements;
 
 		class TutorialGame {
 		public:
@@ -44,10 +47,8 @@ namespace NCL {
 
 			void InitTriggerTest();
 
-			//TODO: When implementing AI, use this to test
 			void initAITest();
 
-			//TODO: When implementing a feature, use this to test
 			void initObstacleTest();
 
 			void CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
@@ -62,6 +63,8 @@ namespace NCL {
 			void BridgeConstraintTest();
 
 			obstacleObject* pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength);
+
+			void levelCreate();
 
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength, 
 				bool isTrigger = false, int collisionLayer = terrainLayer);
@@ -83,6 +86,9 @@ namespace NCL {
 
 			pickUpObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
 				const float scale, int pointvalue, bool isTrigger = true, int collisionLayer = pickupLayer);
+
+			triggerObject* addTriggerVolume(const NCL::Maths::Vector3& position, const float scaleX,
+				const float scaleY, const float scaleZ, const Vector3& trigHalfDims, int collisionLayer = triggerVolume);
 
 			//playerObject* initalisePlayerObject()
 			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
@@ -123,9 +129,9 @@ namespace NCL {
 			Quaternion* playerOrientation;
 			GameObject* playerGroundCollision = nullptr;
 			pickUpObject* testTrigger = nullptr;
-			pickUpObject* testTrigger2 = nullptr;
+			triggerObject* trigVol = nullptr;
 			obstacleObject* pendulum = nullptr;
-
+			EnemyObject* enemyAI = nullptr;
 
 			//Coursework Additional functionality	
 			GameObject* lockedObject = nullptr;

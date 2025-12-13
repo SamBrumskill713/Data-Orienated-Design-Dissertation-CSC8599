@@ -4,6 +4,7 @@
 #include "PhysicsObject.h"
 #include "RenderObject.h"
 #include "TextureLoader.h"
+#include "../CSC8503CoreClasses/NavigationGrid.h"
 
 #include "PositionConstraint.h"
 #include "OrientationConstraint.h"
@@ -104,6 +105,11 @@ void TutorialGame::UpdateGame(float dt) {
 
 	if (pendulum) {
 		Debug::Print("Obstacle isCollided" + std::to_string(pendulum->getIsCollided()), Vector2(0, 35), Debug::WHITE);
+	}
+
+	if (trigVol) {
+		Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
+			Debug::BLUE, 0.1f);
 	}
 
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
@@ -312,9 +318,10 @@ void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
 
-	InitGameExamples();
+	//InitGameExamples();
 	//InitTriggerTest();
 	//initObstacleTest();
+	initAITest();
 }
 
 /*
@@ -379,12 +386,13 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 }
 
 GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass,
-	bool isCollided, int collisionLayer) {
+	bool isTrigger, int collisionLayer) {
 	GameObject* cube = new GameObject();
 
-	AABBVolume* volume = new AABBVolume(dimensions, isCollided);
+	AABBVolume* volume = new AABBVolume(dimensions, isTrigger);
+	volume->collisionLayer = collisionLayer;
 	cube->SetBoundingVolume(volume);
-	cube->setIsCollided(isCollided);
+	cube->setIsCollided(!isTrigger);
 
 	cube->GetTransform()
 		.SetPosition(position)
@@ -501,7 +509,7 @@ pickUpObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vec
 	const float scale, int pointvalue, bool isTrigger, int collisionLayer)
 {
 	pickUpObject* testTrigger = new pickUpObject();
-	AABBVolume* volume = new AABBVolume(Vector3(1, 1, 1), isTrigger);
+	AABBVolume* volume = new AABBVolume(Vector3(scale, scale, scale), isTrigger);
 	volume->collisionLayer = collisionLayer;
 
 	testTrigger->SetBoundingVolume(volume);
@@ -521,6 +529,27 @@ pickUpObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vec
 
 	world.AddGameObject(testTrigger);
 	return testTrigger;
+}
+
+triggerObject* NCL::CSC8503::TutorialGame::addTriggerVolume(const NCL::Maths::Vector3& position, const float scaleX, 
+	const float scaleY, const float scaleZ, const Vector3& trigHalfDims, int collisionLayer)
+{
+	triggerObject* trigObj = new triggerObject();
+
+	AABBVolume* trigVolume = new AABBVolume(trigHalfDims, true);
+	trigVolume->collisionLayer = triggerVolume;
+	trigObj->SetBoundingVolume(trigVolume);
+	trigObj->GetTransform().
+		SetScale(Vector3(scaleX, scaleY, scaleZ)).
+		SetPosition(position);
+
+	trigObj->SetPhysicsObject(new PhysicsObject(trigObj->GetTransform(), trigObj->GetBoundingVolume()));
+	
+	trigObj->GetPhysicsObject()->SetInverseMass(0.0f);
+	trigObj->GetPhysicsObject()->InitCubeInertia();
+	
+	world.AddGameObject(trigObj);
+	return trigObj;
 }
 
 StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
@@ -570,7 +599,8 @@ void NCL::CSC8503::TutorialGame::initAITest()
 	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
-	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
+	//AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
+	levelCreate();
 }
 
 void NCL::CSC8503::TutorialGame::initObstacleTest()
@@ -764,6 +794,8 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 {
 	GameObject* anchor = AddCubeToWorld(anchorPos, Vector3(0.5f, 0.5f, 0.5f), 0.0f, true, terrainLayer);
 
+	trigVol = addTriggerVolume(anchorPos, 15, 0.5f, 2.5, Vector3(10, 0.5f, 5));
+
 	// Allow rotation around Z so it swings in X-Y plane (choose axis to match your desired swing plane)
 	const Vector3 swingAxis = Vector3(0, 0, 1); // or Vector3(1,0,0) to swing in Z-Y
 
@@ -801,6 +833,46 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 	bob->GetPhysicsObject()->ApplyAngularImpulse(swingAxis * 5.0f);
 
 	return bob;
+}
+
+void NCL::CSC8503::TutorialGame::levelCreate()
+{
+	levelElements* level = new levelElements("TestLevel.txt");
+	int nodeSize = level->getNodeSize();
+	int gridWidth = level->getLevelWidth();
+	int gridHeight = level->getLevelHeight();
+	levelNode* nodes = level->getAllLevelNodes();
+	float cubeHeight = nodeSize * 0.25f;
+
+	if (!nodes || nodeSize <= 0 || gridWidth <= 0 || gridHeight <= 0) {
+		Debug::Print("Level data invalid. Falling back floor.", Vector2(0, 5), Debug::RED);
+		AddFloorToWorld(Vector3(0, -20.0f, 0), 50, 50);
+		return;
+	}
+
+	for (int i = 0; i < gridWidth * gridHeight; ++i) {
+		levelNode& lNodes= nodes[i];
+		int type = lNodes.type;
+		if (isdigit(type)) {
+			float unitHeight = cubeHeight * (float(type) - 48);
+			AddCubeToWorld(lNodes.position - Vector3(0, unitHeight + 8, 0), Vector3(nodeSize, unitHeight, nodeSize), 0.0f, false);
+		}
+
+	}
+	const float gridWorldWidth = (float)(gridWidth * nodeSize);
+	const float gridWorldHeight = (float)(gridHeight * nodeSize);
+
+	const Vector3 floorCenter(
+		gridWorldWidth * 0.5f,
+		-20.0f, // keep consistent with your world ground Y
+		gridWorldHeight * 0.5f
+	);
+
+	const float floorHalfX = gridWorldWidth * 0.5f;
+	const float floorHalfZ = gridWorldHeight * 0.5f;
+	const float floorHalfY = 1.0f; // thickness half-size
+
+	AddFloorToWorld(floorCenter, floorHalfX, floorHalfZ);
 }
 
 void TutorialGame::DebugObjectMovement() {

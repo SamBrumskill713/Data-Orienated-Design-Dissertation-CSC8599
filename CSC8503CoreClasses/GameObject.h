@@ -158,10 +158,6 @@ namespace NCL::CSC8503 {
 		std::vector<GameObject*> pickUps;
 	};
 
-	class enemyObject : public GameObject {
-		
-	};
-
 	class obstacleObject : public GameObject {
 	public:
 		void OnCollisionBegin(GameObject* other) override;

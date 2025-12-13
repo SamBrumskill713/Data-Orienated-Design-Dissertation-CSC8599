@@ -47,5 +47,62 @@ namespace NCL {
 
 			GridNode* allNodes;
 		};
+
+		struct levelNode {
+			levelNode* parent;
+
+			levelNode* connected[4];
+
+			Vector3		position;
+
+			int type;
+
+			levelNode() {
+				for (int i = 0; i < 4; ++i) {
+					connected[i] = nullptr;
+				}
+				type = 0;
+				parent = nullptr;
+			}
+		};
+
+		class levelElements {
+		public:
+			levelElements();
+			levelElements(const std::string& filename);
+			~levelElements();
+
+			int getLevelWidth() {
+				return gridWidth;
+			}
+
+			int getLevelHeight() {
+				return gridHeight;
+			}
+
+			int getNodeSize() {
+				return nodeSize;
+			}
+
+			levelNode* getAllLevelNodes() {
+				return allLevelNodes;
+			}
+
+			std::string getNavFile() {
+				return navFile;
+			}
+
+			std::vector<levelNode> getWalkable() {
+				return walkables;
+			}
+
+		protected:
+			int nodeSize;
+			int gridWidth;
+			int gridHeight;
+			std::string navFile;
+			levelNode* allLevelNodes;
+			std::vector<levelNode> walkables;
+		};
 	}
 }
