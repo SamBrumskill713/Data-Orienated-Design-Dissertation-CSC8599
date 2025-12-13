@@ -855,7 +855,7 @@ void NCL::CSC8503::TutorialGame::levelCreate()
 		int type = lNodes.type;
 		if (isdigit(type)) {
 			float unitHeight = cubeHeight * (float(type) - 48);
-			AddCubeToWorld(lNodes.position - Vector3(0, unitHeight + 8, 0), Vector3(nodeSize, unitHeight, nodeSize), 0.0f, false);
+			AddCubeToWorld(lNodes.position - Vector3(0, unitHeight + 8, 0), Vector3(nodeSize / 2, unitHeight, nodeSize / 2), 0.0f);
 		}
 
 	}
@@ -868,8 +868,8 @@ void NCL::CSC8503::TutorialGame::levelCreate()
 		gridWorldHeight * 0.5f
 	);
 
-	const float floorHalfX = gridWorldWidth * 0.5f;
-	const float floorHalfZ = gridWorldHeight * 0.5f;
+	const float floorHalfX = gridWorldWidth * 0.55;
+	const float floorHalfZ = gridWorldHeight * 0.55;
 	const float floorHalfY = 1.0f; // thickness half-size
 
 	AddFloorToWorld(floorCenter, floorHalfX, floorHalfZ);
