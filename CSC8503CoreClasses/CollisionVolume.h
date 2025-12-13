@@ -47,7 +47,7 @@ namespace NCL {
 			if (a < 0 || a >= LayerCount || b < 0 || b >= LayerCount) {
 				return false;
 			}
-			return CollisionMatrix[a][b];
+			return CollisionMatrix[a][b] || CollisionMatrix[a][b];
 		}
 
 		VolumeType type;

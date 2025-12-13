@@ -251,11 +251,9 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 		return;
 	}
 
-	transformA.SetPosition(transformA.GetPosition());
-	(p.normal * p.penetration * (physA->GetInverseMass() / totalMass));
+	transformA.SetPosition(transformA.GetPosition() - (p.normal * p.penetration * (physA->GetInverseMass() / totalMass)));
 
-	transformB.SetPosition(transformB.GetPosition());
-	(p.normal * p.penetration * (physB->GetInverseMass() / totalMass));
+	transformB.SetPosition(transformB.GetPosition() + (p.normal * p.penetration * (physB->GetInverseMass() / totalMass)));
 
 	Vector3 relativeA = p.localA;
 	Vector3 relativeB = p.localB;
