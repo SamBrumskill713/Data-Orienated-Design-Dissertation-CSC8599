@@ -26,12 +26,13 @@ namespace NCL {
         public:
             EnemyObject(levelElements* level, GameWorld& world);
             ~EnemyObject();
-            void chasePlayer();
+            void chasePlayer(float dt);
             void wander();
             bool canSeePlayer();
             void setPlayer(playerObject* player) {
                 this->player = player;
             }
+            void moveEnemy(float dt);
             void Update(float dt) override;
 
         protected:

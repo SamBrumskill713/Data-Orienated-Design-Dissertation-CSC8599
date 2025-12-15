@@ -599,13 +599,13 @@ void NCL::CSC8503::TutorialGame::InitTriggerTest()
 
 void NCL::CSC8503::TutorialGame::initAITest()
 {
-	playerObj = AddPlayerToWorld(Vector3(50, -11.5, 66), playerMesh, 3.0f);
+	playerObj = AddPlayerToWorld(Vector3(50, 0 + 10, 66), playerMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
 	//AddBonusToWorld(Vector3(60, -11.5, 66), enemyMesh, 3.0f);
-	AddEnemyToWorld(Vector3(60, -11.5, 66), enemyMesh, 3.0f);
-	//AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
-	levelCreate();
+	AddEnemyToWorld(Vector3(60, 0 + 10, 66), enemyMesh, 3.0f);
+	AddFloorToWorld(Vector3(20, 0, 50), 50, 50);
+	//levelCreate();
 }
 
 void NCL::CSC8503::TutorialGame::initObstacleTest()

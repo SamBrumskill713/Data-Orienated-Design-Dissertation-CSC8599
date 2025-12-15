@@ -62,8 +62,11 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 	data = level;
 	gameWorld = game;
 	enemyStateMachine = new StateMachine();
+	targetPosition = this->GetTransform().GetPosition();
+	//navigationGridFile = level->getNavFile();
+
 	State* chaseState = new State([&](float dt)->void {
-		this->chasePlayer();
+		this->chasePlayer(dt);
 	});
 
 	State* wanderState = new State([&](float dt)-> void {
@@ -89,42 +92,60 @@ NCL::CSC8503::EnemyObject::~EnemyObject()
 	delete enemyStateMachine;
 }
 
+void NCL::CSC8503::EnemyObject::moveEnemy(float dt)
+{
+	Vector3 dir = Vector::Normalise(targetPosition - this->GetTransform().GetPosition());
+	this->GetPhysicsObject()->AddForce(dir * moveSpeed);
+	//std::cout << "I don't see you";
+}
+
 void NCL::CSC8503::EnemyObject::Update(float dt)
 {
 	enemyStateMachine->Update(dt);
 }
 
-void NCL::CSC8503::EnemyObject::chasePlayer()
+void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
-	std::cout << "I can see you\n";
+	targetPosition = player->GetTransform().GetPosition();
+	moveEnemy(dt);
+	//std::cout << "I can see you\n";
 }
 
 void NCL::CSC8503::EnemyObject::wander()
 {
-	std::cout << "I don't see you\n";
+	/*Vector3 forward = this->GetTransform().GetOrientation() * Vector3(0, 0, -1);
+	forward.y = 0.0f;
+	forward = Vector::Normalise(forward);
+	this->GetPhysicsObject()->AddForce(forward * moveSpeed * 0.5f);*/
+	//std::cout << "I don't see you\n";
 }
 
 bool NCL::CSC8503::EnemyObject::canSeePlayer()
 {
 	std::vector<int>ignoreList;
+	ignoreList.reserve(8);
 	int enemyLayer = this->GetBoundingVolume()->collisionLayer;
 	ignoreList.emplace_back(enemyLayer);
 	if (player) {
 		Vector3 origin = this->GetTransform().GetPosition();
 		Vector3 forward = this->GetTransform().GetOrientation() * Vector3(0, 0, -1);
-		forward.y = 0.0f; // keep ray in horizontal plane if desired
+		forward.y = 0.0f; 
 		forward = Vector::Normalise(forward);
 		Ray ray(origin, forward);
 		RayCollision closestCollision;
+		Debug::DrawLine(origin, origin + forward * Vector3(0, 0, 200), Vector4(0, 0, 1, 1), 0.1f);
 		if (gameWorld.Raycast(ray, closestCollision, true, this)) {
-			GameObject* sightedObject = (GameObject*)closestCollision.node;
 			Debug::DrawLine(origin, origin + forward * Vector3(0, 0, 200), Vector4(0, 0, 1, 1), 0.1f);
+			GameObject* sightedObject = (GameObject*)closestCollision.node;
+			if (sightedObject->GetBoundingVolume()->collisionLayer != playerLayer) {
+				ignoreList.emplace_back(sightedObject->GetBoundingVolume()->collisionLayer);
+			}
 			if (sightedObject->GetBoundingVolume()->collisionLayer == playerLayer) {
 				return true;
 			}
 		}
 		return false;
 	}
-	std::cout << "no player\n";
+	//std::cout << "no player\n";
 	return false;
 }
