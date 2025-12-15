@@ -78,11 +78,11 @@ namespace NCL {
 			playerObject* AddPlayerToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 			const float scale, bool isTrigger = false, int collisionLayer = playerLayer);
 
-			GameObject* AddEnemyToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
+			EnemyObject* AddEnemyToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
 				const float scale, bool isTrigger = false, int collisionLayer = enemyLayer);
 
 			GameObject* AddBonusToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
-				const float scale, bool isTrigger = false);
+				const float scale, bool isTrigger = false, int collisionLayer = defaultLayer);
 
 			pickUpObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
 				const float scale, int pointvalue, bool isTrigger = true, int collisionLayer = pickupLayer);
@@ -120,6 +120,8 @@ namespace NCL {
 			Rendering::Mesh* kittenMesh = nullptr;
 			Rendering::Mesh* enemyMesh	= nullptr;
 			Rendering::Mesh* bonusMesh	= nullptr;
+			Rendering::Mesh* goatMesh   = nullptr;
+			Rendering::Mesh* playerMesh = nullptr;
 
 			GameTechMaterial checkerMaterial;
 			GameTechMaterial glassMaterial;
@@ -132,6 +134,7 @@ namespace NCL {
 			triggerObject* trigVol = nullptr;
 			obstacleObject* pendulum = nullptr;
 			EnemyObject* enemyAI = nullptr;
+			levelElements* data;
 
 			//Coursework Additional functionality	
 			GameObject* lockedObject = nullptr;

@@ -1,6 +1,7 @@
 #pragma once
 #include "GameObject.h"
 #include "GameWorld.h"
+#include "NavigationGrid.h"
 
 namespace NCL {
     namespace CSC8503 {
@@ -23,12 +24,22 @@ namespace NCL {
 
         class EnemyObject : public StateGameObject {
         public:
-            EnemyObject();
+            EnemyObject(levelElements* level, GameWorld& world);
             ~EnemyObject();
+            void chasePlayer();
+            void wander();
+            bool canSeePlayer();
+            void setPlayer(playerObject* player) {
+                this->player = player;
+            }
+            void Update(float dt) override;
 
         protected:
+            StateMachine* enemyStateMachine;
             float moveSpeed = 10.0f;
-            GameWorld* gameWorld;
+            float chaseSpeed = 20.0f;
+            GameWorld& gameWorld;
+            levelElements* data;
             playerObject* player;
             Vector3 targetPosition;
             std::string navigationGridFile;

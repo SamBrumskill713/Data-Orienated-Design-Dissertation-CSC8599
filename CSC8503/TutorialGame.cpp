@@ -54,7 +54,8 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 	catMesh = renderer.LoadMesh("ORIGAMI_Chat.msh");
 	kittenMesh = renderer.LoadMesh("Kitten.msh");
 
-	enemyMesh = renderer.LoadMesh("Keeper.msh");
+	enemyMesh = renderer.LoadMesh("Goat.msh");
+	playerMesh = renderer.LoadMesh("Keeper.msh");
 
 	bonusMesh = renderer.LoadMesh("19463_Kitten_Head_v1.msh");
 	capsuleMesh = renderer.LoadMesh("capsule.msh");
@@ -450,12 +451,13 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 	return character;
 }
 
-GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
+EnemyObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
 	float scale, bool isTrigger, int collisionLayer) {
 	float meshSize = scale;
 	float inverseMass = 0.5f;
 
-	GameObject* character = new GameObject();
+	EnemyObject* character = new EnemyObject(data, world);
+	character->setPlayer(playerObj);
 
 	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
 	character->SetBoundingVolume(volume);
@@ -484,10 +486,11 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Me
 }
 
 GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
-	float scale, bool isCollided) {
+	float scale, bool isTrigger, int collisionLayer) {
 	GameObject* apple = new GameObject();
 
 	SphereVolume* volume = new SphereVolume(0.5f);
+	volume->collisionLayer = collisionLayer;
 	apple->SetBoundingVolume(volume);
 	//volume->collisionLayer = collisionLayer;
 	apple->GetTransform()
@@ -596,9 +599,11 @@ void NCL::CSC8503::TutorialGame::InitTriggerTest()
 
 void NCL::CSC8503::TutorialGame::initAITest()
 {
-	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
+	playerObj = AddPlayerToWorld(Vector3(50, -11.5, 66), playerMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
+	//AddBonusToWorld(Vector3(60, -11.5, 66), enemyMesh, 3.0f);
+	AddEnemyToWorld(Vector3(60, -11.5, 66), enemyMesh, 3.0f);
 	//AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 	levelCreate();
 }
@@ -608,8 +613,8 @@ void NCL::CSC8503::TutorialGame::initObstacleTest()
 	playerObj = AddPlayerToWorld(Vector3(0.18, -11.5, 18.72), enemyMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
-	Vector3 penPos = Vector3(0, 0, 0);
-	pendulum = pendulumConstraint(penPos, 6, 2);
+	Vector3 penPos = Vector3(10, 10, 10);
+	pendulum = pendulumConstraint(penPos, 10, 2);
 	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 }
 
@@ -829,7 +834,7 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 	world.AddConstraint(new OrientationConstraint(prev, bob, swingAxis));
 
 	// Kick to start motion
-	bob->GetPhysicsObject()->ApplyLinearImpulse(Vector3(60.0f, 0, 0));
+	bob->GetPhysicsObject()->ApplyLinearImpulse(Vector3(100.0f, 0, 0));
 	bob->GetPhysicsObject()->ApplyAngularImpulse(swingAxis * 5.0f);
 
 	return bob;
