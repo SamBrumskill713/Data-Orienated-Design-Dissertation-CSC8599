@@ -25,7 +25,7 @@ namespace NCL {
 	constexpr bool CollisionMatrix[LayerCount][LayerCount] = {
 		/* default(0) */ { true,  true,  true,  true,  true,  true,  false, false },
 		/* player (1) */ { true,  true,  true,  true,  true,  false, false, true  },
-		/* enemy  (2) */ { true,  true,  true,  false, true,  false, false, true  },
+		/* enemy  (2) */ { true,  true,  false, false, true,  false, false, true  },
 		/* pickup (3) */ { true,  true,  false, true,  true,  false, false, false },
 		/* terrain(4) */ { true,  true,  true,  true,  true,  false, false, false },
 		/* playerC(5) */ { true,  false, false, false, true,  false, false, false },

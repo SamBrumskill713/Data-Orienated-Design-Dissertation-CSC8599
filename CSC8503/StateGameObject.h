@@ -27,7 +27,7 @@ namespace NCL {
             EnemyObject(levelElements* level, GameWorld& world);
             ~EnemyObject();
             void chasePlayer(float dt);
-            void wander();
+            void wander(float dt);
             bool canSeePlayer();
             void setPlayer(playerObject* player) {
                 this->player = player;

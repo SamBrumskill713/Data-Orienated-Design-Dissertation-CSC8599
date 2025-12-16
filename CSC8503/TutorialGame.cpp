@@ -853,7 +853,7 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 		}
 		if (type == 'P') {
 			lNodes.position.y = 0;
-			playerObj = AddPlayerToWorld(lNodes.position, playerMesh, 3.0f);
+			playerObj = AddPlayerToWorld(lNodes.position - Vector3(0, 10, 0), playerMesh, 3.0f);
 			playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 				playerColliderLayer);
 		}
@@ -863,7 +863,7 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 
 	const Vector3 floorCenter(
 		gridWorldWidth * 0.5f,
-		-20.0f, // keep consistent with your world ground Y
+		-20, // keep consistent with your world ground Y
 		gridWorldHeight * 0.5f
 	);
 

@@ -72,8 +72,7 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 	});
 
 	State* wanderState = new State([&](float dt)-> void {
-		spotDuration += dt;
-		this->wander();
+		this->wander(dt);
 	});
 
 	StateTransition* wanderToChase = new StateTransition(wanderState, chaseState, [&](void)->bool {
@@ -109,20 +108,12 @@ void NCL::CSC8503::EnemyObject::setWalkingPoints()
 
 	bool found = navGrid.FindPath(startPos, endPos, outPath);
 	if (!found) {
-		foundSpot = false;
+		return;
 	}
 
 	Vector3 position;
 	while (outPath.PopWaypoint(position)) {
 		pathFindingNodes.push_back(position);
-	}
-
-	if (spotDuration >= 0) {
-		foundSpot = true;
-	}
-
-	else if (spotDuration >= 20) {
-		foundSpot = false;
 	}
 }
 
@@ -133,7 +124,7 @@ void NCL::CSC8503::EnemyObject::drawWalkingPoints()
 		Vector3 b = pathFindingNodes[i];
 		Debug::debugDrawSphere(a, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
 		Debug::debugDrawSphere(b, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
-		//Debug::DrawLine(a, b, Vector4(0, 0, 1, 1));
+		Debug::DrawLine(a, b, Vector4(0, 0, 1, 1));
 	}
 }
 
@@ -167,32 +158,31 @@ void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 	//std::cout << "I can see you\n";
 }
 
-void NCL::CSC8503::EnemyObject::wander()
+void NCL::CSC8503::EnemyObject::wander(float dt)
 {
 	if (data) {
-		if (Vector::Length(this->GetTransform().GetPosition() - targetPosition) < data->getNodeSize()) {
+		std::cout << spotDuration << "\n";
+		std::cout << foundSpot << "\n";
+		std::cout << searchingForNextSpot << "\n";
+		if (Vector::Length(this->GetTransform().GetPosition() - targetPosition) < data->getNodeSize() || spotDuration >= 20.0f) {
 			searchingForNextSpot = true;
-
+			//setWalkingPoints();
 		}
 
 		if (searchingForNextSpot) {
 			targetPosition = data->getWalkable()[RandomValue(0, data->getWalkable().size() - 1)].position;
 			targetPosition.y = 0;
 			spotDuration = 0.0f;
-			//setWalkingPoints();
-			//drawWalkingPoints();
-			//moveEnemy();
-			//std::cout << "searching for next spot\n";
+			searchingForNextSpot = false;
 		}
 
-		if (foundSpot) {
+		if (!searchingForNextSpot) {
 			//std::cout << "found spot\n";
 			setWalkingPoints();
 			moveEnemy();
-			searchingForNextSpot = false;
-			spotDuration = 0.0f;
 		}
 		drawWalkingPoints();
+		spotDuration += dt;
 	}
 }
 
