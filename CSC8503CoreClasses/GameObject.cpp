@@ -84,6 +84,11 @@ void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
 
 void NCL::CSC8503::playerObject::removeItem()
 {
+	for (int i = 0; i < pickUps.size(); ++i) {
+		if (auto* pickVol = const_cast<CollisionVolume*>(pickUps[i]->GetBoundingVolume())) {
+			pickVol->collisionLayer = pickupLayer;
+		}
+	}
 	pickUps.pop_back();
 }
 
@@ -93,6 +98,13 @@ void NCL::CSC8503::playerObject::OnCollisionBegin(GameObject* other)
 		if (auto* itemPickUp = dynamic_cast<pickUpObject*>(other)) {
 			pickUpItem(itemPickUp);
 			itemPickUp->setIsCollided(false);
+		}
+	}
+
+	if (other->GetBoundingVolume()->collisionLayer == NCL::enemyLayer) {
+		std::cout << "player side\n";
+		if (!pickUps.empty()) {
+			removeItem();
 		}
 	}
 }

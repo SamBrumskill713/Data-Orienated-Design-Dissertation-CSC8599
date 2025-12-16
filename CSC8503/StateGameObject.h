@@ -36,6 +36,7 @@ namespace NCL {
             void drawWalkingPoints();
             void moveEnemy();
             void Update(float dt) override;
+            void OnCollisionBegin(GameObject* other) override;
 
         protected:
             StateMachine* enemyStateMachine;

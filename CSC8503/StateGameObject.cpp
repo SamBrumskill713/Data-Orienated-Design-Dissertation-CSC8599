@@ -149,9 +149,17 @@ void NCL::CSC8503::EnemyObject::Update(float dt)
 	enemyStateMachine->Update(dt);
 }
 
+void NCL::CSC8503::EnemyObject::OnCollisionBegin(GameObject* other)
+{
+	if (other->GetBoundingVolume()->collisionLayer == NCL::playerLayer) {
+		std::cout << "hit\n";
+		this->GetPhysicsObject()->ApplyLinearImpulse(Vector3(100, 0, 0));
+	}
+}
+
 void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
-	std::cout << "I see you\n";
+	//std::cout << "I see you\n";
 	targetPosition = player->GetTransform().GetPosition();
 	setWalkingPoints();
 	drawWalkingPoints();
@@ -174,11 +182,11 @@ void NCL::CSC8503::EnemyObject::wander()
 			//setWalkingPoints();
 			//drawWalkingPoints();
 			//moveEnemy();
-			std::cout << "searching for next spot\n";
+			//std::cout << "searching for next spot\n";
 		}
 
 		if (foundSpot) {
-			std::cout << "found spot\n";
+			//std::cout << "found spot\n";
 			setWalkingPoints();
 			moveEnemy();
 			searchingForNextSpot = false;
