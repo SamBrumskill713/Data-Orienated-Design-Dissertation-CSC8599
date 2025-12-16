@@ -51,6 +51,8 @@ namespace NCL {
 
 			void initObstacleTest();
 
+			void initGame();
+
 			void CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
 			void CreatedMixedGrid(int numRows, int numCols, float rowSpacing, float colSpacing);
 			void CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const NCL::Maths::Vector3& cubeDims);
@@ -135,6 +137,8 @@ namespace NCL {
 			obstacleObject* pendulum = nullptr;
 			EnemyObject* enemyAI = nullptr;
 			levelElements* data;
+			float gameTime;
+			std::vector<pickUpObject*> levelItems;
 
 			//Coursework Additional functionality	
 			GameObject* lockedObject = nullptr;

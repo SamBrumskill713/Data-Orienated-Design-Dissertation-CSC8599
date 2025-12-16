@@ -81,6 +81,8 @@ void TutorialGame::UpdateGame(float dt) {
 	world.GetMainCamera().UpdateCamera(dt);
 	if (useGravity) physics.UseGravity(useGravity);
 
+	gameTime -= dt;
+
 	if (playerObj && playerGroundCollision) {
 		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
 		movePlayerObject(dt);
@@ -111,6 +113,14 @@ void TutorialGame::UpdateGame(float dt) {
 	if (trigVol) {
 		Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
 			Debug::BLUE, 0.1f);
+	}
+
+	if (data) {
+		Debug::Print("Time: " + std::to_string(gameTime), Vector2(0, 65), Debug::WHITE);
+		if (gameTime <= 0.0f) {
+			Debug::Print("Game Over!", Vector2(0, 70));
+			gameTime = 0.0f;
+		}
 	}
 
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
@@ -322,7 +332,7 @@ void TutorialGame::InitWorld() {
 	//InitGameExamples();
 	//InitTriggerTest();
 	//initObstacleTest();
-	initAITest();
+	initGame();
 }
 
 /*
@@ -611,6 +621,12 @@ void NCL::CSC8503::TutorialGame::initObstacleTest()
 	Vector3 penPos = Vector3(10, 10, 10);
 	pendulum = pendulumConstraint(penPos, 10, 2);
 	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
+}
+
+void NCL::CSC8503::TutorialGame::initGame()
+{
+	gameTime = 5;
+	data = levelCreate();
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
