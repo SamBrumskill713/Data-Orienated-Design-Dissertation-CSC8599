@@ -76,6 +76,7 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 	});
 
 	StateTransition* wanderToChase = new StateTransition(wanderState, chaseState, [&](void)->bool {
+		moveSpeed = chaseSpeed;
 		return canSeePlayer();
 	});
 
@@ -137,6 +138,7 @@ void NCL::CSC8503::EnemyObject::Update(float dt)
 
 void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
+	std::cout << "I see you\n";
 	targetPosition = player->GetTransform().GetPosition();
 	moveEnemy();
 	//std::cout << "I can see you\n";
@@ -144,6 +146,7 @@ void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 
 void NCL::CSC8503::EnemyObject::wander()
 {
+	std::cout << "I don't see you\n";
 	if (data) {
 		setWalkingPoints();
 		//drawWalkingPoints();
@@ -164,14 +167,12 @@ bool NCL::CSC8503::EnemyObject::canSeePlayer()
 	ignoreList.emplace_back(enemyLayer);
 	if (player) {
 		Vector3 origin = this->GetTransform().GetPosition();
-		Vector3 forward = this->GetTransform().GetOrientation() * Vector3(0, 0, -1);
-		forward.y = 0.0f; 
-		forward = Vector::Normalise(forward);
-		Ray ray(origin, forward);
+		Vector3 end = Vector::Normalise(player->GetTransform().GetPosition() - this->GetTransform().GetPosition());
+		Ray ray(origin, end);
 		RayCollision closestCollision;
-		Debug::DrawLine(origin, origin + forward * Vector3(0, 0, 200), Vector4(0, 0, 1, 1), 0.1f);
+		//Debug::DrawLine(origin, origin + forward * Vector3(0, 0, 200), Vector4(0, 0, 1, 1), 0.1f);
 		if (gameWorld.Raycast(ray, closestCollision, true, this)) {
-			Debug::DrawLine(origin, origin + forward * Vector3(0, 0, 200), Vector4(0, 0, 1, 1), 0.1f);
+			Debug::DrawLine(origin, closestCollision.collidedAt, Vector4(0, 0, 1, 1), 0.1f);
 			GameObject* sightedObject = (GameObject*)closestCollision.node;
 			if (sightedObject->GetBoundingVolume()->collisionLayer != playerLayer) {
 				ignoreList.emplace_back(sightedObject->GetBoundingVolume()->collisionLayer);

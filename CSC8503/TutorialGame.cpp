@@ -600,7 +600,7 @@ void NCL::CSC8503::TutorialGame::InitTriggerTest()
 void NCL::CSC8503::TutorialGame::initAITest()
 {
 	data = levelCreate();
-	playerObj = AddPlayerToWorld(Vector3(50, 10, 66), playerMesh, 3.0f);
+	playerObj = AddPlayerToWorld(Vector3(50, 10, 10), playerMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
 	enemyAI = AddEnemyToWorld(Vector3(60, 10, 66), enemyMesh, 3.0f);
