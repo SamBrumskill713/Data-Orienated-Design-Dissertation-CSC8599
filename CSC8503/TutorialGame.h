@@ -64,7 +64,7 @@ namespace NCL {
 
 			obstacleObject* pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength);
 
-			void levelCreate();
+			levelElements* levelCreate();
 
 			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength, 
 				bool isTrigger = false, int collisionLayer = terrainLayer);

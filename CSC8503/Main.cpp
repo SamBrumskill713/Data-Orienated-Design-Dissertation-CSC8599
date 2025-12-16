@@ -45,7 +45,7 @@ using namespace CSC8503;
 vector<Vector3> testNodes;
 
 void TestPathfinding() {
-	NavigationGrid grid("TestGrid1.txt");
+	NavigationGrid grid("TestLevel.txt");
 
 	NavigationPath outPath;
 
@@ -376,7 +376,7 @@ int main() {
 #endif
 
 	TutorialGame* g = new TutorialGame(*world, *renderer, *physics);
-	//TestPathfinding();
+	TestPathfinding();
 	w->GetTimer().GetTimeDeltaSeconds(); //Clear the timer so we don't get a larget first dt!
 	while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
 		float dt = w->GetTimer().GetTimeDeltaSeconds();
@@ -406,7 +406,7 @@ int main() {
 		
 		Debug::UpdateRenderables(dt);
 		//TestStateMachine();
-		//DisplayPathfinding();
+		DisplayPathfinding();
 	}
 	Window::DestroyGameWindow();
 }

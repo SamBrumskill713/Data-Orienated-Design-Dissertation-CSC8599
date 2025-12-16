@@ -10,8 +10,6 @@ const int LEFT_NODE		= 0;
 const int RIGHT_NODE	= 1;
 const int TOP_NODE		= 2;
 const int BOTTOM_NODE	= 3;
-
-const char WALL_NODE	= 'x';
 const char FLOOR_NODE	= '.';
 
 NavigationGrid::NavigationGrid()	{
@@ -62,7 +60,7 @@ NavigationGrid::NavigationGrid(const std::string&filename) : NavigationGrid() {
 					if (n.connected[i]->type == '.') {
 						n.costs[i]		= 1;
 					}
-					if (n.connected[i]->type == 'x') {
+					if (isdigit(n.connected[i]->type)) {
 						n.connected[i] = nullptr; //actually a wall, disconnect!
 					}
 				}
@@ -175,7 +173,8 @@ float NavigationGrid::Heuristic(GridNode* hNode, GridNode* endNode) const {
 	return Vector::Length(hNode->position - endNode->position);
 }
 
-NCL::CSC8503::levelElements::levelElements(const std::string& filename)
+NCL::CSC8503::levelElements::levelElements(const std::string& filename):
+	navFile(filename)
 {
 	std::ifstream infile(Assets::DATADIR + filename);
 

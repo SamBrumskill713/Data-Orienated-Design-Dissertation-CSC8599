@@ -32,6 +32,8 @@ namespace NCL {
             void setPlayer(playerObject* player) {
                 this->player = player;
             }
+            void setWalkingPoints();
+            void drawWalkingPoints();
             void moveEnemy(float dt);
             void Update(float dt) override;
 

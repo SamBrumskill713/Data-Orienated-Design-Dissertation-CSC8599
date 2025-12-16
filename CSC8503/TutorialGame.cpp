@@ -599,13 +599,11 @@ void NCL::CSC8503::TutorialGame::InitTriggerTest()
 
 void NCL::CSC8503::TutorialGame::initAITest()
 {
-	playerObj = AddPlayerToWorld(Vector3(50, 0 + 10, 66), playerMesh, 3.0f);
+	data = levelCreate();
+	playerObj = AddPlayerToWorld(Vector3(50, 10, 66), playerMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
-	//AddBonusToWorld(Vector3(60, -11.5, 66), enemyMesh, 3.0f);
-	AddEnemyToWorld(Vector3(60, 0 + 10, 66), enemyMesh, 3.0f);
-	AddFloorToWorld(Vector3(20, 0, 50), 50, 50);
-	//levelCreate();
+	enemyAI = AddEnemyToWorld(Vector3(60, 10, 66), enemyMesh, 3.0f);
 }
 
 void NCL::CSC8503::TutorialGame::initObstacleTest()
@@ -840,7 +838,7 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 	return bob;
 }
 
-void NCL::CSC8503::TutorialGame::levelCreate()
+levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 {
 	levelElements* level = new levelElements("TestLevel.txt");
 	int nodeSize = level->getNodeSize();
@@ -848,12 +846,6 @@ void NCL::CSC8503::TutorialGame::levelCreate()
 	int gridHeight = level->getLevelHeight();
 	levelNode* nodes = level->getAllLevelNodes();
 	float cubeHeight = nodeSize * 0.25f;
-
-	if (!nodes || nodeSize <= 0 || gridWidth <= 0 || gridHeight <= 0) {
-		Debug::Print("Level data invalid. Falling back floor.", Vector2(0, 5), Debug::RED);
-		AddFloorToWorld(Vector3(0, -20.0f, 0), 50, 50);
-		return;
-	}
 
 	for (int i = 0; i < gridWidth * gridHeight; ++i) {
 		levelNode& lNodes= nodes[i];
@@ -878,6 +870,7 @@ void NCL::CSC8503::TutorialGame::levelCreate()
 	const float floorHalfY = 1.0f; // thickness half-size
 
 	AddFloorToWorld(floorCenter, floorHalfX, floorHalfZ);
+	return level;
 }
 
 void TutorialGame::DebugObjectMovement() {

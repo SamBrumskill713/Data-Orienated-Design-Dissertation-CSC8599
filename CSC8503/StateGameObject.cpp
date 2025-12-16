@@ -63,7 +63,9 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 	gameWorld = game;
 	enemyStateMachine = new StateMachine();
 	targetPosition = this->GetTransform().GetPosition();
-	//navigationGridFile = level->getNavFile();
+	if (data) {
+		navigationGridFile = level->getNavFile();
+	}
 
 	State* chaseState = new State([&](float dt)->void {
 		this->chasePlayer(dt);
@@ -85,11 +87,42 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 	enemyStateMachine->AddState(chaseState);
 	enemyStateMachine->AddTransition(wanderToChase);
 	enemyStateMachine->AddTransition(chaseToWander);
+	if (data) {
+		setWalkingPoints();
+		drawWalkingPoints();
+	}
 }
 
 NCL::CSC8503::EnemyObject::~EnemyObject()
 {
 	delete enemyStateMachine;
+}
+
+void NCL::CSC8503::EnemyObject::setWalkingPoints()
+{
+	NavigationGrid navGrid("TestLevel.txt");
+	NavigationPath outPath;
+
+	Vector3 startPos = GetTransform().GetPosition();
+	startPos.y = 0;
+	Vector3 endPos = targetPosition;
+
+	bool found = navGrid.FindPath(startPos, endPos, outPath);
+
+	Vector3 position;
+	while (outPath.PopWaypoint(position)) {
+		pathFindingNodes.push_back(position);
+	}
+}
+
+void NCL::CSC8503::EnemyObject::drawWalkingPoints()
+{
+	for (int i = 1; i < pathFindingNodes.size(); ++i) {
+		Vector3 a = pathFindingNodes[i - 1];
+		Vector3 b = pathFindingNodes[i];
+		Debug::debugDrawSphere(a, 5.0f, Vector4(0, 1, 0, 1), 0.1f, 6);
+		Debug::debugDrawSphere(b, 5.0f, Vector4(0, 1, 0, 1), 0.1f, 6);
+	}
 }
 
 void NCL::CSC8503::EnemyObject::moveEnemy(float dt)
@@ -113,6 +146,7 @@ void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 
 void NCL::CSC8503::EnemyObject::wander()
 {
+	drawWalkingPoints();
 	/*Vector3 forward = this->GetTransform().GetOrientation() * Vector3(0, 0, -1);
 	forward.y = 0.0f;
 	forward = Vector::Normalise(forward);
