@@ -10,7 +10,7 @@ const int LEFT_NODE		= 0;
 const int RIGHT_NODE	= 1;
 const int TOP_NODE		= 2;
 const int BOTTOM_NODE	= 3;
-const char FLOOR_NODE	= '.';
+const char FLOOR_NODE	= 'x';
 
 NavigationGrid::NavigationGrid()	{
 	nodeSize	= 0;
@@ -57,7 +57,7 @@ NavigationGrid::NavigationGrid(const std::string&filename) : NavigationGrid() {
 			}
 			for (int i = 0; i < 4; ++i) {
 				if (n.connected[i]) {
-					if (n.connected[i]->type == '.') {
+					if (!isdigit(n.connected[i]->type)) {
 						n.costs[i]		= 1;
 					}
 					if (isdigit(n.connected[i]->type)) {
@@ -191,7 +191,7 @@ NCL::CSC8503::levelElements::levelElements(const std::string& filename):
 			infile >> type;
 			n.type = type;
 			n.position = Vector3((float)(x * nodeSize), 0, (float)(y * nodeSize));
-			if (type == '.') {
+			if (!isdigit(type)) {
 				walkables.emplace_back(n);
 			}
 		}
@@ -216,7 +216,7 @@ NCL::CSC8503::levelElements::levelElements(const std::string& filename):
 			}
 			for (int i = 0; i < 4; ++i) {
 				if (n.connected[i]) {
-					if (n.connected[i]->type != '.') {
+					if (isdigit(n.connected[i]->type)) {
 						n.connected[i] = nullptr;
 					}
 				}

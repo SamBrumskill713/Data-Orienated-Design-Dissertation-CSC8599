@@ -46,7 +46,9 @@ namespace NCL {
             playerObject* player;
             Vector3 targetPosition;
             std::string navigationGridFile;
-            bool searchingForNextSpot;
+            bool searchingForNextSpot = true;
+            bool foundSpot = false;
+            float spotDuration = 0.0f;
             std::vector<Vector3> pathFindingNodes;
         };
     }

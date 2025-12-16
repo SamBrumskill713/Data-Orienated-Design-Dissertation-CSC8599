@@ -274,7 +274,7 @@ void NCL::CSC8503::TutorialGame::movePlayerObject(float dt)
 	camFwdAxis = Vector::Normalise(camFwdAxis);
 
 	Vector3 moveDir = Vector3(0, 0, 0);
-	float  speed = 20.0f * dt;
+	float  speed = 50.0f * dt;
 
 	if (Window::GetKeyboard()->KeyDown(KeyCodes::W)) {
 		moveDir = (fwdAxis);
@@ -600,10 +600,7 @@ void NCL::CSC8503::TutorialGame::InitTriggerTest()
 void NCL::CSC8503::TutorialGame::initAITest()
 {
 	data = levelCreate();
-	playerObj = AddPlayerToWorld(Vector3(50, 10, 10), playerMesh, 3.0f);
-	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
-		playerColliderLayer);
-	enemyAI = AddEnemyToWorld(Vector3(60, 10, 66), enemyMesh, 3.0f);
+	enemyAI = AddEnemyToWorld(Vector3(60, -7, 120), enemyMesh, 3.0f);
 }
 
 void NCL::CSC8503::TutorialGame::initObstacleTest()
@@ -854,7 +851,12 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 			float unitHeight = cubeHeight * (float(type) - 48);
 			AddCubeToWorld(lNodes.position - Vector3(0, unitHeight + 8, 0), Vector3(nodeSize / 2, unitHeight, nodeSize / 2), 0.0f);
 		}
-
+		if (type == 'P') {
+			lNodes.position.y = 0;
+			playerObj = AddPlayerToWorld(lNodes.position, playerMesh, 3.0f);
+			playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
+				playerColliderLayer);
+		}
 	}
 	const float gridWorldWidth = (float)(gridWidth * nodeSize);
 	const float gridWorldHeight = (float)(gridHeight * nodeSize);

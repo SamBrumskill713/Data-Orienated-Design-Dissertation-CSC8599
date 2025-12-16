@@ -72,6 +72,7 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 	});
 
 	State* wanderState = new State([&](float dt)-> void {
+		spotDuration += dt;
 		this->wander();
 	});
 
@@ -97,7 +98,8 @@ NCL::CSC8503::EnemyObject::~EnemyObject()
 
 void NCL::CSC8503::EnemyObject::setWalkingPoints()
 {
-	targetPosition = data->getWalkable()[RandomValue(0, data->getWalkable().size() - 1)].position;
+	pathFindingNodes.clear();
+	pathFindingNodes.reserve(data->getWalkable().size());
 	NavigationGrid navGrid(navigationGridFile);
 	NavigationPath outPath;
 
@@ -106,10 +108,21 @@ void NCL::CSC8503::EnemyObject::setWalkingPoints()
 	Vector3 endPos = targetPosition;
 
 	bool found = navGrid.FindPath(startPos, endPos, outPath);
+	if (!found) {
+		foundSpot = false;
+	}
 
 	Vector3 position;
 	while (outPath.PopWaypoint(position)) {
 		pathFindingNodes.push_back(position);
+	}
+
+	if (spotDuration >= 0) {
+		foundSpot = true;
+	}
+
+	else if (spotDuration >= 20) {
+		foundSpot = false;
 	}
 }
 
@@ -118,9 +131,9 @@ void NCL::CSC8503::EnemyObject::drawWalkingPoints()
 	for (int i = 1; i < pathFindingNodes.size(); ++i) {
 		Vector3 a = pathFindingNodes[i - 1];
 		Vector3 b = pathFindingNodes[i];
-		//Debug::debugDrawSphere(a, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
-		//Debug::debugDrawSphere(b, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
-		Debug::DrawLine(a, b, Vector4(0, 0, 1, 1));
+		Debug::debugDrawSphere(a, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
+		Debug::debugDrawSphere(b, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
+		//Debug::DrawLine(a, b, Vector4(0, 0, 1, 1));
 	}
 }
 
@@ -140,23 +153,39 @@ void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
 	std::cout << "I see you\n";
 	targetPosition = player->GetTransform().GetPosition();
+	setWalkingPoints();
+	drawWalkingPoints();
 	moveEnemy();
 	//std::cout << "I can see you\n";
 }
 
 void NCL::CSC8503::EnemyObject::wander()
 {
-	std::cout << "I don't see you\n";
 	if (data) {
-		setWalkingPoints();
-		//drawWalkingPoints();
+		if (Vector::Length(this->GetTransform().GetPosition() - targetPosition) < data->getNodeSize()) {
+			searchingForNextSpot = true;
+
+		}
+
+		if (searchingForNextSpot) {
+			targetPosition = data->getWalkable()[RandomValue(0, data->getWalkable().size() - 1)].position;
+			targetPosition.y = 0;
+			spotDuration = 0.0f;
+			//setWalkingPoints();
+			//drawWalkingPoints();
+			//moveEnemy();
+			std::cout << "searching for next spot\n";
+		}
+
+		if (foundSpot) {
+			std::cout << "found spot\n";
+			setWalkingPoints();
+			moveEnemy();
+			searchingForNextSpot = false;
+			spotDuration = 0.0f;
+		}
+		drawWalkingPoints();
 	}
-	moveEnemy();
-	/*Vector3 forward = this->GetTransform().GetOrientation() * Vector3(0, 0, -1);
-	forward.y = 0.0f;
-	forward = Vector::Normalise(forward);
-	this->GetPhysicsObject()->AddForce(forward * moveSpeed * 0.5f);*/
-	//std::cout << "I don't see you\n";
 }
 
 bool NCL::CSC8503::EnemyObject::canSeePlayer()
