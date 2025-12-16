@@ -87,10 +87,6 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 	enemyStateMachine->AddState(chaseState);
 	enemyStateMachine->AddTransition(wanderToChase);
 	enemyStateMachine->AddTransition(chaseToWander);
-	if (data) {
-		setWalkingPoints();
-		drawWalkingPoints();
-	}
 }
 
 NCL::CSC8503::EnemyObject::~EnemyObject()
@@ -100,7 +96,8 @@ NCL::CSC8503::EnemyObject::~EnemyObject()
 
 void NCL::CSC8503::EnemyObject::setWalkingPoints()
 {
-	NavigationGrid navGrid("TestLevel.txt");
+	targetPosition = data->getWalkable()[RandomValue(0, data->getWalkable().size() - 1)].position;
+	NavigationGrid navGrid(navigationGridFile);
 	NavigationPath outPath;
 
 	Vector3 startPos = GetTransform().GetPosition();
@@ -120,12 +117,13 @@ void NCL::CSC8503::EnemyObject::drawWalkingPoints()
 	for (int i = 1; i < pathFindingNodes.size(); ++i) {
 		Vector3 a = pathFindingNodes[i - 1];
 		Vector3 b = pathFindingNodes[i];
-		Debug::debugDrawSphere(a, 5.0f, Vector4(0, 1, 0, 1), 0.1f, 6);
-		Debug::debugDrawSphere(b, 5.0f, Vector4(0, 1, 0, 1), 0.1f, 6);
+		//Debug::debugDrawSphere(a, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
+		//Debug::debugDrawSphere(b, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
+		Debug::DrawLine(a, b, Vector4(0, 0, 1, 1));
 	}
 }
 
-void NCL::CSC8503::EnemyObject::moveEnemy(float dt)
+void NCL::CSC8503::EnemyObject::moveEnemy()
 {
 	Vector3 dir = Vector::Normalise(targetPosition - this->GetTransform().GetPosition());
 	this->GetPhysicsObject()->AddForce(dir * moveSpeed);
@@ -140,13 +138,17 @@ void NCL::CSC8503::EnemyObject::Update(float dt)
 void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
 	targetPosition = player->GetTransform().GetPosition();
-	moveEnemy(dt);
+	moveEnemy();
 	//std::cout << "I can see you\n";
 }
 
 void NCL::CSC8503::EnemyObject::wander()
 {
-	drawWalkingPoints();
+	if (data) {
+		setWalkingPoints();
+		//drawWalkingPoints();
+	}
+	moveEnemy();
 	/*Vector3 forward = this->GetTransform().GetOrientation() * Vector3(0, 0, -1);
 	forward.y = 0.0f;
 	forward = Vector::Normalise(forward);

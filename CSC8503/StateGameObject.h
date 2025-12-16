@@ -34,7 +34,7 @@ namespace NCL {
             }
             void setWalkingPoints();
             void drawWalkingPoints();
-            void moveEnemy(float dt);
+            void moveEnemy();
             void Update(float dt) override;
 
         protected:
