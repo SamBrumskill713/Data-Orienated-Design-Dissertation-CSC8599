@@ -26,7 +26,7 @@ namespace NCL {
 		public:
 			TutorialGame(GameWorld& gameWorld, GameTechRendererInterface& renderer, PhysicsSystem& physics);
 			~TutorialGame();
-
+			void InitWorld();
 			virtual void UpdateGame(float dt);
 
 		protected:
@@ -35,8 +35,6 @@ namespace NCL {
 			void attachCameraToPlayer();
 
 			void movePlayerObject(float dt);
-
-			void InitWorld();
 
 			/*
 			These are some of the world/object creation functions I created when testing the functionality
@@ -49,9 +47,9 @@ namespace NCL {
 
 			void initAITest();
 
-			void initObstacleTest();
-
 			void initGame();
+
+			void initObstacleTest();
 
 			void CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
 			void CreatedMixedGrid(int numRows, int numCols, float rowSpacing, float colSpacing);

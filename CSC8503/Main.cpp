@@ -335,6 +335,82 @@ void TestNetworking()
 	NetworkBase::Destroy();
 }
 
+class IntroMenuState : public PushdownState {
+public:
+	explicit IntroMenuState(TutorialGame* game, Window* win)
+		: gameRef(game), window(win) {
+	}
+
+	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
+		HandleInput();
+		DrawMenu();
+
+		if (confirmPressed) {
+			if (options[currentIndex] == "Play") {
+				if (gameRef) {
+					gameRef->InitWorld();
+				}
+				confirmPressed = false;
+				return PushdownResult::Pop; // start game
+			}
+			if (options[currentIndex] == "Quit") {
+				// Close application window immediately
+				Window::DestroyGameWindow();
+				confirmPressed = false;
+				return PushdownResult::NoChange; // outer while will exit as UpdateWindow() returns false
+			}
+		}
+
+		if (quitRequested) {
+			Window::DestroyGameWindow();
+			quitRequested = false;
+			return PushdownResult::NoChange;
+		}
+
+		return PushdownResult::NoChange;
+	}
+
+	void OnAwake() override {
+		currentIndex = 0;
+		confirmPressed = false;
+		quitRequested = false;
+	}
+
+private:
+	void HandleInput() {
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::UP)) {
+			if (currentIndex > 0) currentIndex--;
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::DOWN)) {
+			if (currentIndex + 1 < static_cast<int>(options.size())) currentIndex++;
+		}
+		confirmPressed = Window::GetKeyboard()->KeyPressed(KeyCodes::RETURN) ||
+			Window::GetKeyboard()->KeyPressed(KeyCodes::SPACE);
+		quitRequested = Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE);
+	}
+
+	void DrawMenu() const {
+		Debug::Print("CSC8503 Game Technology", Vector2(30, 20), Debug::WHITE);
+		Debug::Print("Use Up/Down to choose, ENTER to confirm", Vector2(20, 30), Debug::WHITE);
+
+		const float startY = 50.0f;
+		const float lineStep = 8.0f;
+		for (int i = 0; i < static_cast<int>(options.size()); ++i) {
+			const bool selected = (i == currentIndex);
+			const Vector4 normalCol = Debug::WHITE;
+			const Vector4 highlightCol = Debug::YELLOW;
+			std::string text = selected ? ("> " + options[i]) : ("  " + options[i]);
+			Debug::Print(text, Vector2(40, startY + i * lineStep), selected ? highlightCol : normalCol);
+		}
+	}
+
+	TutorialGame* gameRef = nullptr;
+	Window* window = nullptr;
+	std::vector<std::string> options{ "Play", "Quit" };
+	int currentIndex = 0;
+	bool confirmPressed = false;
+	bool quitRequested = false;
+};
 /*
 
 The main function should look pretty familar to you!
@@ -356,7 +432,7 @@ int main() {
 
 	Window* w = Window::CreateGameWindow(initInfo);
 
-	TestPushdownAutomata(w);
+	//TestPushdownAutomata(w);
 	//TestNetworking();
 
 	if (!w->HasInitialised()) {
@@ -376,7 +452,24 @@ int main() {
 #endif
 
 	TutorialGame* g = new TutorialGame(*world, *renderer, *physics);
-	TestPathfinding();
+
+	// Intro menu loop
+	{
+		PushdownMachine menuMachine(new IntroMenuState(g, w));
+		while (w->UpdateWindow()) {
+			float dt = w->GetTimer().GetTimeDeltaSeconds();
+			if (!menuMachine.Update(dt)) {
+				// Menu popped -> start game
+				break;
+			}
+
+			// Render UI
+			renderer->Update(dt);
+			renderer->Render();
+			Debug::UpdateRenderables(dt);
+		}
+	}
+	//TestPathfinding();
 	w->GetTimer().GetTimeDeltaSeconds(); //Clear the timer so we don't get a larget first dt!
 	while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
 		float dt = w->GetTimer().GetTimeDeltaSeconds();
@@ -406,7 +499,7 @@ int main() {
 		
 		Debug::UpdateRenderables(dt);
 		//TestStateMachine();
-		DisplayPathfinding();
+		//DisplayPathfinding();
 	}
 	Window::DestroyGameWindow();
 }
