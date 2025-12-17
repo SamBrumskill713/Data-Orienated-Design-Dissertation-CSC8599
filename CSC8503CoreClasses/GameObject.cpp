@@ -6,7 +6,7 @@
 
 using namespace NCL::CSC8503;
 
-GameObject::GameObject(const std::string& objectName)	
+GameObject::GameObject(const std::string& objectName)
 {
 	name			= objectName;
 	worldID			= -1;
@@ -73,6 +73,7 @@ void NCL::CSC8503::playerObject::setRespawn(const Vector3& position)
 
 void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
 {
+	hasPickup = true;
 	pickUps.emplace_back(pickup);
 
 	// Make picked item non-blocking and move it to inventory layer
@@ -84,11 +85,11 @@ void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
 
 void NCL::CSC8503::playerObject::removeItem()
 {
-	for (int i = 0; i < pickUps.size(); ++i) {
+	/*for (int i = 0; i < pickUps.size(); ++i) {
 		if (auto* pickVol = const_cast<CollisionVolume*>(pickUps[i]->GetBoundingVolume())) {
 			pickVol->collisionLayer = pickupLayer;
 		}
-	}
+	}*/
 	pickUps.pop_back();
 }
 
@@ -99,6 +100,15 @@ void NCL::CSC8503::playerObject::OnCollisionBegin(GameObject* other)
 			pickUpItem(itemPickUp);
 			itemPickUp->setIsCollided(false);
 		}
+	}
+	if (other->GetBoundingVolume()->collisionLayer == NCL::dropZoneLayer && !pickUps.empty()) {
+		for (int i = 0; i < pickUps.size(); ++i) {
+			pickUps[i]->setIsRender(false);
+			score += pickUps[i]->getPointValue();
+		}
+		pickUps.clear();
+		hasPickup = false;
+		//pickUps.clear();
 	}
 
 	if (other->GetBoundingVolume()->collisionLayer == NCL::enemyLayer) {
@@ -159,4 +169,23 @@ void NCL::CSC8503::obstacleObject::OnCollisionBegin(GameObject* other)
 			physObj->ApplyLinearImpulse(Vector3(0, -100.0f, 0));
 		}
 	}
+}
+
+NCL::CSC8503::pickUpObject::pickUpObject(int type)
+{
+	if (type == 0) {
+		type = defaultType;
+		colour = Vector4(1, 0, 0, 1);
+		this->type = type;
+	}
+
+	else if (type == 1) {
+		type = bonusPointType;
+		colour = Vector4(0, 0, 1, 1);
+		this->type = type;
+	}
+}
+
+NCL::CSC8503::pickUpObject::~pickUpObject()
+{
 }

@@ -186,21 +186,28 @@ void GameTechRenderer::BuildObjectLists() {
 
 	gameWorld.OperateOnContents(
 		[&](GameObject* o) {
-			if (o->IsActive()) {
-				const RenderObject* g = o->GetRenderObject();
-				if (g) {
-					GameTechMaterial mat = g->GetMaterial();
+			if (!o->IsActive()) return;
 
-					ObjectSortState o;
-					o.object = g;
-					o.distanceFromCamera = Vector::LengthSquared(camPos - g->GetTransform().GetPosition());
+			// Skip rendering pickups flagged as not rendered
+			if (auto* p = dynamic_cast<pickUpObject*>(o)) {
+				if (!p->getIsRendered()) {
+					return;
+				}
+			}
 
-					if (mat.type == MaterialType::Opaque) {
-						opaqueObjects.emplace_back(o);
-					}
-					else if (mat.type == MaterialType::Transparent) {
-						transparentObjects.emplace_back(o);
-					}
+			const RenderObject* ro = o->GetRenderObject();
+			if (ro) {
+				GameTechMaterial mat = ro->GetMaterial();
+
+				ObjectSortState s;
+				s.object = ro;
+				s.distanceFromCamera = Vector::LengthSquared(camPos - ro->GetTransform().GetPosition());
+
+				if (mat.type == MaterialType::Opaque) {
+					opaqueObjects.emplace_back(s);
+				}
+				else if (mat.type == MaterialType::Transparent) {
+					transparentObjects.emplace_back(s);
 				}
 			}
 		}

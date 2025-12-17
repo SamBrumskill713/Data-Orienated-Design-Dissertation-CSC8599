@@ -83,13 +83,13 @@ void TutorialGame::UpdateGame(float dt) {
 
 	gameTime -= dt;
 
-	if (playerObj && playerGroundCollision) {
+	if (playerObj && playerGroundCollision && levelFloor) {
 		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
 		movePlayerObject(dt);
 		attachCameraToPlayer();
-		Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(), Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.01f);
-		Debug::debugDrawAABBs(Vector3(0, -20, 0), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
-		Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.01f, 16);
+		Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(), Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
+		Debug::debugDrawAABBs(levelFloor->GetTransform().GetPosition(), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
+		Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.0f, 16);
 		Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
 		Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
 		Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
@@ -97,13 +97,14 @@ void TutorialGame::UpdateGame(float dt) {
 		Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
 		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
 		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);
+		Debug::Print("player Score: " + std::to_string(playerObj->getScore()), Vector2(0, 55));
 	}
 
-	if (testTrigger) {
+	/*if (pickUp) {
 		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
 		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);
-		Debug::Print("trigger isCollided: " + std::to_string(testTrigger->getIsCollided()), Vector2(0, 35), Debug::WHITE);
-		Debug::Print("trigger isTrigger: " + std::to_string(testTrigger->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
+		Debug::Print("trigger isCollided: " + std::to_string(pickUp->getIsCollided()), Vector2(0, 35), Debug::WHITE);
+		Debug::Print("trigger isTrigger: " + std::to_string(pickUp->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
 	}
 
 	if (pendulum) {
@@ -113,15 +114,15 @@ void TutorialGame::UpdateGame(float dt) {
 	if (trigVol) {
 		Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
 			Debug::BLUE, 0.1f);
-	}
+	}*/
 
-	if (data) {
+	/*if (data) {
 		Debug::Print("Time: " + std::to_string(gameTime), Vector2(0, 65), Debug::WHITE);
 		if (gameTime <= 0.0f) {
 			Debug::Print("Game Over!", Vector2(0, 70));
 			gameTime = 0.0f;
 		}
-	}
+	}*/
 
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
 		world.Clear();
@@ -519,29 +520,31 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Me
 }
 
 pickUpObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh, 
-	const float scale, int pointvalue, bool isTrigger, int collisionLayer)
+	const float scale, int type, bool isTrigger, int collisionLayer)
 {
-	pickUpObject* testTrigger = new pickUpObject();
+	pickUpObject* pickObj = new pickUpObject(type);
 	AABBVolume* volume = new AABBVolume(Vector3(scale, scale, scale), isTrigger);
 	volume->collisionLayer = collisionLayer;
 
-	testTrigger->SetBoundingVolume(volume);
-	testTrigger->GetTransform()
+	pickObj->SetBoundingVolume(volume);
+	pickObj->GetTransform()
 		.SetScale(Vector3(scale, scale, scale))
 		.SetPosition(position);
 
-	testTrigger->setIsCollided(isTrigger ? false : true);
+	pickObj->setIsCollided(isTrigger ? false : true);
 
-	testTrigger->SetRenderObject(new RenderObject(testTrigger->GetTransform(), pickupMesh, glassMaterial));
-	testTrigger->SetPhysicsObject(new PhysicsObject(testTrigger->GetTransform(), testTrigger->GetBoundingVolume()));
+	pickObj->SetRenderObject(new RenderObject(pickObj->GetTransform(), pickupMesh, checkerMaterial));
+	//pickObj->setIsRender(true);
+	pickObj->GetRenderObject()->SetColour(pickObj->getColour());
+	pickObj->SetPhysicsObject(new PhysicsObject(pickObj->GetTransform(), pickObj->GetBoundingVolume()));
 
-	testTrigger->GetPhysicsObject()->SetInverseMass(0.0f);
-	testTrigger->GetPhysicsObject()->InitCubeInertia();
+	pickObj->GetPhysicsObject()->SetInverseMass(0.0f);
+	pickObj->GetPhysicsObject()->InitCubeInertia();
 
-	testTrigger->setIsCollided(false);
+	pickObj->setIsCollided(false);
 
-	world.AddGameObject(testTrigger);
-	return testTrigger;
+	world.AddGameObject(pickObj);
+	return pickObj;
 }
 
 triggerObject* NCL::CSC8503::TutorialGame::addTriggerVolume(const NCL::Maths::Vector3& position, const float scaleX, 
@@ -563,6 +566,47 @@ triggerObject* NCL::CSC8503::TutorialGame::addTriggerVolume(const NCL::Maths::Ve
 	
 	world.AddGameObject(trigObj);
 	return trigObj;
+}
+
+GameObject* NCL::CSC8503::TutorialGame::addWall(const NCL::Maths::Vector3& position, Vector3& halfDims, float inverseMass, 
+	int collisionLayer)
+{
+	GameObject* wallObj = new GameObject();
+	AABBVolume* wallVol = new AABBVolume(halfDims);
+	wallVol->collisionLayer = collisionLayer;
+	wallObj->SetBoundingVolume(wallVol);
+	wallObj->GetTransform()
+		.SetScale(halfDims * 2.0f)
+		.SetPosition(position);
+	wallObj->SetRenderObject(new RenderObject(wallObj->GetTransform(), cubeMesh, checkerMaterial));
+	wallObj->GetRenderObject()->SetColour(Vector4(0, 1, 0, 1));
+	wallObj->SetPhysicsObject(new PhysicsObject(wallObj->GetTransform(), wallObj->GetBoundingVolume()));
+
+	wallObj->GetPhysicsObject()->SetInverseMass(inverseMass);
+	wallObj->GetPhysicsObject()->InitCubeInertia();
+
+	world.AddGameObject(wallObj);
+	return wallObj;
+}
+
+GameObject* NCL::CSC8503::TutorialGame::addDropOffZone(const NCL::Maths::Vector3& position, Vector3& halfDims, bool isTrigger, 
+	int collisionLayer)
+{
+	GameObject* dropZone = new GameObject();
+	AABBVolume* dropVol = new AABBVolume(halfDims, isTrigger);
+	dropVol->collisionLayer = collisionLayer;
+	dropZone->SetBoundingVolume(dropVol);
+	dropZone->GetTransform()
+		.SetScale(halfDims * 2.0f)
+		.SetPosition(position);
+	dropZone->SetRenderObject(new RenderObject(dropZone->GetTransform(), cubeMesh, glassMaterial));
+	dropZone->SetPhysicsObject(new PhysicsObject(dropZone->GetTransform(), dropZone->GetBoundingVolume()));
+
+	dropZone->GetPhysicsObject()->SetInverseMass(0);
+	dropZone->GetPhysicsObject()->InitCubeInertia();
+
+	world.AddGameObject(dropZone);
+	return dropZone;
 }
 
 StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
@@ -600,8 +644,8 @@ void NCL::CSC8503::TutorialGame::InitTriggerTest()
 	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
 	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false, 
 		playerColliderLayer);
-	testTrigger = AddPickupToWorld(Vector3(10, -15, 0), cubeMesh, 1.0f, 1);
-	testTrigger = AddPickupToWorld(Vector3(15, -15, 0), cubeMesh, 1.0f, 1);
+	pickUp = AddPickupToWorld(Vector3(10, -15, 0), cubeMesh, 1.0f, 1);
+	pickUp = AddPickupToWorld(Vector3(15, -15, 0), cubeMesh, 1.0f, 1);
 	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
 	
 	//AddSphereToWorld(Vector3(10, -10, 0), 0.5f, true);
@@ -865,13 +909,31 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 		int type = lNodes.type;
 		if (isdigit(type)) {
 			float unitHeight = cubeHeight * (float(type) - 48);
-			AddCubeToWorld(lNodes.position - Vector3(0, unitHeight + 8, 0), Vector3(nodeSize / 2, unitHeight, nodeSize / 2), 0.0f);
+			AddCubeToWorld(lNodes.position - Vector3(0, unitHeight + 8, 0), Vector3(nodeSize / 2, nodeSize / 2, nodeSize / 2), 0.0f);
 		}
 		if (type == 'P') {
 			lNodes.position.y = 0;
 			playerObj = AddPlayerToWorld(lNodes.position - Vector3(0, 10, 0), playerMesh, 3.0f);
 			playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 				playerColliderLayer);
+		}
+		if (type == 'W') {
+			lNodes.position.y = 0;
+			Vector3 wallHalfDims = Vector3(nodeSize / 2, nodeSize / 2, nodeSize / 2);
+			movableWall = addWall(lNodes.position - Vector3(0, (nodeSize / 2) + 8, 0), wallHalfDims);
+		}
+		if (type == 'D') {
+			lNodes.position.y = 0;
+			Vector3 zoneHalfDims = Vector3(nodeSize / 2, nodeSize / 2, nodeSize / 2);
+			dropOffZone = addDropOffZone(lNodes.position - Vector3(0, (nodeSize / 2) + 8, 0), zoneHalfDims);
+		}
+		if (type == 'I') {
+			lNodes.position.y = 0;
+			pickUp = AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1);
+		}
+		if (type == 'B') {
+			lNodes.position.y = 0;
+			pickUp = AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1, 1);
 		}
 	}
 	const float gridWorldWidth = (float)(gridWidth * nodeSize);
@@ -887,7 +949,7 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 	const float floorHalfZ = gridWorldHeight * 0.55;
 	const float floorHalfY = 1.0f; // thickness half-size
 
-	AddFloorToWorld(floorCenter, floorHalfX, floorHalfZ);
+	levelFloor = AddFloorToWorld(floorCenter, floorHalfX, floorHalfZ);
 	return level;
 }
 

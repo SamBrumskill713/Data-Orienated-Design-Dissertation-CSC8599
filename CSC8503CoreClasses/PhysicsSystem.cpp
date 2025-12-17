@@ -222,8 +222,6 @@ void PhysicsSystem::BasicCollisionDetection()
 				if (!(*i)->GetBoundingVolume()->isTrigger && !(*j)->GetBoundingVolume()->isTrigger) {
 					ImpulseResolveCollision(*info.a, *info.b, info.point);
 				}
-				
-
 				info.framesLeft = numCollisionFrames;
 				allCollisions.insert(info);
 			}

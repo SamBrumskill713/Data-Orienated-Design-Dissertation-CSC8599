@@ -1,6 +1,7 @@
 #pragma once
 #include "Transform.h"
 #include "CollisionVolume.h"
+#include "GameWorld.h"
 
 using std::vector;
 
@@ -107,6 +108,10 @@ namespace NCL::CSC8503 {
 			return isCollided;
 		}
 
+		void setGameWorld(GameWorld* w) {
+			w = world;
+		}
+
 	protected:
 		Transform			transform;
 
@@ -114,6 +119,7 @@ namespace NCL::CSC8503 {
 		PhysicsObject* physicsObject;
 		RenderObject* renderObject;
 		NetworkObject* networkObject;
+		GameWorld* world = nullptr;
 
 		bool				isActive;
 		bool				isCollided = false;
@@ -128,6 +134,40 @@ namespace NCL::CSC8503 {
 	};
 
 	class pickUpObject : public GameObject {
+	public:
+		pickUpObject(int type);
+		~pickUpObject();
+
+		int getPointValue() {
+			if (type == defaultType) {
+				pointValue = 1;
+			}
+
+			else if (type == bonusPointType) {
+				pointValue = 5;
+			}
+			return pointValue;
+		}
+
+		void setIsRender(bool ren) {
+			isRendered = ren;
+		}
+
+		bool getIsRendered(){
+			return isRendered;
+		}
+
+		Vector4 getColour() {
+			return colour;
+		}
+
+	protected:
+		const int defaultType = 0;
+		const int bonusPointType = 1;
+		int pointValue;
+		int type;
+		bool isRendered = true;
+		Vector4 colour;
 	};
 
 	class playerObject : public GameObject {
@@ -144,6 +184,10 @@ namespace NCL::CSC8503 {
 			return pickUps.size();
 		}
 
+		int getScore() {
+			return score;
+		}
+
 		void updateItemTransforms(const float dt);
 
 		void Update(float dt) override {
@@ -152,19 +196,14 @@ namespace NCL::CSC8503 {
 
 	protected:
 		bool hasPickup = false;
-
 		Vector3 playerPos;
-
-		std::vector<GameObject*> pickUps;
+		int score = 0;
+		std::vector<pickUpObject*> pickUps;
 	};
 
 	class obstacleObject : public GameObject {
 	public:
 		void OnCollisionBegin(GameObject* other) override;
-	};
-
-	class movingPlatformObject : public GameObject {
-
 	};
 }
 

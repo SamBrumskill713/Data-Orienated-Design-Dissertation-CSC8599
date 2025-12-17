@@ -87,10 +87,16 @@ namespace NCL {
 				const float scale, bool isTrigger = false, int collisionLayer = defaultLayer);
 
 			pickUpObject* AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
-				const float scale, int pointvalue, bool isTrigger = true, int collisionLayer = pickupLayer);
+				const float scale, int type = 0, bool isTrigger = true, int collisionLayer = pickupLayer);
 
 			triggerObject* addTriggerVolume(const NCL::Maths::Vector3& position, const float scaleX,
 				const float scaleY, const float scaleZ, const Vector3& trigHalfDims, int collisionLayer = triggerVolume);
+
+			GameObject* addWall(const NCL::Maths::Vector3& position, Vector3& halfDims, float inverseMass = 0, 
+				int collisionLayer = defaultLayer);
+
+			GameObject* addDropOffZone(const NCL::Maths::Vector3& position, Vector3& halfDims, bool isTrigger = true,
+				int collisionLayer = dropZoneLayer);
 
 			//playerObject* initalisePlayerObject()
 			StateGameObject* AddStateObjectToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* characterMesh,
@@ -132,11 +138,14 @@ namespace NCL {
 			playerObject* playerObj = nullptr;
 			Quaternion* playerOrientation;
 			GameObject* playerGroundCollision = nullptr;
-			pickUpObject* testTrigger = nullptr;
+			pickUpObject* pickUp = nullptr;
 			triggerObject* trigVol = nullptr;
 			obstacleObject* pendulum = nullptr;
 			EnemyObject* enemyAI = nullptr;
 			levelElements* data;
+			GameObject* movableWall = nullptr;
+			GameObject* dropOffZone = nullptr;
+			GameObject* levelFloor = nullptr;
 			float gameTime;
 			std::vector<pickUpObject*> levelItems;
 
