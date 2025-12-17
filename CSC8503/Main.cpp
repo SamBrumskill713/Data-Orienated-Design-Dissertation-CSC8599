@@ -356,7 +356,7 @@ int main() {
 
 	Window* w = Window::CreateGameWindow(initInfo);
 
-	//TestPushdownAutomata(w);
+	TestPushdownAutomata(w);
 	//TestNetworking();
 
 	if (!w->HasInitialised()) {

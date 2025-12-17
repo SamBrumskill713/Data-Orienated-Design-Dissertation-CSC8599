@@ -669,8 +669,9 @@ void NCL::CSC8503::TutorialGame::initObstacleTest()
 
 void NCL::CSC8503::TutorialGame::initGame()
 {
-	gameTime = 5;
+	gameTime = 120.0f;
 	data = levelCreate();
+	//enemyAI = AddEnemyToWorld(Vector3(60, -7, 120), enemyMesh, 3.0f);
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
@@ -929,11 +930,11 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 		}
 		if (type == 'I') {
 			lNodes.position.y = 0;
-			pickUp = AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1);
+			levelItems.emplace_back(AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1));
 		}
 		if (type == 'B') {
 			lNodes.position.y = 0;
-			pickUp = AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1, 1);
+			levelItems.emplace_back(AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1, 1));
 		}
 	}
 	const float gridWorldWidth = (float)(gridWidth * nodeSize);

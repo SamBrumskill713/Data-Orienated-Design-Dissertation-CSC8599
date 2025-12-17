@@ -148,6 +148,7 @@ namespace NCL {
 			GameObject* levelFloor = nullptr;
 			float gameTime;
 			std::vector<pickUpObject*> levelItems;
+			std::vector<EnemyObject*> enemies;
 
 			//Coursework Additional functionality	
 			GameObject* lockedObject = nullptr;
