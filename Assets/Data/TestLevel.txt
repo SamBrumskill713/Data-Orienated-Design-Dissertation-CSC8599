@@ -3,8 +3,8 @@
 10
 2222222222
 2xxxxxxxx2
-2xxxxxxxx2
-2xxxxxxxx2
+2xxxOxxxx2
+2xxxOxxxx2
 2xxxxxxxx2
 2xDxxWxxx2
 2xxxIBxxx2

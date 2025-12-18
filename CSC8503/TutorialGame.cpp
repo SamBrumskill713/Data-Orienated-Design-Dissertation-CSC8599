@@ -78,6 +78,11 @@ TutorialGame::~TutorialGame() {
 }
 
 void TutorialGame::UpdateGame(float dt) {
+	// End screen is now handled by a PushdownState. Early-out keeps the world paused.
+	if (isGameOver || isWin) {
+		return;
+	}
+
 	world.GetMainCamera().UpdateCamera(dt);
 	if (useGravity) physics.UseGravity(useGravity);
 
@@ -109,20 +114,49 @@ void TutorialGame::UpdateGame(float dt) {
 
 	if (pendulum) {
 		Debug::Print("Obstacle isCollided" + std::to_string(pendulum->getIsCollided()), Vector2(0, 35), Debug::WHITE);
-	}
+	}*/
 
 	if (trigVol) {
 		Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
 			Debug::BLUE, 0.1f);
-	}*/
+	}
 
-	/*if (data) {
+	if (outOfBounds) {
+		Debug::debugDrawAABBs(outOfBounds->GetTransform().GetPosition(), outOfBounds->GetTransform().GetScale(),
+			Debug::BLUE, 0.1f);
+	}
+
+	if (data) {
+		int remaining = 0;
+		for (auto* p : levelItems) {
+			if (p && p->getIsRendered()) {
+				++remaining;
+			}
+		}
+		Debug::Print("Items Remaining: " + std::to_string(remaining), Vector2(0, 80));
 		Debug::Print("Time: " + std::to_string(gameTime), Vector2(0, 65), Debug::WHITE);
-		if (gameTime <= 0.0f) {
+
+		// Remove delivered items from levelItems (those set to not rendered)
+		levelItems.erase(
+			std::remove_if(levelItems.begin(), levelItems.end(),
+				[](pickUpObject* p) {
+					return p == nullptr || !p->getIsRendered();
+				}),
+			levelItems.end()
+		);
+
+		if (!isWin && levelItems.empty()) {
+			std::cout << "win\n";
+			Debug::Print("You Got all the items delivered. You Win!", Vector2(0, 85));
+			isWin = true; // trigger win screen in pushdown state
+		}
+
+		if (!isGameOver && gameTime <= 0.0f) {
 			Debug::Print("Game Over!", Vector2(0, 70));
 			gameTime = 0.0f;
+			isGameOver = true; // trigger game over screen in pushdown state
 		}
-	}*/
+	}
 
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
 		world.Clear();
@@ -424,7 +458,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
 	const float scale, bool isTrigger, int collisionLayer) {
 	float meshSize = scale;
-	float inverseMass = 50.0f;
+	float inverseMass = 20.0f;
 
 	playerObject* character = new playerObject();
 	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
@@ -553,7 +587,7 @@ triggerObject* NCL::CSC8503::TutorialGame::addTriggerVolume(const NCL::Maths::Ve
 	triggerObject* trigObj = new triggerObject();
 
 	AABBVolume* trigVolume = new AABBVolume(trigHalfDims, true);
-	trigVolume->collisionLayer = triggerVolume;
+	trigVolume->collisionLayer = collisionLayer;
 	trigObj->SetBoundingVolume(trigVolume);
 	trigObj->GetTransform().
 		SetScale(Vector3(scaleX, scaleY, scaleZ)).
@@ -669,9 +703,10 @@ void NCL::CSC8503::TutorialGame::initObstacleTest()
 
 void NCL::CSC8503::TutorialGame::initGame()
 {
-	gameTime = 120.0f;
+	levelItems.clear();
+	gameTime = 5.0f;
 	data = levelCreate();
-	//enemyAI = AddEnemyToWorld(Vector3(60, -7, 120), enemyMesh, 3.0f);
+	enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
@@ -855,8 +890,6 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 {
 	GameObject* anchor = AddCubeToWorld(anchorPos, Vector3(0.5f, 0.5f, 0.5f), 0.0f, true, terrainLayer);
 
-	trigVol = addTriggerVolume(anchorPos, 15, 0.5f, 2.5, Vector3(10, 0.5f, 5));
-
 	// Allow rotation around Z so it swings in X-Y plane (choose axis to match your desired swing plane)
 	const Vector3 swingAxis = Vector3(0, 0, 1); // or Vector3(1,0,0) to swing in Z-Y
 
@@ -893,6 +926,10 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 	bob->GetPhysicsObject()->ApplyLinearImpulse(Vector3(100.0f, 0, 0));
 	bob->GetPhysicsObject()->ApplyAngularImpulse(swingAxis * 5.0f);
 
+	Vector3 bobPos = bob->GetTransform().GetPosition();
+
+	trigVol = addTriggerVolume(bobPos + Vector3(10, 0, 0), 2.5, 2.5, 2.5, Vector3(2.5, 2.5, 2.5));
+
 	return bob;
 }
 
@@ -908,6 +945,8 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 	for (int i = 0; i < gridWidth * gridHeight; ++i) {
 		levelNode& lNodes= nodes[i];
 		int type = lNodes.type;
+		int obstacleNum = 0;
+		int itemNum = 0;
 		if (isdigit(type)) {
 			float unitHeight = cubeHeight * (float(type) - 48);
 			AddCubeToWorld(lNodes.position - Vector3(0, unitHeight + 8, 0), Vector3(nodeSize / 2, nodeSize / 2, nodeSize / 2), 0.0f);
@@ -915,6 +954,7 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 		if (type == 'P') {
 			lNodes.position.y = 0;
 			playerObj = AddPlayerToWorld(lNodes.position - Vector3(0, 10, 0), playerMesh, 3.0f);
+			playerObj->setRespawn(lNodes.position - Vector3(0, 10, 0));	
 			playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 				playerColliderLayer);
 		}
@@ -929,12 +969,22 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 			dropOffZone = addDropOffZone(lNodes.position - Vector3(0, (nodeSize / 2) + 8, 0), zoneHalfDims);
 		}
 		if (type == 'I') {
+			itemNum++;
+			levelItems.reserve(itemNum);
 			lNodes.position.y = 0;
 			levelItems.emplace_back(AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1));
 		}
 		if (type == 'B') {
+			itemNum++;
+			levelItems.reserve(itemNum);
 			lNodes.position.y = 0;
 			levelItems.emplace_back(AddPickupToWorld(lNodes.position - Vector3(0, (nodeSize / 2) + 10, 0), cubeMesh, 1, 1));
+		}
+		if (type == 'O') {
+			obstacleNum++;
+			obstacles.resize(obstacleNum);
+			lNodes.position.y = 10;
+			obstacles.emplace_back(pendulumConstraint(lNodes.position, 10, 2));
 		}
 	}
 	const float gridWorldWidth = (float)(gridWidth * nodeSize);
@@ -951,6 +1001,7 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 	const float floorHalfY = 1.0f; // thickness half-size
 
 	levelFloor = AddFloorToWorld(floorCenter, floorHalfX, floorHalfZ);
+	//outOfBounds = addTriggerVolume(floorCenter, 100, 100, 100, Vector3(100, 100, 100), outOfBoundLayer);
 	return level;
 }
 

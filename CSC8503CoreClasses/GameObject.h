@@ -172,7 +172,9 @@ namespace NCL::CSC8503 {
 
 	class playerObject : public GameObject {
 	public:
-		void setRespawn(const Vector3& position);
+		void setRespawn(Vector3 position);
+
+		void respawn();
 
 		void pickUpItem(pickUpObject* pickup);
 

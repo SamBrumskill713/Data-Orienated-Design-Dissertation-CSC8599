@@ -40,8 +40,11 @@ namespace NCL {
 
         protected:
             StateMachine* enemyStateMachine;
-            float moveSpeed = 10.0f;
-            float chaseSpeed = 20.0f;
+            float travellingSpeed = 5.0f;
+            float chaseSpeed = 10.0f;
+            float moveSpeed = travellingSpeed;
+            bool hitPlayer = false;
+            float cooldownTimer = 0.0f;
             GameWorld& gameWorld;
             levelElements* data;
             playerObject* player;

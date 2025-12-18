@@ -26,6 +26,8 @@
 
 #include "PhysicsSystem.h"
 
+
+
 #ifdef USEOPENGL
 #include "GameTechRenderer.h"
 #define CAN_COMPILE
@@ -41,6 +43,9 @@ using namespace CSC8503;
 #include <chrono>
 #include <thread>
 #include <sstream>
+#include <atomic>
+
+static std::atomic<bool> gReturnToMenu{ false };
 
 vector<Vector3> testNodes;
 
@@ -283,27 +288,32 @@ void TestPushdownAutomata(Window* w) {
 	}
 }
 
-class TestPacketReceiver : public PacketReceiver {
+class TestPacketReceiver : public PacketReceiver
+{
 public:
-	TestPacketReceiver(std::string name) {
+	TestPacketReceiver(std::string name)
+	{
 		this->name = name;
 	}
-	void ReceivePacket(int type, GamePacket* payload, int source = -1) override {
-		if (type == String_Message) {
+
+	void ReceivePacket(int type, GamePacket* payload, int source)
+	{
+		if (type == String_Message)
+		{
 			StringPacket* realPacket = (StringPacket*)payload;
 
 			std::string msg = realPacket->GetStringFromData();
 
-			std::cout << name << " received message: " << msg << std::endl;
+			std::cout << name << " recieved message: " << msg << std::endl;
 		}
 	}
-
 protected:
 	std::string name;
 };
 
 void TestNetworking()
 {
+	///*
 	NetworkBase::Initialise();
 
 	TestPacketReceiver serverReceiver("Server");
@@ -333,6 +343,7 @@ void TestNetworking()
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	NetworkBase::Destroy();
+	//*/
 }
 
 class IntroMenuState : public PushdownState {
@@ -351,13 +362,12 @@ public:
 					gameRef->InitWorld();
 				}
 				confirmPressed = false;
-				return PushdownResult::Pop; // start game
+				return PushdownResult::Pop; 
 			}
 			if (options[currentIndex] == "Quit") {
-				// Close application window immediately
 				Window::DestroyGameWindow();
 				confirmPressed = false;
-				return PushdownResult::NoChange; // outer while will exit as UpdateWindow() returns false
+				return PushdownResult::NoChange; 
 			}
 		}
 
@@ -411,6 +421,116 @@ private:
 	bool confirmPressed = false;
 	bool quitRequested = false;
 };
+
+class EndGameState : public PushdownState {
+public:
+	EndGameState(TutorialGame* game, Window* win, bool didWin, int score)
+		: gameRef(game), window(win), winState(didWin), finalScore(score) {
+	}
+
+	void OnAwake() override {}
+
+	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
+		const Vector4 titleCol = winState ? Debug::GREEN : Debug::RED;
+		Debug::Print(winState ? "YOU WIN!" : "GAME OVER", Vector2(40, 30), titleCol);
+		Debug::Print("Score: " + std::to_string(finalScore), Vector2(40, 40), Debug::WHITE);
+
+		Debug::Print("Press ENTER to Restart", Vector2(40, 55), Debug::YELLOW);
+		Debug::Print("Press M to Main Menu", Vector2(40, 63), Debug::YELLOW);
+		Debug::Print("Press ESC to Quit", Vector2(40, 71), Debug::YELLOW);
+
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::RETURN) ||
+			Window::GetKeyboard()->KeyPressed(KeyCodes::SPACE)) {
+			if (gameRef) {
+				gameRef->ClearEndState(); // re-init world and clear flags
+			}
+			return PushdownResult::Pop; // back to gameplay
+		}
+
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::M)) {
+			// Clear end flags and let GamePlayState push the menu
+			if (gameRef) {
+				gameRef->ClearEndState();
+			}
+			gReturnToMenu = true;
+			return PushdownResult::Pop; // remove EndGameState from stack
+		}
+
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE)) {
+			Window::DestroyGameWindow();
+			return PushdownResult::NoChange;
+		}
+		return PushdownResult::NoChange;
+	}
+
+private:
+	TutorialGame* gameRef = nullptr;
+	Window* window = nullptr;
+	bool winState = false;
+	int finalScore = 0;
+};
+
+// --- GamePlayState ---
+class GamePlayState : public PushdownState {
+public:
+	GamePlayState(TutorialGame* game, GameWorld* gw, PhysicsSystem* phys, Window* win)
+		: gameRef(game), world(gw), physics(phys), window(win) {
+	}
+
+	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
+		if (dt > 0.1f) {
+			std::cout << "Skipping large time delta" << std::endl;
+			return PushdownResult::NoChange;
+		}
+
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::PRIOR)) {
+			window->ShowConsole(true);
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NEXT)) {
+			window->ShowConsole(false);
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::T)) {
+			window->SetWindowPosition(0, 0);
+		}
+
+		window->SetTitle("Gametech frame time:" + std::to_string(1000.0f * dt));
+
+		// Core game updates
+		gameRef->UpdateGame(dt);
+
+		// Only tick world/physics if not in end state (keeps the scene paused)
+		if (!gameRef->IsGameOver() && !gameRef->IsWin()) {
+			world->UpdateWorld(dt);
+			physics->Update(dt);
+		}
+
+		// If a return to menu was requested, push the IntroMenuState
+		if (gReturnToMenu.load()) {
+			gReturnToMenu = false;
+			*newState = new IntroMenuState(gameRef, window);
+			return PushdownResult::Push;
+		}
+
+		// Detect end state and push end screen
+		if (gameRef->IsGameOver() || gameRef->IsWin()) {
+			const bool didWin = gameRef->IsWin();
+			const int score = gameRef->GetPlayerScore();
+			*newState = new EndGameState(gameRef, window, didWin, score);
+			return PushdownResult::Push;
+		}
+
+		return PushdownResult::NoChange;
+	}
+
+private:
+	TutorialGame* gameRef = nullptr;
+	GameWorld* world = nullptr;
+	PhysicsSystem* physics = nullptr;
+	Window* window = nullptr;
+};
+
+
+
 /*
 
 The main function should look pretty familar to you!
@@ -433,7 +553,7 @@ int main() {
 	Window* w = Window::CreateGameWindow(initInfo);
 
 	//TestPushdownAutomata(w);
-	//TestNetworking();
+	TestNetworking();
 
 	if (!w->HasInitialised()) {
 		return -1;
@@ -459,47 +579,60 @@ int main() {
 		while (w->UpdateWindow()) {
 			float dt = w->GetTimer().GetTimeDeltaSeconds();
 			if (!menuMachine.Update(dt)) {
-				// Menu popped -> start game
 				break;
 			}
 
-			// Render UI
+			renderer->Update(dt);
+			renderer->Render();
+			Debug::UpdateRenderables(dt);
+		}
+	}
+
+	{
+		PushdownMachine gameMachine(new GamePlayState(g, world, physics, w));
+		while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+			float dt = w->GetTimer().GetTimeDeltaSeconds();
+			if (!gameMachine.Update(dt)) {
+				break;
+			}
+
+			// Always render current state (gameplay or end screen overlay)
 			renderer->Update(dt);
 			renderer->Render();
 			Debug::UpdateRenderables(dt);
 		}
 	}
 	//TestPathfinding();
-	w->GetTimer().GetTimeDeltaSeconds(); //Clear the timer so we don't get a larget first dt!
-	while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
-		float dt = w->GetTimer().GetTimeDeltaSeconds();
-		if (dt > 0.1f) {
-			std::cout << "Skipping large time delta" << std::endl;
-			continue; //must have hit a breakpoint or something to have a 1 second frame time!
-		}
-		if (Window::GetKeyboard()->KeyPressed(KeyCodes::PRIOR)) {
-			w->ShowConsole(true);
-		}
-		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NEXT)) {
-			w->ShowConsole(false);
-		}
+	//w->GetTimer().GetTimeDeltaSeconds();
+	//while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+	//	float dt = w->GetTimer().GetTimeDeltaSeconds();
+	//	if (dt > 0.1f) {
+	//		std::cout << "Skipping large time delta" << std::endl;
+	//		continue; 
+	//	}
+	//	if (Window::GetKeyboard()->KeyPressed(KeyCodes::PRIOR)) {
+	//		w->ShowConsole(true);
+	//	}
+	//	if (Window::GetKeyboard()->KeyPressed(KeyCodes::NEXT)) {
+	//		w->ShowConsole(false);
+	//	}
 
-		if (Window::GetKeyboard()->KeyPressed(KeyCodes::T)) {
-			w->SetWindowPosition(0, 0);
-		}
+	//	if (Window::GetKeyboard()->KeyPressed(KeyCodes::T)) {
+	//		w->SetWindowPosition(0, 0);
+	//	}
 
-		w->SetTitle("Gametech frame time:" + std::to_string(1000.0f * dt));
+	//	w->SetTitle("Gametech frame time:" + std::to_string(1000.0f * dt));
 
-		g->UpdateGame(dt);
+	//	g->UpdateGame(dt);
 
-		world->UpdateWorld(dt);
-		physics->Update(dt);
-		renderer->Update(dt);	
-		renderer->Render();
-		
-		Debug::UpdateRenderables(dt);
-		//TestStateMachine();
-		//DisplayPathfinding();
-	}
+	//	world->UpdateWorld(dt);
+	//	physics->Update(dt);
+	//	renderer->Update(dt);	
+	//	renderer->Render();
+	//	
+	//	Debug::UpdateRenderables(dt);
+	//	//TestStateMachine();
+	//	//DisplayPathfinding();
+	//}
 	Window::DestroyGameWindow();
 }

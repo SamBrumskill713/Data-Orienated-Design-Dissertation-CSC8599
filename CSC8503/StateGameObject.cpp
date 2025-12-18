@@ -5,6 +5,7 @@
 #include "PhysicsObject.h"
 #include "CollisionDetection.h"
 #include "CollisionVolume.h"
+#include "PhysicsSystem.h"
 #include "Debug.h"
 
 using namespace NCL;
@@ -138,13 +139,26 @@ void NCL::CSC8503::EnemyObject::moveEnemy()
 void NCL::CSC8503::EnemyObject::Update(float dt)
 {
 	enemyStateMachine->Update(dt);
+	if (hitPlayer) {
+		cooldownTimer -= dt;
+		if (cooldownTimer <= 0.0f) {
+			cooldownTimer = 0.0f;
+			hitPlayer = false;
+		}
+	}
+	Debug::Print("cool down timer: " + std::to_string(cooldownTimer), Vector2(0, 90));
 }
 
 void NCL::CSC8503::EnemyObject::OnCollisionBegin(GameObject* other)
 {
+	if(hitPlayer){
+		std::cout << "hasn't cooled down\n";
+		return;
+	}
+
 	if (other->GetBoundingVolume()->collisionLayer == NCL::playerLayer) {
-		std::cout << "hit\n";
-		this->GetPhysicsObject()->ApplyLinearImpulse(Vector3(100, 0, 0));
+		hitPlayer = true;
+		cooldownTimer = 5.0f;
 	}
 }
 

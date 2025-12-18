@@ -17,8 +17,8 @@ namespace NCL::CSC8503 {
 	};
 
 	struct DeltaPacket : public GamePacket {
-		int		fullID		= -1;
-		int		objectID	= -1;
+		int		fullID = -1;
+		int		objectID = -1;
 		char	pos[3];
 		char	orientation[4];
 
@@ -37,7 +37,7 @@ namespace NCL::CSC8503 {
 		}
 	};
 
-	class NetworkObject		{
+	class NetworkObject {
 	public:
 		NetworkObject(GameObject& o, int id);
 		virtual ~NetworkObject();
@@ -55,11 +55,11 @@ namespace NCL::CSC8503 {
 
 		bool GetNetworkState(int frameID, NetworkState& state);
 
-		virtual bool ReadDeltaPacket(DeltaPacket &p);
-		virtual bool ReadFullPacket(FullPacket &p);
+		virtual bool ReadDeltaPacket(DeltaPacket& p);
+		virtual bool ReadFullPacket(FullPacket& p);
 
-		virtual bool WriteDeltaPacket(GamePacket**p, int stateID);
-		virtual bool WriteFullPacket(GamePacket**p);
+		virtual bool WriteDeltaPacket(GamePacket** p, int stateID);
+		virtual bool WriteFullPacket(GamePacket** p);
 
 		GameObject& object;
 

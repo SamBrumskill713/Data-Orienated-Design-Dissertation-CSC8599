@@ -22,30 +22,33 @@ struct GamePacket {
 	short type;
 
 	GamePacket() {
-		type		= BasicNetworkMessages::None;
-		size		= 0;
+		type = BasicNetworkMessages::None;
+		size = 0;
 	}
 
 	GamePacket(short type) : GamePacket() {
-		this->type	= type;
+		this->type = type;
 	}
 
 	int GetTotalSize() {
 		return sizeof(GamePacket) + size;
 	}
 };
-
-struct StringPacket : public GamePacket {
+struct StringPacket : public GamePacket
+{
 	char stringData[256];
 
-	StringPacket(const std::string& message) {
+	StringPacket(const std::string& message)
+	{
 		type = BasicNetworkMessages::String_Message;
 		size = (short)message.length();
 
 		memcpy(stringData, message.data(), size);
-	}
-	
-	std::string GetStringFromData() {
+
+	};
+
+	std::string GetStringFromData()
+	{
 		std::string realString(stringData);
 		realString.resize(size);
 		return realString;
@@ -57,7 +60,7 @@ public:
 	virtual void ReceivePacket(int type, GamePacket* payload, int source = -1) = 0;
 };
 
-class NetworkBase	{
+class NetworkBase {
 public:
 	static void Initialise();
 	static void Destroy();
@@ -83,8 +86,8 @@ protected:
 		if (range.first == packetHandlers.end()) {
 			return false; //no handlers for this message type!
 		}
-		first	= range.first;
-		last	= range.second;
+		first = range.first;
+		last = range.second;
 		return true;
 	}
 

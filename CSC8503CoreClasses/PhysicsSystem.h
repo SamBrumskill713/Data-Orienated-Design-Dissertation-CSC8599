@@ -46,6 +46,9 @@ namespace NCL {
 
 			void ImpulseResolveCollision(GameObject& a , GameObject&b, CollisionDetection::ContactPoint& p) const;
 
+			void ImpulseResolveCollisionCustom(GameObject& a, GameObject& b, CollisionDetection::ContactPoint& p,
+				float impulseScale, float restitution) const;
+
 			GameWorld& gameWorld;
 
 			bool	applyGravity;

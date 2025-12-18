@@ -1,6 +1,7 @@
 #pragma once
 #include "RenderObject.h"
 #include "../CSC8503CoreClasses/CollisionVolume.h"
+#include "../CSC8503CoreClasses/GameObject.h"
 namespace NCL {
 	class Controller;
 
@@ -28,6 +29,15 @@ namespace NCL {
 			~TutorialGame();
 			void InitWorld();
 			virtual void UpdateGame(float dt);
+			bool IsGameOver() const { return isGameOver; }
+			bool IsWin() const { return isWin; }
+			int  GetPlayerScore() const { return playerObj ? playerObj->getScore() : 0; }
+
+			void ClearEndState() {
+				isGameOver = false;
+				isWin = false;
+				InitWorld();
+			}
 
 		protected:
 			void InitCamera();
@@ -138,6 +148,7 @@ namespace NCL {
 			GameObject* playerGroundCollision = nullptr;
 			pickUpObject* pickUp = nullptr;
 			triggerObject* trigVol = nullptr;
+			triggerObject* outOfBounds = nullptr;
 			obstacleObject* pendulum = nullptr;
 			EnemyObject* enemyAI = nullptr;
 			levelElements* data;
@@ -145,8 +156,11 @@ namespace NCL {
 			GameObject* dropOffZone = nullptr;
 			GameObject* levelFloor = nullptr;
 			float gameTime;
+			bool isGameOver = false;
+			bool isWin = false;
 			std::vector<pickUpObject*> levelItems;
 			std::vector<EnemyObject*> enemies;
+			std::vector<obstacleObject*> obstacles;
 
 			//Coursework Additional functionality	
 			GameObject* lockedObject = nullptr;

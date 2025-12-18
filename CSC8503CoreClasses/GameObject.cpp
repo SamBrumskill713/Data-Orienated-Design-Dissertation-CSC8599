@@ -60,7 +60,7 @@ void GameObject::UpdateBroadphaseAABB()
 	}
 }
 
-void NCL::CSC8503::playerObject::setRespawn(const Vector3& position)
+void NCL::CSC8503::playerObject::setRespawn(Vector3 position)
 {
 	playerPos = position;
 	GetTransform().SetPosition(playerPos);
@@ -69,6 +69,11 @@ void NCL::CSC8503::playerObject::setRespawn(const Vector3& position)
 		phys->SetLinearVelocity(Vector3(0, 0, 0));
 		phys->SetAngularVelocity(Vector3(0, 0, 0));
 	}
+}
+
+void NCL::CSC8503::playerObject::respawn()
+{
+	this->GetTransform().SetPosition(playerPos);
 }
 
 void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
@@ -85,12 +90,43 @@ void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
 
 void NCL::CSC8503::playerObject::removeItem()
 {
-	/*for (int i = 0; i < pickUps.size(); ++i) {
-		if (auto* pickVol = const_cast<CollisionVolume*>(pickUps[i]->GetBoundingVolume())) {
-			pickVol->collisionLayer = pickupLayer;
-		}
-	}*/
+	if (pickUps.empty()) {
+		hasPickup = false;
+		return;
+	}
+
+	pickUpObject* droppedItem = pickUps.back();
+
 	pickUps.pop_back();
+
+	Vector3 vel = Vector3(0, 0, 0);
+
+	if (auto* droppedPhysics = droppedItem->GetPhysicsObject()) {
+		vel = droppedPhysics->GetLinearVelocity();
+	}
+
+	Vector3 backDir = Vector::Length(vel) > 0.001f ? Vector::Normalise(vel) : Vector3(0, 0, 1);
+
+	const float dropDistance = 5.0f;
+	const float dropImpulse = 10.0f;
+
+	Vector3 playerPos = GetTransform().GetPosition();
+	Vector3 dropPos = playerPos + backDir * dropDistance;
+	dropPos.y = playerPos.y;
+
+	// Place item behind the player and make it visible again
+	droppedItem->GetTransform().SetPosition(dropPos);
+
+	if (const CollisionVolume* droppedVol = droppedItem->GetBoundingVolume()) {
+		auto* vol = const_cast<CollisionVolume*>(droppedVol);
+		vol->collisionLayer = pickupLayer;
+	}
+
+	if (auto* itemPhys = droppedItem->GetPhysicsObject()) {
+		itemPhys->SetLinearVelocity(Vector3(0, 0, 0));
+		itemPhys->ClearForces();
+		itemPhys->ApplyLinearImpulse(backDir * dropImpulse);
+	}
 }
 
 void NCL::CSC8503::playerObject::OnCollisionBegin(GameObject* other)
@@ -150,17 +186,6 @@ void NCL::CSC8503::obstacleObject::OnCollisionBegin(GameObject* other)
 {
 	if (!other || !other->GetBoundingVolume()) {
 		return;
-	}
-
-	if (other->GetBoundingVolume()->collisionLayer == playerLayer) {
-		std::cout << "hit player\n";
-		if (auto* playerObj = dynamic_cast<playerObject*>(other)) {
-			auto playerPhys = playerObj->GetPhysicsObject();
-			if (playerPhys) {
-				playerPhys->ApplyLinearImpulse(Vector3(0.5f, 0, 0));
-			}
-			std::cout << "hit player\n";
-		}
 	}
 
 	if (other->GetBoundingVolume()->collisionLayer == triggerVolume) {

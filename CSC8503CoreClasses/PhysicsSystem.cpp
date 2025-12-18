@@ -215,12 +215,22 @@ void PhysicsSystem::BasicCollisionDetection()
 			}
 			CollisionDetection::CollisionInfo info;
 			if (CollisionDetection::ObjectIntersection(*i, *j, info)) {
-				/*std::cout << "Collision between " << (*i)->GetName() << " and " 
-					<< (*j)->GetName() << std::endl;*/
 				(*i)->setIsCollided(true);
 				(*j)->setIsCollided(true);
+
+				const int layerA = (*i)->GetBoundingVolume()->collisionLayer;
+				const int layerB = (*j)->GetBoundingVolume()->collisionLayer;
+				const bool playerEnemy =
+					(layerA == playerLayer && layerB == enemyLayer) ||
+					(layerA == enemyLayer && layerB == playerLayer);
+
 				if (!(*i)->GetBoundingVolume()->isTrigger && !(*j)->GetBoundingVolume()->isTrigger) {
-					ImpulseResolveCollision(*info.a, *info.b, info.point);
+					if (playerEnemy) {
+						ImpulseResolveCollisionCustom(*info.a, *info.b, info.point, 2.5, 0.66);
+					}
+					else {
+						ImpulseResolveCollision(*info.a, *info.b, info.point);
+					}
 				}
 				info.framesLeft = numCollisionFrames;
 				allCollisions.insert(info);
@@ -287,6 +297,49 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	physB->ApplyAngularImpulse(Vector::Cross(relativeB, -fullImpulse));
 }
 
+void PhysicsSystem::ImpulseResolveCollisionCustom(GameObject& a, GameObject& b, CollisionDetection::ContactPoint& p,
+	float impulseScale, float restitution) const
+{
+	PhysicsObject* physA = a.GetPhysicsObject();
+	PhysicsObject* physB = b.GetPhysicsObject();
+	Transform& transformA = a.GetTransform();
+	Transform& transformB = b.GetTransform();
+
+	float totalMass = physA->GetInverseMass() + physB->GetInverseMass();
+	if (totalMass == 0) return;
+
+	transformA.SetPosition(transformA.GetPosition() - (p.normal * p.penetration * (physA->GetInverseMass() / totalMass)));
+	transformB.SetPosition(transformB.GetPosition() + (p.normal * p.penetration * (physB->GetInverseMass() / totalMass)));
+
+	Vector3 relativeA = p.localA;
+	Vector3 relativeB = p.localB;
+
+	Vector3 angVelocityA = Vector::Cross(physA->GetAngularVelocity(), relativeA);
+	Vector3 angVelocityB = Vector::Cross(physB->GetAngularVelocity(), relativeB);
+
+	Vector3 fullVelocityA = physA->GetLinearVelocity() + angVelocityA;
+	Vector3 fullVelocityB = physB->GetLinearVelocity() + angVelocityB;
+
+	Vector3 contactVelocity = fullVelocityB - fullVelocityA;
+	float impulseForce = Vector::Dot(contactVelocity, p.normal);
+
+	Vector3 inertiaA = Vector::Cross(physA->GetInertiaTensor() * Vector::Cross(relativeA, p.normal), relativeA);
+	Vector3 inertiaB = Vector::Cross(physB->GetInertiaTensor() * Vector::Cross(relativeB, p.normal), relativeB);
+	float angularEffect = Vector::Dot(inertiaA + inertiaB, p.normal);
+
+	const float cRestitution = restitution; 
+	float j = (-(1.0f + cRestitution) * impulseForce) / (totalMass + angularEffect);
+
+	j *= impulseScale;
+
+	Vector3 fullImpulse = p.normal * j;
+
+	physA->ApplyLinearImpulse(-fullImpulse);
+	physB->ApplyLinearImpulse(fullImpulse);
+	physA->ApplyAngularImpulse(Vector::Cross(relativeA, -fullImpulse));
+	physB->ApplyAngularImpulse(Vector::Cross(relativeB, fullImpulse));
+}
+
 /*
 
 Later, we replace the BasicCollisionDetection method with a broadphase
@@ -339,10 +392,20 @@ void PhysicsSystem::NarrowPhase()
 			info.a->setIsCollided(true);
 			info.b->setIsCollided(true);
 			if (!info.a->GetBoundingVolume()->isTrigger && !info.b->GetBoundingVolume()->isTrigger) {
-				ImpulseResolveCollision(*info.a, *info.b, info.point);
+				const int layerA = info.a->GetBoundingVolume()->collisionLayer;
+				const int layerB = info.b->GetBoundingVolume()->collisionLayer;
+				const bool playerEnemy =
+					(layerA == playerLayer && layerB == enemyLayer) ||
+					(layerA == enemyLayer && layerB == playerLayer);
+
+				if (playerEnemy) {
+					// Uses your tunables: impulseScale, restitutionScale
+					ImpulseResolveCollisionCustom(*info.a, *info.b, info.point, 1.5, 0.66);
+				}
+				else {
+					ImpulseResolveCollision(*info.a, *info.b, info.point);
+				}
 			}
-			info.framesLeft = numCollisionFrames;
-			allCollisions.insert(info);
 		}
 	}
 }
