@@ -93,6 +93,9 @@ NetworkedGame::NetworkedGame(GameWorld& gameWorld, GameTechRendererInterface& re
 	packetsToSnapshot = 0;
 
 	allowLocalPlayerControl = thisServer != nullptr;
+
+	// Ensure localPlayer refers to the server host only (never a client)
+	localPlayer = nullptr;
 }
 
 NetworkedGame::~NetworkedGame() {
@@ -114,9 +117,12 @@ void NetworkedGame::StartAsServer() {
 
 	// NEW: server status
 	std::cout << "[Server] Started on port " << NetworkBase::GetDefaultPort() << " (max clients: 4)" << std::endl;
-	//Debug::Print("Server: Running (F10 to connect a client)", Vector2(5, 5), Debug::GREEN);
 
 	StartLevel();
+
+	// Host's local player is the server's player
+	localPlayer = playerObj;
+	SetCameraTarget(localPlayer);
 }
 
 void NetworkedGame::StartAsClient(char a, char b, char c, char d) {
@@ -132,7 +138,8 @@ void NetworkedGame::StartAsClient(char a, char b, char c, char d) {
 	SetLocalPlayerControl(false);
 	StartLevel();
 
-	// Keep local player alive; we don't control it client-side
+	// Clients should not use localPlayer; they use ownedNetId to find their proxy
+	localPlayer = nullptr;
 	SetCameraTarget(nullptr);
 }
 
@@ -206,29 +213,20 @@ void NetworkedGame::UpdateAsClient(float dt) {
 	thisClient->SendPacket(input);
 
 	// Client-side orientation prediction for owned player (yaw-only)
-	if (localPlayer && ownedNetId >= 0) {
-		const float yawDeg = world.GetMainCamera().GetYaw();
-		const Quaternion q = Quaternion::EulerAnglesToQuaternion(0.0f, yawDeg, 0.0f);
-		localPlayer->GetTransform().SetOrientation(q);
+	if (ownedNetId >= 0) {
+		auto it = netIdToObject.find(ownedNetId);
+		if (it != netIdToObject.end() && it->second) {
+			GameObject* mine = it->second;
+			const float yawDeg = world.GetMainCamera().GetYaw();
+			const Quaternion q = Quaternion::EulerAnglesToQuaternion(0.0f, yawDeg, 0.0f);
+			mine->GetTransform().SetOrientation(q);
+		}
 	}
 
 	AcknowledgePacket ack(lastReceivedStateID);
 	thisClient->SendPacket(ack);
 
-	// Keep smoothing, but skip owned object (already done in your code)
-	/*for (auto& kv : gSmoothPos) {
-		if (kv.first == ownedNetId) continue;
-		SmoothPos& s = kv.second;
-		s.t += dt;
-		const float a = s.duration > 0.0f ? std::min(s.t / s.duration, 1.0f) : 1.0f;
-		if (auto it = netIdToObject.find(kv.first); it != netIdToObject.end() && it->second) {
-			GameObject* obj = it->second;
-			obj->GetTransform().SetPosition(s.from + (s.to - s.from) * a);
-		}
-	}*/
-
 	// Position interpolation (owned and remote)
-	// REMOVE the owned check so we also smooth the owned player's position
 	for (auto& kv : gSmoothPos) {
 		SmoothPos& s = kv.second;
 		s.t += dt;
@@ -253,14 +251,12 @@ void NetworkedGame::UpdateAsClient(float dt) {
 			Quaternion qFrom = s.from;
 			Quaternion qTo   = s.to;
 
-			// Hemisphere correction: ensure shortest arc
 			float dot = Quaternion::Dot(qFrom, qTo);
 			if (dot < 0.0f) {
 				qTo = -qTo;
 				dot = -dot;
 			}
 
-			// Prefer Slerp; if very close, fallback to Lerp to avoid numerical issues
 			Quaternion q;
 			if (dot > 0.9995f) {
 				q = Quaternion::Lerp(qFrom, qTo, a).Normalised();
@@ -365,7 +361,7 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			auto* input = reinterpret_cast<ClientInputPacket*>(payload);
 			GameObject* target = nullptr;
 			if (auto it = serverPlayers.find(source); it != serverPlayers.end()) {
-				target = it->second;
+				target = it->second; // clients only
 			}
 			if (!target) break;
 
@@ -533,9 +529,10 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 		if (thisClient) {
 			auto* op = reinterpret_cast<OwnershipPacket*>(payload);
 			GameObject* mine = GetOrCreateProxy(op->objectID);
-			localPlayer = mine;
 			ownedNetId = op->objectID;
-			SetCameraTarget(localPlayer);
+
+			// Do not assign localPlayer on client; keep it server-host only.
+			SetCameraTarget(mine);
 			// Do NOT create client ground collider; physics is server-only
 		}
 		break;

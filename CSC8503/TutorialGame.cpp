@@ -738,7 +738,7 @@ void NCL::CSC8503::TutorialGame::initGame()
 	levelItems.clear();
 	gameTime = 60.0f * 3;
 	data = levelCreate();
-	//enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
+	enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
