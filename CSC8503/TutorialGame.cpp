@@ -723,7 +723,7 @@ void NCL::CSC8503::TutorialGame::initGame()
 		enemies.reserve(4);
 		enemies.emplace_back(AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f)
 	}*/
-	enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
+	//enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
 	//AddEnemyToWorld(Vector3(60 + 10, -7, 60), enemyMesh, 3.0f);
 }
 
@@ -950,7 +950,7 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 
 levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 {
-	levelElements* level = new levelElements("TestLevel.txt");
+	levelElements* level = new levelElements("testLevel.txt");
 	int nodeSize = level->getNodeSize();
 	int gridWidth = level->getLevelWidth();
 	int gridHeight = level->getLevelHeight();

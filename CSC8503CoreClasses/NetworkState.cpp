@@ -5,6 +5,7 @@ using namespace CSC8503;
 
 NetworkState::NetworkState() {
 	stateID = 0;
+	score   = -1; // default: not set
 }
 
 NetworkState::~NetworkState() {

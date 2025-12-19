@@ -178,25 +178,23 @@ namespace NCL::CSC8503 {
 	class playerObject : public GameObject {
 	public:
 		void setRespawn(Vector3 position);
-
 		void respawn();
-
 		void pickUpItem(pickUpObject* pickup);
-
 		void removeItem();
-
 		void OnCollisionBegin(GameObject* other) override;
 
 		int getpickUpSize() {
 			return pickUps.size();
 		}
-
 		int getScore() {
 			return score;
 		}
+		
+		void setScore(int s) {
+			score = s;
+		}
 
 		void updateItemTransforms(const float dt);
-
 		void Update(float dt) override {
 			updateItemTransforms(dt);
 		}

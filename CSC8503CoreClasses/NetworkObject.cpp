@@ -60,8 +60,14 @@ bool NetworkObject::ReadFullPacket(FullPacket& p)
 	object.GetTransform().SetPosition(lastFullState.position);
 	object.GetTransform().SetOrientation(lastFullState.orientation);
 
-	stateHistory.emplace_back(lastFullState);
+	// New: if this object is a player proxy, apply authoritative score
+	if (lastFullState.score >= 0) {
+		if (auto* pObj = dynamic_cast<playerObject*>(&object)) {
+			pObj->setScore(lastFullState.score);
+		}
+	}
 
+	stateHistory.emplace_back(lastFullState);
 	return true;
 }
 
@@ -100,6 +106,14 @@ bool NetworkObject::WriteFullPacket(GamePacket** p)
 	fp->fullState.position = object.GetTransform().GetPosition();
 	fp->fullState.orientation = object.GetTransform().GetOrientation();
 	fp->fullState.stateID = lastFullState.stateID++;
+
+	// New: include score when this network object is a player
+	if (auto* pObj = dynamic_cast<playerObject*>(&object)) {
+		fp->fullState.score = pObj->getScore();
+	} else {
+		fp->fullState.score = -1;
+	}
+
 	*p = fp;
 	return true;
 }
