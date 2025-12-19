@@ -216,7 +216,7 @@ void NetworkedGame::UpdateAsClient(float dt) {
 	thisClient->SendPacket(ack);
 
 	// Keep smoothing, but skip owned object (already done in your code)
-	for (auto& kv : gSmoothPos) {
+	/*for (auto& kv : gSmoothPos) {
 		if (kv.first == ownedNetId) continue;
 		SmoothPos& s = kv.second;
 		s.t += dt;
@@ -225,7 +225,7 @@ void NetworkedGame::UpdateAsClient(float dt) {
 			GameObject* obj = it->second;
 			obj->GetTransform().SetPosition(s.from + (s.to - s.from) * a);
 		}
-	}
+	}*/
 
 	// Position interpolation (owned and remote)
 	// REMOVE the owned check so we also smooth the owned player's position
@@ -422,7 +422,10 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 
 			// Always smooth position; but skip orientation smoothing if owned
 			SmoothPos sp{};
-			sp.from = predictedPos; sp.to = serverPos; sp.t = 0.0f; sp.duration = 1.0f / 20.0f;
+			sp.from = predictedPos;
+			sp.to   = serverPos;
+			sp.t    = 0.0f;
+			sp.duration = (fp->objectID == ownedNetId) ? 0.0f : (1.0f / 20.0f); // no lag for owned
 			gSmoothPos[fp->objectID] = sp;
 
 			if (fp->objectID != ownedNetId) {
@@ -459,7 +462,10 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				const Quaternion serverOri = obj->GetTransform().GetOrientation();
 
 				SmoothPos sp{};
-				sp.from = predictedPos; sp.to = serverPos; sp.t = 0.0f; sp.duration = 1.0f / 20.0f;
+				sp.from = predictedPos;
+				sp.to   = serverPos;
+				sp.t    = 0.0f;
+				sp.duration = (dp->objectID == ownedNetId) ? 0.0f : (1.0f / 20.0f); // no lag for owned
 				gSmoothPos[dp->objectID] = sp;
 
 				if (dp->objectID != ownedNetId) {

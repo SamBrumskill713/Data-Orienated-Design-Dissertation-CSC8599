@@ -80,6 +80,15 @@ TutorialGame::~TutorialGame() {
 void TutorialGame::UpdateGame(float dt) {
 	// End screen is now handled by a PushdownState. Early-out keeps the world paused.
 	if (isGameOver || isWin) {
+		// Draw end screen overlay before returning
+		if (isWin) {
+			Debug::Print("YOU WIN!",             Vector2(35, 45), Debug::GREEN);
+			Debug::Print("All items delivered.", Vector2(30, 50), Debug::WHITE);
+		} else {
+			Debug::Print("GAME OVER!",        Vector2(33, 45), Debug::RED);
+			Debug::Print("Time ran out.",     Vector2(34, 50), Debug::WHITE);
+		}
+		Debug::Print("Press ESC to quit", Vector2(32, 60), Debug::WHITE);
 		return;
 	}
 
