@@ -33,6 +33,10 @@ namespace NCL::CSC8503 {
 
 		void BroadcastSnapshot(bool deltaFrame);
 		void UpdateMinimumState();
+
+		void RegisterNetworkObject(GameObject* obj, int netId);
+		GameObject* GetOrCreateProxy(int objectID);
+
 		std::map<int, int> stateIDs;
 
 		GameServer* thisServer;
@@ -40,9 +44,17 @@ namespace NCL::CSC8503 {
 		float timeToNextPacket;
 		int packetsToSnapshot;
 
+		bool allowLocalPlayerControl = false;
+
 		std::vector<NetworkObject*> networkObjects;
 
 		std::map<int, GameObject*> serverPlayers;
 		GameObject* localPlayer;
+
+		std::unordered_map<int, GameObject*> netIdToObject;
+		int nextObjectId = 1;
+		int ownedNetId = -1;
+
+		int lastReceivedStateID = 0;
 	};
 }

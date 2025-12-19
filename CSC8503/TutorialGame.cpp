@@ -88,11 +88,17 @@ void TutorialGame::UpdateGame(float dt) {
 
 	gameTime -= dt;
 
-	if (playerObj && playerGroundCollision && levelFloor) {
-		playerGroundCollision->GetTransform().SetPosition(playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
+	// Only run local player block on server/single-player
+	if (allowLocalPlayerControl && playerObj && playerGroundCollision && levelFloor) {
+		playerGroundCollision->GetTransform().SetPosition(
+			playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
 		movePlayerObject(dt);
-		attachCameraToPlayer();
-		Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(), Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
+
+		attachCameraToPlayer(); // local control: follow local player
+
+		// debug draws for local player...
+		Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(),
+							  Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
 		Debug::debugDrawAABBs(levelFloor->GetTransform().GetPosition(), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
 		Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.0f, 16);
 		Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
@@ -104,6 +110,11 @@ void TutorialGame::UpdateGame(float dt) {
 		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);
 		Debug::Print("player Score: " + std::to_string(playerObj->getScore()), Vector2(0, 55));
 	}
+
+	// Client camera follow: if you have a proxy target, follow it without touching playerObj
+    if (!allowLocalPlayerControl && cameraTarget) {
+        attachCameraToPlayer();
+    }
 
 	/*if (pickUp) {
 		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
@@ -278,30 +289,42 @@ void TutorialGame::InitCamera() {
 }
 
 void NCL::CSC8503::TutorialGame::attachCameraToPlayer() {
-	if (!playerObj) return;
+    // Server/single-player: follow local playerObj
+    // Client: follow cameraTarget only (never fall back to playerObj)
+    GameObject* target = allowLocalPlayerControl ? playerObj : cameraTarget;
+    if (!target) {
+        // No camera target available; skip
+        return;
+    }
+    if (!target->GetRenderObject()) {
+        return;
+    }
 
-	const float camYaw = world.GetMainCamera().GetYaw();
-	const Quaternion newPlayerOri = Quaternion::EulerAnglesToQuaternion(0.0f, camYaw, 0.0f);
-	playerObj->GetTransform().SetOrientation(newPlayerOri);
+    const float camYaw = world.GetMainCamera().GetYaw();
+    const Quaternion newOri = Quaternion::EulerAnglesToQuaternion(0.0f, camYaw, 0.0f);
+    target->GetTransform().SetOrientation(newOri);
 
-	// 2) Place camera behind/above using the updated orientation
-	const Transform& playerTransform = playerObj->GetTransform();
-	const Vector3    playerPos = playerTransform.GetPosition();
-	const Vector3    playerFwd = newPlayerOri * Vector3(0, 0, -1);
-	const Vector3    playerUp = newPlayerOri * Vector3(0, 1, 0);
+    const Transform& t = target->GetTransform();
+    const Vector3 pos = t.GetPosition();
+    const Vector3 fwd = newOri * Vector3(0, 0, -1);
+    const Vector3 up  = newOri * Vector3(0, 1, 0);
 
-	const float followDistance = 10.0f;
-	const float followHeight = 4.0f;
-
-	const Vector3 camPos = playerPos - playerFwd * followDistance + playerUp * followHeight;
-	world.GetMainCamera().SetPosition(camPos);
+    const float followDistance = 10.0f;
+    const float followHeight   = 4.0f;
+    const Vector3 camPos = pos - fwd * followDistance + up * followHeight;
+    world.GetMainCamera().SetPosition(camPos);
 }
 
-void NCL::CSC8503::TutorialGame::movePlayerObject(float dt)
+void TutorialGame::movePlayerObject(float dt)
 {
 	if (!playerObj) {
 		return;
 	}
+
+	if (!allowLocalPlayerControl) {
+		return;
+	}
+
 	Matrix4 view = world.GetMainCamera().BuildViewMatrix();
 	Matrix4 camWorld = Matrix::Inverse(view);
 
@@ -704,9 +727,9 @@ void NCL::CSC8503::TutorialGame::initObstacleTest()
 void NCL::CSC8503::TutorialGame::initGame()
 {
 	levelItems.clear();
-	gameTime = 5.0f;
+	gameTime = 60.0f * 3;
 	data = levelCreate();
-	enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
+	//enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {

@@ -146,13 +146,13 @@ void NCL::CSC8503::EnemyObject::Update(float dt)
 			hitPlayer = false;
 		}
 	}
-	Debug::Print("cool down timer: " + std::to_string(cooldownTimer), Vector2(0, 90));
+	//Debug::Print("cool down timer: " + std::to_string(cooldownTimer), Vector2(0, 90));
 }
 
 void NCL::CSC8503::EnemyObject::OnCollisionBegin(GameObject* other)
 {
 	if(hitPlayer){
-		std::cout << "hasn't cooled down\n";
+		//std::cout << "hasn't cooled down\n";
 		return;
 	}
 
@@ -175,9 +175,6 @@ void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 void NCL::CSC8503::EnemyObject::wander(float dt)
 {
 	if (data) {
-		std::cout << spotDuration << "\n";
-		std::cout << foundSpot << "\n";
-		std::cout << searchingForNextSpot << "\n";
 		if (Vector::Length(this->GetTransform().GetPosition() - targetPosition) < data->getNodeSize() || spotDuration >= 20.0f) {
 			searchingForNextSpot = true;
 			//setWalkingPoints();

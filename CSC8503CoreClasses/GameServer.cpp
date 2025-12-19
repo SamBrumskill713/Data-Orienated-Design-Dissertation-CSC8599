@@ -18,6 +18,7 @@ GameServer::~GameServer() {
 
 void GameServer::Shutdown() {
 	SendGlobalPacket(BasicNetworkMessages::Shutdown);
+	peers.clear(); // NEW
 	enet_host_destroy(netHandle);
 	netHandle = nullptr;
 }
@@ -52,31 +53,40 @@ bool GameServer::SendGlobalPacket(GamePacket& packet)
 	return true;
 }
 
-void GameServer::UpdateServer()
+// NEW: unicast to specific peer
+bool GameServer::SendPacketToPeer(int peerId, GamePacket& packet)
 {
-	if (!netHandle) return;
-	ENetEvent event;
-	while (enet_host_service(netHandle, &event, 0) > 0)
-	{
-		int type = event.type;
-		ENetPeer* p = event.peer;
-		int peer = p->incomingPeerID;
+	auto it = peers.find(peerId);
+	if (it == peers.end() || !it->second) return false;
 
-		if (type == ENetEventType::ENET_EVENT_TYPE_CONNECT)
-		{
-			std::cout << "Server: New client connected" << std::endl;
-		}
-		else if (type == ENetEventType::ENET_EVENT_TYPE_DISCONNECT)
-		{
-			std::cout << "Server: A client has disconnected" << std::endl;
-		}
-		else if (type == ENetEventType::ENET_EVENT_TYPE_RECEIVE)
-		{
-			GamePacket* packet = (GamePacket*)event.packet->data;
-			ProcessPacket(packet, peer);
-		}
-		enet_packet_destroy(event.packet);
-	}
+	ENetPacket* dataPacket = enet_packet_create(&packet, packet.GetTotalSize(), 0);
+	return enet_peer_send(it->second, 0, dataPacket) == 0;
+}
+
+void GameServer::UpdateServer() {
+    if (!netHandle) return;
+    ENetEvent event;
+    while (enet_host_service(netHandle, &event, 0) > 0) {
+        int type = event.type;
+        ENetPeer* p = event.peer;
+        int peer = p->incomingPeerID;
+
+        if (type == ENetEventType::ENET_EVENT_TYPE_CONNECT) {
+            peers[peer] = p; // NEW
+            std::cout << "Server: New client connected" << std::endl;
+            GamePacket pkt(Player_Connected);
+            ProcessPacket(&pkt, peer);
+        } else if (type == ENetEventType::ENET_EVENT_TYPE_DISCONNECT) {
+            std::cout << "Server: A client has disconnected" << std::endl;
+            GamePacket pkt(Player_Disconnected);
+            ProcessPacket(&pkt, peer);
+            peers.erase(peer); // NEW
+        } else if (type == ENetEventType::ENET_EVENT_TYPE_RECEIVE) {
+            GamePacket* packet = (GamePacket*)event.packet->data;
+            ProcessPacket(packet, peer);
+        }
+        enet_packet_destroy(event.packet);
+    }
 }
 
 void GameServer::SetGameWorld(GameWorld& g) {

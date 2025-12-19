@@ -348,8 +348,9 @@ void TestNetworking()
 
 class IntroMenuState : public PushdownState {
 public:
-	explicit IntroMenuState(TutorialGame* game, Window* win)
-		: gameRef(game), window(win) {
+	explicit IntroMenuState(TutorialGame*& game, GameWorld* gw, PhysicsSystem* phys, Window* win, 
+		GameTechRendererInterface* rend)
+		: gameRefPtr(game), world(gw), physics(phys), window(win), renderer(rend) {
 	}
 
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
@@ -357,17 +358,44 @@ public:
 		DrawMenu();
 
 		if (confirmPressed) {
-			if (options[currentIndex] == "Play") {
-				if (gameRef) {
-					gameRef->InitWorld();
+			const std::string& choice = options[currentIndex];
+
+			if (choice == "Play") {
+				if (gameRefPtr) {
+					gameRefPtr->InitWorld();
 				}
 				confirmPressed = false;
-				return PushdownResult::Pop; 
+				return PushdownResult::Pop; // proceed to gameplay
 			}
-			if (options[currentIndex] == "Quit") {
+
+			if (choice == "Host Online") {
+				// Swap TutorialGame -> NetworkedGame and host
+				if (gameRefPtr) {
+					delete gameRefPtr;
+					gameRefPtr = nullptr;
+				}
+				gameRefPtr = new NetworkedGame(*world, *renderer, *physics);
+				static_cast<NetworkedGame*>(gameRefPtr)->StartAsServer();
+				confirmPressed = false;
+				return PushdownResult::Pop;
+			}
+
+			if (choice == "Join Online") {
+				// Swap TutorialGame -> NetworkedGame and connect to localhost
+				if (gameRefPtr) {
+					delete gameRefPtr;
+					gameRefPtr = nullptr;
+				}
+				gameRefPtr = new NetworkedGame(*world, *renderer, *physics);
+				static_cast<NetworkedGame*>(gameRefPtr)->StartAsClient(127, 0, 0, 1);
+				confirmPressed = false;
+				return PushdownResult::Pop;
+			}
+
+			if (choice == "Quit") {
 				Window::DestroyGameWindow();
 				confirmPressed = false;
-				return PushdownResult::NoChange; 
+				return PushdownResult::NoChange;
 			}
 		}
 
@@ -414,9 +442,13 @@ private:
 		}
 	}
 
-	TutorialGame* gameRef = nullptr;
+	TutorialGame*& gameRefPtr;
+	GameWorld* world = nullptr;
+	PhysicsSystem* physics = nullptr;
 	Window* window = nullptr;
-	std::vector<std::string> options{ "Play", "Quit" };
+	GameTechRendererInterface* renderer = nullptr;
+
+	std::vector<std::string> options{ "Play", "Host Online", "Join Online", "Quit" };
 	int currentIndex = 0;
 	bool confirmPressed = false;
 	bool quitRequested = false;
@@ -473,8 +505,8 @@ private:
 // --- GamePlayState ---
 class GamePlayState : public PushdownState {
 public:
-	GamePlayState(TutorialGame* game, GameWorld* gw, PhysicsSystem* phys, Window* win)
-		: gameRef(game), world(gw), physics(phys), window(win) {
+	GamePlayState(TutorialGame* game, GameWorld* gw, PhysicsSystem* phys, Window* win, GameTechRendererInterface* rend)
+		: gameRef(game), world(gw), physics(phys), window(win), renderer(rend) {
 	}
 
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
@@ -507,7 +539,7 @@ public:
 		// If a return to menu was requested, push the IntroMenuState
 		if (gReturnToMenu.load()) {
 			gReturnToMenu = false;
-			*newState = new IntroMenuState(gameRef, window);
+			*newState = new IntroMenuState(gameRef, world, physics, window, renderer);
 			return PushdownResult::Push;
 		}
 
@@ -527,6 +559,7 @@ private:
 	GameWorld* world = nullptr;
 	PhysicsSystem* physics = nullptr;
 	Window* window = nullptr;
+	GameTechRendererInterface* renderer = nullptr; // ADD THIS MEMBER
 };
 
 
@@ -552,8 +585,8 @@ int main() {
 
 	Window* w = Window::CreateGameWindow(initInfo);
 
-	//TestPushdownAutomata(w);
-	TestNetworking();
+	TestPushdownAutomata(w);
+	//TestNetworking();
 
 	if (!w->HasInitialised()) {
 		return -1;
@@ -575,7 +608,7 @@ int main() {
 
 	// Intro menu loop
 	{
-		PushdownMachine menuMachine(new IntroMenuState(g, w));
+		PushdownMachine menuMachine(new IntroMenuState(g, world, physics, w, renderer));
 		while (w->UpdateWindow()) {
 			float dt = w->GetTimer().GetTimeDeltaSeconds();
 			if (!menuMachine.Update(dt)) {
@@ -589,19 +622,20 @@ int main() {
 	}
 
 	{
-		PushdownMachine gameMachine(new GamePlayState(g, world, physics, w));
+		PushdownMachine gameMachine(new GamePlayState(g, world, physics, w, renderer));
 		while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
 			float dt = w->GetTimer().GetTimeDeltaSeconds();
 			if (!gameMachine.Update(dt)) {
 				break;
 			}
 
-			// Always render current state (gameplay or end screen overlay)
 			renderer->Update(dt);
 			renderer->Render();
 			Debug::UpdateRenderables(dt);
 		}
 	}
+
+	Window::DestroyGameWindow();
 	//TestPathfinding();
 	//w->GetTimer().GetTimeDeltaSeconds();
 	//while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
@@ -634,5 +668,5 @@ int main() {
 	//	//TestStateMachine();
 	//	//DisplayPathfinding();
 	//}
-	Window::DestroyGameWindow();
+	//Window::DestroyGameWindow();
 }

@@ -39,6 +39,18 @@ namespace NCL {
 				InitWorld();
 			}
 
+			void SetLocalPlayerControl(bool enabled) {
+				allowLocalPlayerControl = enabled;
+			}
+
+			bool IsLocalPlayerControlEnabled() const {
+				return allowLocalPlayerControl;
+			}
+
+			void SetCameraTarget(GameObject* target) {
+				cameraTarget = target;
+			}
+
 		protected:
 			void InitCamera();
 
@@ -158,6 +170,8 @@ namespace NCL {
 			float gameTime;
 			bool isGameOver = false;
 			bool isWin = false;
+			bool allowLocalPlayerControl = true;
+			GameObject* cameraTarget = nullptr;
 			std::vector<pickUpObject*> levelItems;
 			std::vector<EnemyObject*> enemies;
 			std::vector<obstacleObject*> obstacles;
