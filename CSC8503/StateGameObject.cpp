@@ -62,7 +62,7 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 {
 	data = level;
 	gameWorld = game;
-	net = nullptr; // will be set by game setup via SetNetworkedGame(...)
+	net = nullptr;
 	enemyStateMachine = new StateMachine();
 	targetPosition = this->GetTransform().GetPosition();
 	if (data) {
@@ -124,8 +124,8 @@ void NCL::CSC8503::EnemyObject::drawWalkingPoints()
 	for (int i = 1; i < pathFindingNodes.size(); ++i) {
 		Vector3 a = pathFindingNodes[i - 1];
 		Vector3 b = pathFindingNodes[i];
-		Debug::debugDrawSphere(a, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
-		Debug::debugDrawSphere(b, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
+		//Debug::debugDrawSphere(a, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
+		//Debug::debugDrawSphere(b, 2.0f, Vector4(0, 1, 0, 1), 0.1f, 16);
 		Debug::DrawLine(a, b, Vector4(0, 0, 1, 1));
 	}
 }
@@ -168,7 +168,6 @@ void NCL::CSC8503::EnemyObject::OnCollisionBegin(GameObject* other)
 
 void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
-	// Prefer network-aware closest target; fallback to legacy player pointer.
 	GameObject* target = nullptr;
 	if (net) {
 		target = net->FindClosestServerPlayerFrom(this);
@@ -188,7 +187,7 @@ void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 void NCL::CSC8503::EnemyObject::wander(float dt)
 {
 	if (data) {
-		if (Vector::Length(this->GetTransform().GetPosition() - targetPosition) < data->getNodeSize() || spotDuration >= 20.0f) {
+		if (spotDuration >= 20.0f) {
 			searchingForNextSpot = true;
 			//setWalkingPoints();
 		}
@@ -213,7 +212,6 @@ void NCL::CSC8503::EnemyObject::wander(float dt)
 bool NCL::CSC8503::EnemyObject::canSeePlayer()
 {
 	std::vector<int> ignoreList;
-	// Prefer network-aware closest target; fallback to legacy player pointer.
 	GameObject* target = nullptr;
 	if (net) {
 		target = net->FindClosestServerPlayerFrom(this);

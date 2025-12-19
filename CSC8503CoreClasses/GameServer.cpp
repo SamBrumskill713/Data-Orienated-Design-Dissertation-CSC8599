@@ -18,7 +18,7 @@ GameServer::~GameServer() {
 
 void GameServer::Shutdown() {
 	SendGlobalPacket(BasicNetworkMessages::Shutdown);
-	peers.clear(); // NEW
+	peers.clear();
 	enet_host_destroy(netHandle);
 	netHandle = nullptr;
 }
@@ -53,7 +53,6 @@ bool GameServer::SendGlobalPacket(GamePacket& packet)
 	return true;
 }
 
-// NEW: unicast to specific peer
 bool GameServer::SendPacketToPeer(int peerId, GamePacket& packet)
 {
 	auto it = peers.find(peerId);
@@ -80,7 +79,7 @@ void GameServer::UpdateServer() {
             std::cout << "Server: A client has disconnected" << std::endl;
             GamePacket pkt(Player_Disconnected);
             ProcessPacket(&pkt, peer);
-            peers.erase(peer); // NEW
+            peers.erase(peer);
         } else if (type == ENetEventType::ENET_EVENT_TYPE_RECEIVE) {
             GamePacket* packet = (GamePacket*)event.packet->data;
             ProcessPacket(packet, peer);

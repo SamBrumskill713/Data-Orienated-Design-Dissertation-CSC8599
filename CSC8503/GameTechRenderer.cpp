@@ -188,7 +188,6 @@ void GameTechRenderer::BuildObjectLists() {
 		[&](GameObject* o) {
 			if (!o->IsActive()) return;
 
-			// Skip rendering pickups flagged as not rendered
 			if (auto* p = dynamic_cast<pickUpObject*>(o)) {
 				if (!p->getIsRendered()) {
 					return;

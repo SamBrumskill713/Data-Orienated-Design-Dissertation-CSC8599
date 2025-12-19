@@ -27,10 +27,10 @@ struct SmoothPos {
 	Vector3 from;
 	Vector3 to;
 	float   t = 0.0f;
-	float   duration = 1.0f / 20.0f;
+	float   duration = 1.0f / 120.0f;
 };
 
-// extend PredError
+
 static std::unordered_map<int, struct PredError> gPredErrors;
 struct PredError {
 	Vector3 posPending;
@@ -42,10 +42,10 @@ struct SmoothOri {
 	Quaternion from;
 	Quaternion to;
 	float t = 0.0f;
-	float duration = 1.0f / 20.0f;
+	float duration = 1.0f / 120.0f;
 };
 
-// Replace this helper to use degrees consistently:
+
 static inline Quaternion FacingFromYawDeg(float pitch, float yawDeg) {
 	return Quaternion::EulerAnglesToQuaternion(pitch, yawDeg, 0.0f);
 }
@@ -67,15 +67,15 @@ struct AcknowledgePacket : public GamePacket {
 	}
 };
 
-// Ensure identical layout across builds; pad to 4-byte boundary before floats
+
 struct ClientInputPacket : public GamePacket {
-	int            seq;       // 4 bytes
-	unsigned char  buttons;   // 1 byte
-	unsigned char  reserved[3]; // 3 bytes padding so next floats are aligned
-	float          pitch;     // 4 bytes
-	float          yaw;       // 4 bytes
+	int            seq;       
+	unsigned char  buttons;   
+	unsigned char  reserved[3]; 
+	float          pitch;     
+	float          yaw;       
 	ClientInputPacket() : GamePacket(Message), seq(0), buttons(0), reserved{0,0,0}, pitch(0.0f), yaw(0.0f) {
-		size = static_cast<short>(sizeof(ClientInputPacket)); // 16 bytes
+		size = static_cast<short>(sizeof(ClientInputPacket)); 
 	}
 };
 
@@ -98,7 +98,6 @@ NetworkedGame::NetworkedGame(GameWorld& gameWorld, GameTechRendererInterface& re
 
 	allowLocalPlayerControl = thisServer != nullptr;
 
-	// Ensure localPlayer refers to the server host only (never a client)
 	localPlayer = nullptr;
 }
 
@@ -113,18 +112,16 @@ void NetworkedGame::StartAsServer() {
 	thisServer->RegisterPacketHandler(Received_State, this);
 	thisServer->RegisterPacketHandler(Player_Connected, this);
 	thisServer->RegisterPacketHandler(Player_Disconnected, this);
-	thisServer->RegisterPacketHandler(Message, this); // handle ClientInputPacket
+	thisServer->RegisterPacketHandler(Message, this);
 
 	thisServer->SetGameWorld(world);
 
-	SetLocalPlayerControl(true); // server simulates movement
+	SetLocalPlayerControl(true); 
 
-	// NEW: server status
 	std::cout << "[Server] Started on port " << NetworkBase::GetDefaultPort() << " (max clients: 4)" << std::endl;
 
 	StartLevel();
 
-	// Host's local player is the server's player
 	localPlayer = playerObj;
 	SetCameraTarget(localPlayer);
 }
@@ -142,7 +139,6 @@ void NetworkedGame::StartAsClient(char a, char b, char c, char d) {
     SetLocalPlayerControl(false);
     StartLevel();
 
-    // Clients do not simulate AI – remove any pre-spawned local enemies
     {
         std::vector<GameObject*> toRemove;
         std::vector<GameObject*>::const_iterator first, last;
@@ -153,7 +149,7 @@ void NetworkedGame::StartAsClient(char a, char b, char c, char d) {
             }
         }
         for (auto* e : toRemove) {
-            world.RemoveGameObject(e, /*andDelete*/true);
+            world.RemoveGameObject(e, true);
         }
     }
 
@@ -170,7 +166,7 @@ void NetworkedGame::UpdateGame(float dt) {
 		else if (thisClient) {
 			UpdateAsClient(dt);
 		}
-		timeToNextPacket += 1.0f / 20.0f; //20hz server/client update
+		timeToNextPacket += 1.0f / 120.0f; //20hz server/client update
 	}
 
 	if (!thisServer && Window::GetKeyboard()->KeyPressed(KeyCodes::F9)) {
@@ -180,25 +176,23 @@ void NetworkedGame::UpdateGame(float dt) {
 		StartAsClient(127, 0, 0, 1);
 	}
 
-	// Always draw HUD every frame (prevents flicker)
-	if (thisServer) {
-		Debug::Print("Server: Snapshots sent = " + std::to_string(gBroadcastCount), Vector2(10, 13), Debug::WHITE);
-		if (gLastAckFromPeer >= 0) {
-			Debug::Print("Last Ack: peer=" + std::to_string(gLastAckFromPeer) +
-				" stateID=" + std::to_string(gLastAckStateId),
-				Vector2(5, 21), Debug::YELLOW);
-		}
-	}
-	if (thisClient) {
-		Debug::Print("Client Game", Vector2(0, 95));
-	}
+	//if (thisServer) {
+	//	Debug::Print("Server: Snapshots sent = " + std::to_string(gBroadcastCount), Vector2(0, 25), Debug::WHITE);
+	//	if (gLastAckFromPeer >= 0) {
+	//		Debug::Print("Last Ack: peer=" + std::to_string(gLastAckFromPeer) +
+	//			" stateID=" + std::to_string(gLastAckStateId),
+	//			Vector2(5, 21), Debug::YELLOW);
+	//	}
+	//}
+	/*if (thisClient) {
+		Debug::Print("Client Game", Vector2(0, 25));
+	}*/
 
-	// HUD each frame
 	if (thisServer) {
-		Debug::Print("Authority: Server", Vector2(0, 88), Debug::GREEN);
+		Debug::Print("Authority: Server", Vector2(0, 30), Debug::GREEN);
 	}
 	if (thisClient) {
-		Debug::Print("Authority: Server (local control disabled)", Vector2(0, 88), Debug::YELLOW);
+		Debug::Print("Authority: Server (local control disabled)", Vector2(0, 35), Debug::YELLOW);
 	}
 
 	TutorialGame::UpdateGame(dt);
@@ -210,9 +204,8 @@ void NCL::CSC8503::NetworkedGame::OnEnemySpawned(EnemyObject& enemy)
 }
 
 void NetworkedGame::UpdateAsServer(float dt) {
-	thisServer->UpdateServer();   // process connects / inputs / acks
-	BroadcastSnapshot(false);     // then broadcast states
-	// Remove per-tick prints here; HUD is drawn every frame in UpdateGame
+	thisServer->UpdateServer();   
+	BroadcastSnapshot(false);     
 }
 
 void NetworkedGame::UpdateAsClient(float dt) {
@@ -230,12 +223,10 @@ void NetworkedGame::UpdateAsClient(float dt) {
 	ClientInputPacket input;
 	input.seq    = seq++;
 	input.buttons= b;
-	// reserved[] left as zeros
-	input.pitch  = world.GetMainCamera().GetPitch(); // degrees
-	input.yaw    = world.GetMainCamera().GetYaw();   // degrees
+	input.pitch  = world.GetMainCamera().GetPitch(); 
+	input.yaw    = world.GetMainCamera().GetYaw();  
 	thisClient->SendPacket(input);
 
-	// Client-side orientation prediction for owned player (yaw-only)
 	if (ownedNetId >= 0) {
 		auto it = netIdToObject.find(ownedNetId);
 		if (it != netIdToObject.end() && it->second) {
@@ -249,7 +240,7 @@ void NetworkedGame::UpdateAsClient(float dt) {
 	AcknowledgePacket ack(lastReceivedStateID);
 	thisClient->SendPacket(ack);
 
-	// Position interpolation (owned and remote)
+	// Position interpolation
 	for (auto& kv : gSmoothPos) {
 		SmoothPos& s = kv.second;
 		s.t += dt;
@@ -260,8 +251,7 @@ void NetworkedGame::UpdateAsClient(float dt) {
 		}
 	}
 
-	// Orientation interpolation (owned and remote)
-	// keep skipping orientation for owned so camera prediction isn’t overwritten
+	// Orientation interpolation
 	for (auto& kv : gSmoothOri) {
 		if (kv.first == ownedNetId) continue;
 		SmoothOri& s = kv.second;
@@ -294,7 +284,7 @@ void NetworkedGame::UpdateAsClient(float dt) {
 	Debug::Print("Client Game", Vector2(0, 95));
 }
 
-void NetworkedGame::BroadcastSnapshot(bool /*deltaFrame*/) {
+void NetworkedGame::BroadcastSnapshot(bool deltaFrame) {
 	std::vector<GameObject*>::const_iterator first;
 	std::vector<GameObject*>::const_iterator last;
 	world.GetObjectIterators(first, last);
@@ -311,7 +301,6 @@ void NetworkedGame::BroadcastSnapshot(bool /*deltaFrame*/) {
 		const bool isPlayer = (vol->collisionLayer == playerLayer);
 		const bool isEnemy  = (dynamic_cast<EnemyObject*>(obj) != nullptr);
 
-		// Replicate players and enemies
 		if (!isPlayer && !isEnemy) {
 			continue;
 		}
@@ -328,21 +317,18 @@ void NetworkedGame::BroadcastSnapshot(bool /*deltaFrame*/) {
 			++packetsThisFrame;
 		}
 	}
-
 	gBroadcastCount += packetsThisFrame;
 }
 
 void NetworkedGame::UpdateMinimumState() {
-	//Periodically remove old data from the server
 	int minID = INT_MAX;
-	int maxID = 0; //we could use this to see if a player is lagging behind?
+	int maxID = 0; 
 
 	for (auto i : stateIDs) {
 		minID = std::min(minID, i.second);
 		maxID = std::max(maxID, i.second);
 	}
-	//every client has acknowledged reaching at least state minID
-	//so we can get rid of any old states!
+
 	std::vector<GameObject*>::const_iterator first;
 	std::vector<GameObject*>::const_iterator last;
 	world.GetObjectIterators(first, last);
@@ -352,7 +338,7 @@ void NetworkedGame::UpdateMinimumState() {
 		if (!o) {
 			continue;
 		}
-		o->UpdateStateHistory(minID); //clear out old states so they arent taking up memory...
+		o->UpdateStateHistory(minID);
 	}
 }
 
@@ -370,19 +356,16 @@ void NetworkedGame::StartLevel() {
 		const bool isPlayer = (vol->collisionLayer == playerLayer);
 		const bool isEnemy  = (dynamic_cast<EnemyObject*>(obj) != nullptr);
 
-		// Attach network state for players
 		if (isPlayer && !obj->GetNetworkObject()) {
 			const int id = nextObjectId++;
 			obj->SetNetworkObject(new NetworkObject(*obj, id));
 			netIdToObject[id] = obj;
 		}
 
-		// Ensure enemy AI gets session pointer
 		if (isEnemy) {
 			auto* enemy = static_cast<EnemyObject*>(obj);
 			enemy->SetNetworkedGame(this);
 
-			// Server: give enemies a network ID
 			if (thisServer && !obj->GetNetworkObject()) {
 				const int id = EnemyIdBias + (nextEnemyId++);
 				obj->SetNetworkObject(new NetworkObject(*obj, id));
@@ -399,7 +382,7 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			auto* input = reinterpret_cast<ClientInputPacket*>(payload);
 			GameObject* target = nullptr;
 			if (auto it = serverPlayers.find(source); it != serverPlayers.end()) {
-				target = it->second; // clients only
+				target = it->second;
 			}
 			if (!target) break;
 
@@ -408,17 +391,10 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			target->GetTransform().SetOrientation(facing);
 
 			const Vector3 euler = target->GetTransform().GetOrientation().ToEuler();
-			std::cout << "[Server] peer " << source
-					  << " yawDeg=" << yawDeg
-					  << " appliedEuler(y,p,r)=" << euler.y << ", " << euler.x << ", " << euler.z
-					  << " pos=" << target->GetTransform().GetPosition().x << ", "
-					  << target->GetTransform().GetPosition().y << ", "
-					  << target->GetTransform().GetPosition().z
-					  << std::endl;
 
 			if (auto* phys = target->GetPhysicsObject()) {
 				phys->SetAngularVelocity(Vector3(0.0f, 0.0f, 0.0f));
-				const float perTick   = 1.0f / 20.0f;
+				const float perTick   = 1.0f / 120.0f;
 				const float moveForce = 50.0f;
 				const Vector3 forward = facing * Vector3(0, 0, -1);
 				const Vector3 right   = facing * Vector3(1, 0,  0);
@@ -454,21 +430,19 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			const Vector3    serverPos = obj->GetTransform().GetPosition();
 			const Quaternion serverOri = obj->GetTransform().GetOrientation();
 
-			// Always smooth position; but skip orientation smoothing if owned
 			SmoothPos sp{};
 			sp.from = predictedPos;
 			sp.to   = serverPos;
 			sp.t    = 0.0f;
-			sp.duration = (fp->objectID == ownedNetId) ? 0.0f : (1.0f / 20.0f); // no lag for owned
+			sp.duration = (fp->objectID == ownedNetId) ? 0.0f : (1.0f / 120.0f);
 			gSmoothPos[fp->objectID] = sp;
 
 			if (fp->objectID != ownedNetId) {
 				SmoothOri so{};
-				so.from = predictedOri; so.to = serverOri; so.t = 0.0f; so.duration = 1.0f / 20.0f;
+				so.from = predictedOri; so.to = serverOri; so.t = 0.0f; so.duration = 1.0f / 120.0f;
 				gSmoothOri[fp->objectID] = so;
 			}
 
-			// Start from predicted
 			obj->GetTransform().SetPosition(predictedPos);
 			obj->GetTransform().SetOrientation(predictedOri);
 
@@ -499,12 +473,12 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				sp.from = predictedPos;
 				sp.to   = serverPos;
 				sp.t    = 0.0f;
-				sp.duration = (dp->objectID == ownedNetId) ? 0.0f : (1.0f / 20.0f); // no lag for owned
+				sp.duration = (dp->objectID == ownedNetId) ? 0.0f : (1.0f / 120.0f); 
 				gSmoothPos[dp->objectID] = sp;
 
 				if (dp->objectID != ownedNetId) {
 					SmoothOri so{};
-					so.from = predictedOri; so.to = serverOri; so.t = 0.0f; so.duration = 1.0f / 20.0f;
+					so.from = predictedOri; so.to = serverOri; so.t = 0.0f; so.duration = 1.0f / 120.0f;
 					gSmoothOri[dp->objectID] = so;
 				}
 
@@ -519,7 +493,6 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			auto* ack = reinterpret_cast<AcknowledgePacket*>(payload);
 			stateIDs[source] = ack->lastID;
 
-			// NEW: server ack feedback
 			gLastAckFromPeer = source;
 			gLastAckStateId = ack->lastID;
 			std::cout << "[Server] Ack from peer " << source << " for stateID " << ack->lastID << std::endl;
@@ -542,7 +515,6 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				netIdToObject[id] = p;
 				serverPlayers[source] = p;
 
-				// NEW: tell this peer which object it owns
 				OwnershipPacket own(id);
 				thisServer->SendPacketToPeer(source, own);
 			}
@@ -556,7 +528,7 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				GameObject* p = it->second;
 				serverPlayers.erase(it);
 				if (p) {
-					world.RemoveGameObject(p, /*andDelete*/true);
+					world.RemoveGameObject(p, true);
 				}
 			}
 			std::cout << "[Server] Player removed for peer " << source << "\n";
@@ -569,9 +541,7 @@ void NetworkedGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			GameObject* mine = GetOrCreateProxy(op->objectID);
 			ownedNetId = op->objectID;
 
-			// Do not assign localPlayer on client; keep it server-host only.
 			SetCameraTarget(mine);
-			// Do NOT create client ground collider; physics is server-only
 		}
 		break;
 	}
@@ -601,22 +571,18 @@ GameObject* NetworkedGame::GetOrCreateProxy(int objectID) {
         return it->second;
     }
 
-    // Enemy IDs live in a separate range
     const bool isEnemyId = (objectID >= EnemyIdBias);
 
     if (isEnemyId) {
-        // Create enemy proxy: non-colliding, kinematic
-        EnemyObject* proxy = AddEnemyToWorld(Vector3(), enemyMesh, 3.0f, /*isTrigger*/true, /*collisionLayer*/defaultLayer);
+        EnemyObject* proxy = AddEnemyToWorld(Vector3(), enemyMesh, 3.0f, true, enemyLayer);
         if (!proxy) return nullptr;
 
-        // Kinematic on client
         if (auto* phys = proxy->GetPhysicsObject()) {
             phys->SetInverseMass(0.0f);
             phys->SetLinearVelocity(Vector3());
             phys->SetAngularVelocity(Vector3());
         }
 
-        // Make sure AI is not running on client (it already early-outs if net->IsClient())
         proxy->SetNetworkedGame(this);
 
         proxy->SetNetworkObject(new NetworkObject(*proxy, objectID));
@@ -624,12 +590,11 @@ GameObject* NetworkedGame::GetOrCreateProxy(int objectID) {
         return proxy;
     }
 
-    // Otherwise treat as player proxy
-    playerObject* proxy = AddPlayerToWorld(Vector3(), playerMesh, 3.0f, /*isTrigger*/true, /*collisionLayer*/playerLayer);
+    playerObject* proxy = AddPlayerToWorld(Vector3(), playerMesh, 3.0f, true, playerLayer);
     if (!proxy) return nullptr;
 
     if (auto* phys = proxy->GetPhysicsObject()) {
-        phys->SetInverseMass(0.0f);           // kinematic on client
+        phys->SetInverseMass(0.0f);          
         phys->SetLinearVelocity(Vector3());
         phys->SetAngularVelocity(Vector3());
     }
@@ -639,16 +604,11 @@ GameObject* NetworkedGame::GetOrCreateProxy(int objectID) {
     return proxy;
 }
 
-// Add near the top includes:
-#include <functional>
-#include <limits>
-
 void NetworkedGame::ForEachServerPlayer(const std::function<void(GameObject*)>& fn) const {
-	// Server host player (created by TutorialGame / StartLevel)
 	if (playerObj) {
 		fn(playerObj);
 	}
-	// Connected clients (spawned in Player_Connected)
+
 	for (const auto& kv : serverPlayers) {
 		GameObject* p = kv.second;
 		if (p) {

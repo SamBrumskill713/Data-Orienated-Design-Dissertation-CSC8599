@@ -29,18 +29,14 @@ namespace NCL::CSC8503 {
 
 		void OnPlayerCollision(NetworkPlayer* a, NetworkPlayer* b);
 
-		// Iterate server-side players: server host (localPlayer / playerObj) + all clients (serverPlayers)
 		void ForEachServerPlayer(const std::function<void(GameObject*)>& fn) const;
 
-		// Convenience for AI: find the closest server-side player to 'from'
 		GameObject* FindClosestServerPlayerFrom(GameObject* from) const;
 
 		void OnEnemySpawned(EnemyObject& enemy) override;
 
-		// Optional: host accessor (server-only)
 		GameObject* GetHostPlayer() const { return localPlayer; }
 
-		// Role helpers
 		bool IsServer() const { return thisServer != nullptr; }
 		bool IsClient() const { return thisClient != nullptr; }
 
@@ -76,7 +72,6 @@ namespace NCL::CSC8503 {
 
 		int lastReceivedStateID = 0;
 
-		// Unique ID ranges for AI so the client can infer object type
 		static constexpr int EnemyIdBias = 100000;
 		int nextEnemyId = 1;
 	};

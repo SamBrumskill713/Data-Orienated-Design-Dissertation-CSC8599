@@ -399,7 +399,6 @@ void PhysicsSystem::NarrowPhase()
 					(layerA == enemyLayer && layerB == playerLayer);
 
 				if (playerEnemy) {
-					// Uses your tunables: impulseScale, restitutionScale
 					ImpulseResolveCollisionCustom(*info.a, *info.b, info.point, 1.5, 0.66);
 				}
 				else {

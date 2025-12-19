@@ -19,8 +19,6 @@ namespace NCL {
 
 			bool SendGlobalPacket(int msgID);
 			bool SendGlobalPacket(GamePacket& packet);
-
-			// NEW: send to a single peer by its incomingPeerID
 			bool SendPacketToPeer(int peerId, GamePacket& packet);
 
 			virtual void UpdateServer();
@@ -34,7 +32,6 @@ namespace NCL {
 			int incomingDataRate;
 			int outgoingDataRate;
 
-			// NEW: track peers so we can unicast
 			std::unordered_map<int, _ENetPeer*> peers;
 		};
 	}

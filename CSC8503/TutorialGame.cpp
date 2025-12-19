@@ -78,9 +78,7 @@ TutorialGame::~TutorialGame() {
 }
 
 void TutorialGame::UpdateGame(float dt) {
-	// End screen is now handled by a PushdownState. Early-out keeps the world paused.
 	if (isGameOver || isWin) {
-		// Draw end screen overlay before returning
 		if (isWin) {
 			Debug::Print("YOU WIN!",             Vector2(35, 45), Debug::GREEN);
 			Debug::Print("All items delivered.", Vector2(30, 50), Debug::WHITE);
@@ -97,16 +95,16 @@ void TutorialGame::UpdateGame(float dt) {
 
 	gameTime -= dt;
 
-	// Only run local player block on server/single-player
+
 	if (allowLocalPlayerControl && playerObj && playerGroundCollision && levelFloor) {
 		playerGroundCollision->GetTransform().SetPosition(
 			playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
 		movePlayerObject(dt);
 
-		attachCameraToPlayer(); // local control: follow local player
+		attachCameraToPlayer(); 
 
-		// debug draws for local player...
-		Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(),
+		
+		/*Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(),
 			Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
 		Debug::debugDrawAABBs(levelFloor->GetTransform().GetPosition(), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
 		Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.0f, 16);
@@ -116,47 +114,32 @@ void TutorialGame::UpdateGame(float dt) {
 		Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
 		Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
 		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
-		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);
-		Debug::Print("player Score: " + std::to_string(playerObj->getScore()), Vector2(0, 55));
+		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);*/
+		// Score is now printed in the unified HUD below
 	}
 
-	// Client camera follow: if you have a proxy target, follow it without touching playerObj
 	if (!allowLocalPlayerControl && cameraTarget) {
 		attachCameraToPlayer();
 	}
 
-	/*if (pickUp) {
-		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
-		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);
-		Debug::Print("trigger isCollided: " + std::to_string(pickUp->getIsCollided()), Vector2(0, 35), Debug::WHITE);
-		Debug::Print("trigger isTrigger: " + std::to_string(pickUp->GetBoundingVolume()->isTrigger), Vector2(0, 40), Debug::WHITE);
-	}
-
-	if (pendulum) {
-		Debug::Print("Obstacle isCollided" + std::to_string(pendulum->getIsCollided()), Vector2(0, 35), Debug::WHITE);
-	}*/
-
 	if (trigVol) {
-		Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
-			Debug::BLUE, 0.1f);
+		/*Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
+			Debug::BLUE, 0.1f);*/
 	}
 
 	if (outOfBounds) {
-		Debug::debugDrawAABBs(outOfBounds->GetTransform().GetPosition(), outOfBounds->GetTransform().GetScale(),
-			Debug::BLUE, 0.1f);
+		/*Debug::debugDrawAABBs(outOfBounds->GetTransform().GetPosition(), outOfBounds->GetTransform().GetScale(),
+			Debug::BLUE, 0.1f);*/
 	}
 
+	int itemsRemaining = 0;
 	if (data) {
-		int remaining = 0;
 		for (auto* p : levelItems) {
 			if (p && p->getIsRendered()) {
-				++remaining;
+				++itemsRemaining;
 			}
 		}
-		Debug::Print("Items Remaining: " + std::to_string(remaining), Vector2(0, 80));
-		Debug::Print("Time: " + std::to_string(gameTime), Vector2(0, 65), Debug::WHITE);
 
-		// Remove delivered items from levelItems (those set to not rendered)
 		levelItems.erase(
 			std::remove_if(levelItems.begin(), levelItems.end(),
 				[](pickUpObject* p) {
@@ -168,14 +151,29 @@ void TutorialGame::UpdateGame(float dt) {
 		if (!isWin && levelItems.empty()) {
 			std::cout << "win\n";
 			Debug::Print("You Got all the items delivered. You Win!", Vector2(0, 85));
-			isWin = true; // trigger win screen in pushdown state
+			isWin = true; 
 		}
 
 		if (!isGameOver && gameTime <= 0.0f) {
 			Debug::Print("Game Over!", Vector2(0, 70));
 			gameTime = 0.0f;
-			isGameOver = true; // trigger game over screen in pushdown state
+			isGameOver = true; 
 		}
+	}
+
+	{
+		playerObject* scorePlayer = nullptr;
+		if (playerObj) {
+			scorePlayer = playerObj;
+		} else if (cameraTarget) {
+			scorePlayer = dynamic_cast<playerObject*>(cameraTarget);
+		}
+		const int score = scorePlayer ? scorePlayer->getScore() : 0;
+
+		const float timeLeft = std::max(0.0f, gameTime);
+		Debug::Print("Items Remaining: " + std::to_string(itemsRemaining), Vector2(0, 20), Debug::WHITE);
+		Debug::Print("Time Left: " + std::to_string((int)timeLeft), Vector2(0, 15), Debug::WHITE);
+		Debug::Print("Player Score: " + std::to_string(score), Vector2(0, 10), Debug::WHITE);
 	}
 
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
@@ -298,8 +296,6 @@ void TutorialGame::InitCamera() {
 }
 
 void NCL::CSC8503::TutorialGame::attachCameraToPlayer() {
-    // Server/single-player: follow local playerObj
-    // Client: follow cameraTarget only (never fall back to playerObj)
     GameObject* target = allowLocalPlayerControl ? playerObj : cameraTarget;
     if (!target || !target->GetRenderObject()) {
         return;
@@ -308,7 +304,6 @@ void NCL::CSC8503::TutorialGame::attachCameraToPlayer() {
     const float camYaw = world.GetMainCamera().GetYaw();
     const Quaternion newOri = Quaternion::EulerAnglesToQuaternion(0.0f, camYaw, 0.0f);
 
-    // Only the server/local authority should set orientation.
     if (allowLocalPlayerControl) {
         target->GetTransform().SetOrientation(newOri);
     }
@@ -337,7 +332,7 @@ void TutorialGame::movePlayerObject(float dt)
 	Matrix4 view = world.GetMainCamera().BuildViewMatrix();
 	Matrix4 camWorld = Matrix::Inverse(view);
 
-	Vector3 rightAxis = Vector3(camWorld.GetColumn(0)); //view is inverse of model!
+	Vector3 rightAxis = Vector3(camWorld.GetColumn(0)); 
 
 	//forward is more tricky -  camera forward is 'into' the screen...
 	//so we can take a guess, and use the cross of straight up, and
@@ -379,15 +374,8 @@ void TutorialGame::movePlayerObject(float dt)
 		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, 2.0f, 0) * dt);
 	}
 
-	/*if (Window::GetKeyboard()->KeyDown(KeyCodes::SPACE) && playerGroundCollision->getIsCollided() == false) {
-		playerObj->GetPhysicsObject()->ApplyLinearImpulse(Vector3(0, 5.0f, 0) * dt);
-	}*/
-
 	playerGroundCollision->GetPhysicsObject()->SetLinearVelocity(playerObj->GetPhysicsObject()->GetLinearVelocity());
 
-	/*if (Window::GetKeyboard()->KeyDown(KeyCodes::NEXT)) {
-		selectionObject->GetPhysicsObject()->AddForce(Vector3(0, -10, 0));
-	}*/
 }
 
 
@@ -396,9 +384,6 @@ void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
 
-	//InitGameExamples();
-	//InitTriggerTest();
-	//initObstacleTest();
 	initGame();
 }
 
@@ -553,7 +538,6 @@ EnemyObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::M
 
     world.AddGameObject(character);
 
-    // New: delegate wiring to derived implementations
     OnEnemySpawned(*character);
 
     return character;
@@ -919,8 +903,7 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 {
 	GameObject* anchor = AddCubeToWorld(anchorPos, Vector3(0.5f, 0.5f, 0.5f), 0.0f, true, terrainLayer);
 
-	// Allow rotation around Z so it swings in X-Y plane (choose axis to match your desired swing plane)
-	const Vector3 swingAxis = Vector3(0, 0, 1); // or Vector3(1,0,0) to swing in Z-Y
+	const Vector3 swingAxis = Vector3(0, 0, 1);
 
 	GameObject* prev = anchor;
 	for (int i = 0; i < numLinks; ++i) {
@@ -928,14 +911,13 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 		GameObject* link = AddCubeToWorld(linkPos, Vector3(0.25f, 0.25, 0.25f), 1.0f, true, defaultLayer);
 
 		world.AddConstraint(new PositionConstraint(prev, link, linkLength));
-		world.AddConstraint(new OrientationConstraint(prev, link, swingAxis)); // allow rotation only around swingAxis
+		world.AddConstraint(new OrientationConstraint(prev, link, swingAxis));
 
 		prev = link;
 	}
 
-	// Create bob as obstacleObject so OnCollisionBegin override and cast work
 	obstacleObject* bob = new obstacleObject();
-	SphereVolume* bobVol = new SphereVolume(/*isTrigger*/false, /*radius*/2.0f);
+	SphereVolume* bobVol = new SphereVolume(false, 2.0f);
 	bobVol->collisionLayer = defaultLayer;
 	bob->SetBoundingVolume(bobVol);
 	bob->GetTransform()
@@ -951,7 +933,6 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 	world.AddConstraint(new PositionConstraint(prev, bob, linkLength));
 	world.AddConstraint(new OrientationConstraint(prev, bob, swingAxis));
 
-	// Kick to start motion
 	bob->GetPhysicsObject()->ApplyLinearImpulse(Vector3(100.0f, 0, 0));
 	bob->GetPhysicsObject()->ApplyAngularImpulse(swingAxis * 5.0f);
 
@@ -1021,13 +1002,13 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 
 	const Vector3 floorCenter(
 		gridWorldWidth * 0.5f,
-		-20, // keep consistent with your world ground Y
+		-20, 
 		gridWorldHeight * 0.5f
 	);
 
 	const float floorHalfX = gridWorldWidth * 0.55;
 	const float floorHalfZ = gridWorldHeight * 0.55;
-	const float floorHalfY = 1.0f; // thickness half-size
+	const float floorHalfY = 1.0f; 
 
 	levelFloor = AddFloorToWorld(floorCenter, floorHalfX, floorHalfZ);
 	//outOfBounds = addTriggerVolume(floorCenter, 100, 100, 100, Vector3(100, 100, 100), outOfBoundLayer);

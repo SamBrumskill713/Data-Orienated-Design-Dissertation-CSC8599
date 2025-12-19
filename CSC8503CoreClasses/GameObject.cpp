@@ -81,7 +81,6 @@ void NCL::CSC8503::playerObject::pickUpItem(pickUpObject* pickup)
 	hasPickup = true;
 	pickUps.emplace_back(pickup);
 
-	// Make picked item non-blocking and move it to inventory layer
 	if (auto* vol = const_cast<CollisionVolume*>(pickup->GetBoundingVolume())) {
 		vol->isTrigger = true;
 		vol->collisionLayer = NCL::itemInventoryLayer; 
@@ -114,7 +113,6 @@ void NCL::CSC8503::playerObject::removeItem()
 	Vector3 dropPos = playerPos + backDir * dropDistance;
 	dropPos.y = playerPos.y;
 
-	// Place item behind the player and make it visible again
 	droppedItem->GetTransform().SetPosition(dropPos);
 
 	if (const CollisionVolume* droppedVol = droppedItem->GetBoundingVolume()) {
