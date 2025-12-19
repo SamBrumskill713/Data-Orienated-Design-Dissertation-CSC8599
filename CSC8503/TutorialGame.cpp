@@ -98,7 +98,7 @@ void TutorialGame::UpdateGame(float dt) {
 
 		// debug draws for local player...
 		Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(),
-							  Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
+			Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
 		Debug::debugDrawAABBs(levelFloor->GetTransform().GetPosition(), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
 		Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.0f, 16);
 		Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
@@ -112,9 +112,9 @@ void TutorialGame::UpdateGame(float dt) {
 	}
 
 	// Client camera follow: if you have a proxy target, follow it without touching playerObj
-    if (!allowLocalPlayerControl && cameraTarget) {
-        attachCameraToPlayer();
-    }
+	if (!allowLocalPlayerControl && cameraTarget) {
+		attachCameraToPlayer();
+	}
 
 	/*if (pickUp) {
 		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
@@ -174,14 +174,14 @@ void TutorialGame::UpdateGame(float dt) {
 		physics.Clear();
 		initAITest();
 	}
-	
+
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::I)) {
 		world.Clear();
 		physics.Clear();
 		InitTriggerTest();
 	}
 
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::B)) { 
+	if (Window::GetKeyboard()->KeyPressed(KeyCodes::B)) {
 		world.Clear();
 		physics.Clear();
 		initObstacleTest();
@@ -190,7 +190,7 @@ void TutorialGame::UpdateGame(float dt) {
 	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
 
 	if (testStateObject) testStateObject->Update(dt);
-	
+
 	/*if (!inSelectionMode) {
 		world.GetMainCamera().UpdateCamera(dt);
 	}*/
@@ -292,17 +292,17 @@ void NCL::CSC8503::TutorialGame::attachCameraToPlayer() {
     // Server/single-player: follow local playerObj
     // Client: follow cameraTarget only (never fall back to playerObj)
     GameObject* target = allowLocalPlayerControl ? playerObj : cameraTarget;
-    if (!target) {
-        // No camera target available; skip
-        return;
-    }
-    if (!target->GetRenderObject()) {
+    if (!target || !target->GetRenderObject()) {
         return;
     }
 
     const float camYaw = world.GetMainCamera().GetYaw();
     const Quaternion newOri = Quaternion::EulerAnglesToQuaternion(0.0f, camYaw, 0.0f);
-    target->GetTransform().SetOrientation(newOri);
+
+    // Only the server/local authority should set orientation.
+    if (allowLocalPlayerControl) {
+        target->GetTransform().SetOrientation(newOri);
+    }
 
     const Transform& t = target->GetTransform();
     const Vector3 pos = t.GetPosition();
@@ -398,10 +398,10 @@ void TutorialGame::InitWorld() {
 A single function to add a large immoveable cube to the bottom of our world
 
 */
-GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, 
+GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength,
 	bool isTrigger, int collisionLayer) {
 	GameObject* floor = new GameObject();
-	
+
 	Vector3 floorSize = Vector3(floorHeight, 2, floorLength);
 	AABBVolume* volume = new AABBVolume(floorSize, isTrigger);
 	volume->collisionLayer = collisionLayer;
@@ -478,7 +478,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 	return cube;
 }
 
-playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
+playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
 	const float scale, bool isTrigger, int collisionLayer) {
 	float meshSize = scale;
 	float inverseMass = 20.0f;
@@ -519,7 +519,7 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 	return character;
 }
 
-EnemyObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
+EnemyObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
 	float scale, bool isTrigger, int collisionLayer) {
 	float meshSize = scale;
 	float inverseMass = 0.5f;
@@ -576,7 +576,7 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Me
 	return apple;
 }
 
-pickUpObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh, 
+pickUpObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vector3& position, Rendering::Mesh* pickupMesh,
 	const float scale, int type, bool isTrigger, int collisionLayer)
 {
 	pickUpObject* pickObj = new pickUpObject(type);
@@ -604,7 +604,7 @@ pickUpObject* NCL::CSC8503::TutorialGame::AddPickupToWorld(const NCL::Maths::Vec
 	return pickObj;
 }
 
-triggerObject* NCL::CSC8503::TutorialGame::addTriggerVolume(const NCL::Maths::Vector3& position, const float scaleX, 
+triggerObject* NCL::CSC8503::TutorialGame::addTriggerVolume(const NCL::Maths::Vector3& position, const float scaleX,
 	const float scaleY, const float scaleZ, const Vector3& trigHalfDims, int collisionLayer)
 {
 	triggerObject* trigObj = new triggerObject();
@@ -617,15 +617,15 @@ triggerObject* NCL::CSC8503::TutorialGame::addTriggerVolume(const NCL::Maths::Ve
 		SetPosition(position);
 
 	trigObj->SetPhysicsObject(new PhysicsObject(trigObj->GetTransform(), trigObj->GetBoundingVolume()));
-	
+
 	trigObj->GetPhysicsObject()->SetInverseMass(0.0f);
 	trigObj->GetPhysicsObject()->InitCubeInertia();
-	
+
 	world.AddGameObject(trigObj);
 	return trigObj;
 }
 
-GameObject* NCL::CSC8503::TutorialGame::addWall(const NCL::Maths::Vector3& position, Vector3& halfDims, float inverseMass, 
+GameObject* NCL::CSC8503::TutorialGame::addWall(const NCL::Maths::Vector3& position, Vector3& halfDims, float inverseMass,
 	int collisionLayer)
 {
 	GameObject* wallObj = new GameObject();
@@ -646,7 +646,7 @@ GameObject* NCL::CSC8503::TutorialGame::addWall(const NCL::Maths::Vector3& posit
 	return wallObj;
 }
 
-GameObject* NCL::CSC8503::TutorialGame::addDropOffZone(const NCL::Maths::Vector3& position, Vector3& halfDims, bool isTrigger, 
+GameObject* NCL::CSC8503::TutorialGame::addDropOffZone(const NCL::Maths::Vector3& position, Vector3& halfDims, bool isTrigger,
 	int collisionLayer)
 {
 	GameObject* dropZone = new GameObject();
@@ -666,7 +666,7 @@ GameObject* NCL::CSC8503::TutorialGame::addDropOffZone(const NCL::Maths::Vector3
 	return dropZone;
 }
 
-StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Rendering::Mesh* characterMesh, 
+StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
 	float scale)
 {
 	StateGameObject* stateObj = new StateGameObject();
@@ -685,7 +685,7 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position, Re
 	world.AddGameObject(stateObj);
 
 	return stateObj;
-}	
+}
 
 void TutorialGame::InitGameExamples() {
 	CreatedMixedGrid(15, 15, 3.5f, 3.5f);
@@ -699,12 +699,12 @@ void TutorialGame::InitGameExamples() {
 void NCL::CSC8503::TutorialGame::InitTriggerTest()
 {
 	playerObj = AddPlayerToWorld(Vector3(5, -11.5, 0), enemyMesh, 3.0f);
-	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false, 
+	playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 		playerColliderLayer);
 	pickUp = AddPickupToWorld(Vector3(10, -15, 0), cubeMesh, 1.0f, 1);
 	pickUp = AddPickupToWorld(Vector3(15, -15, 0), cubeMesh, 1.0f, 1);
 	AddFloorToWorld(Vector3(0, -20, 0), 50, 50);
-	
+
 	//AddSphereToWorld(Vector3(10, -10, 0), 0.5f, true);
 }
 
@@ -893,13 +893,13 @@ void NCL::CSC8503::TutorialGame::BridgeConstraintTest()
 	Vector3 startPos = Vector3(50, 50, 50);
 
 	GameObject* start = AddCubeToWorld(startPos + Vector3(0, 0, 0), cubeSize, 0);
-	GameObject* end = AddCubeToWorld(startPos + Vector3((numLinks + 2) * cubeDistance, 0, 0), 
+	GameObject* end = AddCubeToWorld(startPos + Vector3((numLinks + 2) * cubeDistance, 0, 0),
 		cubeSize, 0);
 
 	GameObject* previous = start;
 
 	for (int i = 0; i < numLinks; ++i) {
-		GameObject* block = AddCubeToWorld(startPos + Vector3((i + 1) * cubeDistance, 0, 0), 
+		GameObject* block = AddCubeToWorld(startPos + Vector3((i + 1) * cubeDistance, 0, 0),
 			cubeSize, invCubeMass);
 		PositionConstraint* constraint = new PositionConstraint(previous, block, maxDistance);
 		world.AddConstraint(constraint);
@@ -966,7 +966,7 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 	float cubeHeight = nodeSize * 0.25f;
 
 	for (int i = 0; i < gridWidth * gridHeight; ++i) {
-		levelNode& lNodes= nodes[i];
+		levelNode& lNodes = nodes[i];
 		int type = lNodes.type;
 		int obstacleNum = 0;
 		int itemNum = 0;
@@ -977,7 +977,7 @@ levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 		if (type == 'P') {
 			lNodes.position.y = 0;
 			playerObj = AddPlayerToWorld(lNodes.position - Vector3(0, 10, 0), playerMesh, 3.0f);
-			playerObj->setRespawn(lNodes.position - Vector3(0, 10, 0));	
+			playerObj->setRespawn(lNodes.position - Vector3(0, 10, 0));
 			playerGroundCollision = AddSphereToWorld(playerObj->GetTransform().GetPosition(), 0.5f, false, 0.1f, false,
 				playerColliderLayer);
 		}

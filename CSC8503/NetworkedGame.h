@@ -44,6 +44,8 @@ namespace NCL::CSC8503 {
 		float timeToNextPacket;
 		int packetsToSnapshot;
 
+		TutorialGame* mainGame;
+
 		bool allowLocalPlayerControl = false;
 
 		std::vector<NetworkObject*> networkObjects;

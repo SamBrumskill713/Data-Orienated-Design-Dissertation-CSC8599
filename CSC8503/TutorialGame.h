@@ -51,6 +51,10 @@ namespace NCL {
 				cameraTarget = target;
 			}
 
+			Quaternion* getPlayerOrientaiton(Quaternion* playOr) {
+				playerOrientation = playOr;
+			}
+
 		protected:
 			void InitCamera();
 
