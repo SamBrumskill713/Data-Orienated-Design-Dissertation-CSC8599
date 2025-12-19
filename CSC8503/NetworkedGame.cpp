@@ -153,6 +153,9 @@ void NetworkedGame::StartAsClient(char a, char b, char c, char d) {
         }
     }
 
+    //// Important: avoid using the single-player playerObj on clients
+    //playerObj = nullptr;
+
     localPlayer = nullptr;
     SetCameraTarget(nullptr);
 }

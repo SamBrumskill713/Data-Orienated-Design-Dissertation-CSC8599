@@ -163,7 +163,7 @@ void TutorialGame::UpdateGame(float dt) {
 
 	{
 		playerObject* scorePlayer = nullptr;
-		if (playerObj) {
+		if (allowLocalPlayerControl && playerObj) {
 			scorePlayer = playerObj;
 		} else if (cameraTarget) {
 			scorePlayer = dynamic_cast<playerObject*>(cameraTarget);
@@ -284,6 +284,20 @@ void TutorialGame::UpdateGame(float dt) {
 
 	/*SelectObject();
 	MoveSelectedObject();*/
+}
+
+int TutorialGame::GetPlayerScore() const {
+
+	if (allowLocalPlayerControl && playerObj) {
+		return playerObj->getScore();
+	}
+
+	if (cameraTarget) {
+		if (auto* p = dynamic_cast<playerObject*>(cameraTarget)) {
+			return p->getScore();
+		}
+	}
+	return 0;
 }
 
 void TutorialGame::InitCamera() {

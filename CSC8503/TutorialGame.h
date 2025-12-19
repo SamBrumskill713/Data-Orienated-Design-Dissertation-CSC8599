@@ -31,7 +31,7 @@ namespace NCL {
 			virtual void UpdateGame(float dt);
 			bool IsGameOver() const { return isGameOver; }
 			bool IsWin() const { return isWin; }
-			int  GetPlayerScore() const { return playerObj ? playerObj->getScore() : 0; }
+			int  GetPlayerScore() const; 
 
 			void ClearEndState() {
 				isGameOver = false;
