@@ -7,6 +7,10 @@
 #include "Window.h"
 #include "Debug.h"
 #include "PhysicsObject.h"
+#include "StateGameObject.h"
+
+#include <functional>
+#include <limits>
 
 #define COLLISION_MSG 30
 #define OWNERSHIP_MSG 201
@@ -126,21 +130,35 @@ void NetworkedGame::StartAsServer() {
 }
 
 void NetworkedGame::StartAsClient(char a, char b, char c, char d) {
-	thisClient = new GameClient();
-	thisClient->Connect(a, b, c, d, NetworkBase::GetDefaultPort());
+    thisClient = new GameClient();
+    thisClient->Connect(a, b, c, d, NetworkBase::GetDefaultPort());
 
-	thisClient->RegisterPacketHandler(Delta_State, this);
-	thisClient->RegisterPacketHandler(Full_State, this);
-	thisClient->RegisterPacketHandler(Player_Connected, this);
-	thisClient->RegisterPacketHandler(Player_Disconnected, this);
-	thisClient->RegisterPacketHandler(OWNERSHIP_MSG, this); // NEW
+    thisClient->RegisterPacketHandler(Delta_State, this);
+    thisClient->RegisterPacketHandler(Full_State, this);
+    thisClient->RegisterPacketHandler(Player_Connected, this);
+    thisClient->RegisterPacketHandler(Player_Disconnected, this);
+    thisClient->RegisterPacketHandler(OWNERSHIP_MSG, this);
 
-	SetLocalPlayerControl(false);
-	StartLevel();
+    SetLocalPlayerControl(false);
+    StartLevel();
 
-	// Clients should not use localPlayer; they use ownedNetId to find their proxy
-	localPlayer = nullptr;
-	SetCameraTarget(nullptr);
+    // Clients do not simulate AI – remove any pre-spawned local enemies
+    {
+        std::vector<GameObject*> toRemove;
+        std::vector<GameObject*>::const_iterator first, last;
+        world.GetObjectIterators(first, last);
+        for (auto it = first; it != last; ++it) {
+            if (auto* enemy = dynamic_cast<EnemyObject*>(*it)) {
+                toRemove.push_back(enemy);
+            }
+        }
+        for (auto* e : toRemove) {
+            world.RemoveGameObject(e, /*andDelete*/true);
+        }
+    }
+
+    localPlayer = nullptr;
+    SetCameraTarget(nullptr);
 }
 
 void NetworkedGame::UpdateGame(float dt) {
@@ -184,6 +202,11 @@ void NetworkedGame::UpdateGame(float dt) {
 	}
 
 	TutorialGame::UpdateGame(dt);
+}
+
+void NCL::CSC8503::NetworkedGame::OnEnemySpawned(EnemyObject& enemy)
+{
+	enemy.SetNetworkedGame(this);
 }
 
 void NetworkedGame::UpdateAsServer(float dt) {
@@ -285,14 +308,16 @@ void NetworkedGame::BroadcastSnapshot(bool /*deltaFrame*/) {
 		const CollisionVolume* vol = obj->GetBoundingVolume();
 		if (!vol || vol->isTrigger) continue;
 
-		// Only replicate players
-		if (vol->collisionLayer != playerLayer) {
+		const bool isPlayer = (vol->collisionLayer == playerLayer);
+		const bool isEnemy  = (dynamic_cast<EnemyObject*>(obj) != nullptr);
+
+		// Replicate players and enemies
+		if (!isPlayer && !isEnemy) {
 			continue;
 		}
 
 		NetworkObject* no = obj->GetNetworkObject();
 		if (!no) {
-			// Do NOT auto-attach here, StartLevel handles attachment for players
 			continue;
 		}
 
@@ -342,14 +367,27 @@ void NetworkedGame::StartLevel() {
 		const CollisionVolume* vol = obj->GetBoundingVolume();
 		if (!vol || vol->isTrigger) continue;
 
-		const int layer = vol->collisionLayer;
-		const bool isPlayer = (layer == playerLayer);
+		const bool isPlayer = (vol->collisionLayer == playerLayer);
+		const bool isEnemy  = (dynamic_cast<EnemyObject*>(obj) != nullptr);
 
-		// Only attach network state for players for now
+		// Attach network state for players
 		if (isPlayer && !obj->GetNetworkObject()) {
 			const int id = nextObjectId++;
 			obj->SetNetworkObject(new NetworkObject(*obj, id));
 			netIdToObject[id] = obj;
+		}
+
+		// Ensure enemy AI gets session pointer
+		if (isEnemy) {
+			auto* enemy = static_cast<EnemyObject*>(obj);
+			enemy->SetNetworkedGame(this);
+
+			// Server: give enemies a network ID
+			if (thisServer && !obj->GetNetworkObject()) {
+				const int id = EnemyIdBias + (nextEnemyId++);
+				obj->SetNetworkObject(new NetworkObject(*obj, id));
+				netIdToObject[id] = obj;
+			}
 		}
 	}
 }
@@ -558,22 +596,82 @@ void NetworkedGame::RegisterNetworkObject(GameObject* obj, int netId) {
 }
 
 GameObject* NetworkedGame::GetOrCreateProxy(int objectID) {
-	auto it = netIdToObject.find(objectID);
-	if (it != netIdToObject.end()) {
-		return it->second;
+    auto it = netIdToObject.find(objectID);
+    if (it != netIdToObject.end()) {
+        return it->second;
+    }
+
+    // Enemy IDs live in a separate range
+    const bool isEnemyId = (objectID >= EnemyIdBias);
+
+    if (isEnemyId) {
+        // Create enemy proxy: non-colliding, kinematic
+        EnemyObject* proxy = AddEnemyToWorld(Vector3(), enemyMesh, 3.0f, /*isTrigger*/true, /*collisionLayer*/defaultLayer);
+        if (!proxy) return nullptr;
+
+        // Kinematic on client
+        if (auto* phys = proxy->GetPhysicsObject()) {
+            phys->SetInverseMass(0.0f);
+            phys->SetLinearVelocity(Vector3());
+            phys->SetAngularVelocity(Vector3());
+        }
+
+        // Make sure AI is not running on client (it already early-outs if net->IsClient())
+        proxy->SetNetworkedGame(this);
+
+        proxy->SetNetworkObject(new NetworkObject(*proxy, objectID));
+        netIdToObject[objectID] = proxy;
+        return proxy;
+    }
+
+    // Otherwise treat as player proxy
+    playerObject* proxy = AddPlayerToWorld(Vector3(), playerMesh, 3.0f, /*isTrigger*/true, /*collisionLayer*/playerLayer);
+    if (!proxy) return nullptr;
+
+    if (auto* phys = proxy->GetPhysicsObject()) {
+        phys->SetInverseMass(0.0f);           // kinematic on client
+        phys->SetLinearVelocity(Vector3());
+        phys->SetAngularVelocity(Vector3());
+    }
+
+    proxy->SetNetworkObject(new NetworkObject(*proxy, objectID));
+    netIdToObject[objectID] = proxy;
+    return proxy;
+}
+
+// Add near the top includes:
+#include <functional>
+#include <limits>
+
+void NetworkedGame::ForEachServerPlayer(const std::function<void(GameObject*)>& fn) const {
+	// Server host player (created by TutorialGame / StartLevel)
+	if (playerObj) {
+		fn(playerObj);
 	}
-
-	// Client proxy: non-colliding, kinematic
-	playerObject* proxy = AddPlayerToWorld(Vector3(), playerMesh, 3.0f, /*isTrigger*/true, /*collisionLayer*/playerLayer);
-	if (!proxy) return nullptr;
-
-	if (auto* phys = proxy->GetPhysicsObject()) {
-		phys->SetInverseMass(0.0f);           // kinematic on client
-		phys->SetLinearVelocity(Vector3());
-		phys->SetAngularVelocity(Vector3());
+	// Connected clients (spawned in Player_Connected)
+	for (const auto& kv : serverPlayers) {
+		GameObject* p = kv.second;
+		if (p) {
+			fn(p);
+		}
 	}
+}
 
-	proxy->SetNetworkObject(new NetworkObject(*proxy, objectID));
-	netIdToObject[objectID] = proxy;
-	return proxy;
+GameObject* NetworkedGame::FindClosestServerPlayerFrom(GameObject* from) const {
+	if (!from) return nullptr;
+
+	const Vector3 origin = from->GetTransform().GetPosition();
+
+	GameObject* best = nullptr;
+	float bestD2 = std::numeric_limits<float>::max();
+
+	ForEachServerPlayer([&](GameObject* p) {
+		const Vector3 d = p->GetTransform().GetPosition() - origin;
+		const float d2 = Vector::Dot(d, d);
+		if (d2 < bestD2) {
+			bestD2 = d2;
+			best = p;
+		}
+	});
+	return best;
 }

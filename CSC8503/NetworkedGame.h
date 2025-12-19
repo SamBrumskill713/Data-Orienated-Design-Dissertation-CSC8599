@@ -1,12 +1,14 @@
 #pragma once
 #include "TutorialGame.h"
 #include "NetworkBase.h"
+#include <functional>
 
 namespace NCL::CSC8503 {
 	class GameServer;
 	class GameClient;
 	class NetworkPlayer;
 	class NetworkObject;
+	class EnemyObject;
 
 	class NetworkedGame : public TutorialGame, public PacketReceiver 
 	{
@@ -26,6 +28,21 @@ namespace NCL::CSC8503 {
 		void ReceivePacket(int type, GamePacket* payload, int source) override;
 
 		void OnPlayerCollision(NetworkPlayer* a, NetworkPlayer* b);
+
+		// Iterate server-side players: server host (localPlayer / playerObj) + all clients (serverPlayers)
+		void ForEachServerPlayer(const std::function<void(GameObject*)>& fn) const;
+
+		// Convenience for AI: find the closest server-side player to 'from'
+		GameObject* FindClosestServerPlayerFrom(GameObject* from) const;
+
+		void OnEnemySpawned(EnemyObject& enemy) override;
+
+		// Optional: host accessor (server-only)
+		GameObject* GetHostPlayer() const { return localPlayer; }
+
+		// Role helpers
+		bool IsServer() const { return thisServer != nullptr; }
+		bool IsClient() const { return thisClient != nullptr; }
 
 	protected:
 		void UpdateAsServer(float dt);
@@ -58,5 +75,9 @@ namespace NCL::CSC8503 {
 		int ownedNetId = -1;
 
 		int lastReceivedStateID = 0;
+
+		// Unique ID ranges for AI so the client can infer object type
+		static constexpr int EnemyIdBias = 100000;
+		int nextEnemyId = 1;
 	};
 }

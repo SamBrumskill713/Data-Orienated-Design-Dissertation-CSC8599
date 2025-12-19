@@ -529,37 +529,34 @@ playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering:
 }
 
 EnemyObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
-	float scale, bool isTrigger, int collisionLayer) {
-	float meshSize = scale;
-	float inverseMass = 0.5f;
+    float scale, bool isTrigger, int collisionLayer) {
+    float meshSize = scale;
+    float inverseMass = 0.5f;
 
-	EnemyObject* character = new EnemyObject(data, world);
-	character->setPlayer(playerObj);
+    EnemyObject* character = new EnemyObject(data, world);
+    character->setPlayer(playerObj);
 
-	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
-	character->SetBoundingVolume(volume);
-	volume->collisionLayer = collisionLayer;
+    AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
+    character->SetBoundingVolume(volume);
+    volume->collisionLayer = collisionLayer;
 
-	character->GetTransform()
-		.SetScale(Vector3(meshSize, meshSize, meshSize))
-		.SetPosition(position);
+    character->GetTransform()
+        .SetScale(Vector3(meshSize, meshSize, meshSize))
+        .SetPosition(position);
 
-	if (isTrigger) {
-		character->setIsCollided(false);
-	}
-	else {
-		character->setIsCollided(true);
-	}
+    character->setIsCollided(!isTrigger);
 
-	character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
-	character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
+    character->SetRenderObject(new RenderObject(character->GetTransform(), characterMesh, notexMaterial));
+    character->SetPhysicsObject(new PhysicsObject(character->GetTransform(), character->GetBoundingVolume()));
+    character->GetPhysicsObject()->SetInverseMass(inverseMass);
+    character->GetPhysicsObject()->InitSphereInertia();
 
-	character->GetPhysicsObject()->SetInverseMass(inverseMass);
-	character->GetPhysicsObject()->InitSphereInertia();
+    world.AddGameObject(character);
 
-	world.AddGameObject(character);
+    // New: delegate wiring to derived implementations
+    OnEnemySpawned(*character);
 
-	return character;
+    return character;
 }
 
 GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, Rendering::Mesh* characterMesh,

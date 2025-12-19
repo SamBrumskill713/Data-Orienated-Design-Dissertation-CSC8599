@@ -62,6 +62,7 @@ NCL::CSC8503::EnemyObject::EnemyObject(levelElements* level, GameWorld& game) :
 {
 	data = level;
 	gameWorld = game;
+	net = nullptr; // will be set by game setup via SetNetworkedGame(...)
 	enemyStateMachine = new StateMachine();
 	targetPosition = this->GetTransform().GetPosition();
 	if (data) {
@@ -138,15 +139,18 @@ void NCL::CSC8503::EnemyObject::moveEnemy()
 
 void NCL::CSC8503::EnemyObject::Update(float dt)
 {
-	enemyStateMachine->Update(dt);
-	if (hitPlayer) {
-		cooldownTimer -= dt;
-		if (cooldownTimer <= 0.0f) {
-			cooldownTimer = 0.0f;
-			hitPlayer = false;
-		}
+	if (net && net->IsClient()) {
+		return;
 	}
-	//Debug::Print("cool down timer: " + std::to_string(cooldownTimer), Vector2(0, 90));
+
+    enemyStateMachine->Update(dt);
+    if (hitPlayer) {
+        cooldownTimer -= dt;
+        if (cooldownTimer <= 0.0f) {
+            cooldownTimer = 0.0f;
+            hitPlayer = false;
+        }
+    }
 }
 
 void NCL::CSC8503::EnemyObject::OnCollisionBegin(GameObject* other)
@@ -164,12 +168,21 @@ void NCL::CSC8503::EnemyObject::OnCollisionBegin(GameObject* other)
 
 void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
-	//std::cout << "I see you\n";
-	targetPosition = player->GetTransform().GetPosition();
+	// Prefer network-aware closest target; fallback to legacy player pointer.
+	GameObject* target = nullptr;
+	if (net) {
+		target = net->FindClosestServerPlayerFrom(this);
+	} else if (player) {
+		target = player;
+	}
+	if (!target) {
+		return;
+	}
+
+	targetPosition = target->GetTransform().GetPosition();
 	setWalkingPoints();
 	drawWalkingPoints();
 	moveEnemy();
-	//std::cout << "I can see you\n";
 }
 
 void NCL::CSC8503::EnemyObject::wander(float dt)
@@ -199,28 +212,35 @@ void NCL::CSC8503::EnemyObject::wander(float dt)
 
 bool NCL::CSC8503::EnemyObject::canSeePlayer()
 {
-	std::vector<int>ignoreList;
-	ignoreList.reserve(8);
-	int enemyLayer = this->GetBoundingVolume()->collisionLayer;
-	ignoreList.emplace_back(enemyLayer);
-	if (player) {
-		Vector3 origin = this->GetTransform().GetPosition();
-		Vector3 end = Vector::Normalise(player->GetTransform().GetPosition() - this->GetTransform().GetPosition());
-		Ray ray(origin, end);
-		RayCollision closestCollision;
-		//Debug::DrawLine(origin, origin + forward * Vector3(0, 0, 200), Vector4(0, 0, 1, 1), 0.1f);
-		if (gameWorld.Raycast(ray, closestCollision, true, this)) {
-			Debug::DrawLine(origin, closestCollision.collidedAt, Vector4(0, 0, 1, 1), 0.1f);
-			GameObject* sightedObject = (GameObject*)closestCollision.node;
-			if (sightedObject->GetBoundingVolume()->collisionLayer != playerLayer) {
-				ignoreList.emplace_back(sightedObject->GetBoundingVolume()->collisionLayer);
-			}
-			if (sightedObject->GetBoundingVolume()->collisionLayer == playerLayer) {
-				return true;
-			}
-		}
+	std::vector<int> ignoreList;
+	// Prefer network-aware closest target; fallback to legacy player pointer.
+	GameObject* target = nullptr;
+	if (net) {
+		target = net->FindClosestServerPlayerFrom(this);
+
+	} else if (player) {
+		target = player;
+
+	}
+	if (!target) {
 		return false;
 	}
-	//std::cout << "no player\n";
+
+	Vector3 origin = this->GetTransform().GetPosition();
+	Vector3 dir = Vector::Normalise(target->GetTransform().GetPosition() - origin);
+	Ray ray(origin, dir);
+
+	RayCollision closestCollision;
+	if (gameWorld.Raycast(ray, closestCollision, true, this)) {
+		Debug::DrawLine(origin, closestCollision.collidedAt, Vector4(0, 0, 1, 1), 0.1f);
+		GameObject* sightedObject = (GameObject*)closestCollision.node;
+		if (sightedObject->GetBoundingVolume()->collisionLayer != playerLayer) {
+			ignoreList.emplace_back(sightedObject->GetBoundingVolume()->collisionLayer);
+			return false;
+		}
+		if (sightedObject->GetBoundingVolume()->collisionLayer == playerLayer) {
+			return true;
+		}
+	}
 	return false;
 }

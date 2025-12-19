@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "GameWorld.h"
 #include "NavigationGrid.h"
+#include "NetworkedGame.h"
 
 namespace NCL {
     namespace CSC8503 {
@@ -37,6 +38,7 @@ namespace NCL {
             void moveEnemy();
             void Update(float dt) override;
             void OnCollisionBegin(GameObject* other) override;
+            void SetNetworkedGame(NetworkedGame* g) { net = g; }
 
         protected:
             StateMachine* enemyStateMachine;
@@ -49,6 +51,7 @@ namespace NCL {
             levelElements* data;
             playerObject* player;
             Vector3 targetPosition;
+            NetworkedGame* net;
             std::string navigationGridFile;
             bool searchingForNextSpot = true;
             bool foundSpot = false;

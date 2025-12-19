@@ -88,6 +88,10 @@ namespace NCL {
 
 			void BridgeConstraintTest();
 
+			virtual void OnEnemySpawned(EnemyObject& enemy) {
+
+			}
+
 			obstacleObject* pendulumConstraint(const Vector3& anchorPos, int numLinks, float linkLength);
 
 			levelElements* levelCreate();
