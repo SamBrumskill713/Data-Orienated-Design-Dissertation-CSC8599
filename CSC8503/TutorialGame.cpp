@@ -964,7 +964,7 @@ obstacleObject* NCL::CSC8503::TutorialGame::pendulumConstraint(const Vector3& an
 
 levelElements* NCL::CSC8503::TutorialGame::levelCreate()
 {
-	levelElements* level = new levelElements("testLevel.txt");
+	levelElements* level = new levelElements("level.txt");
 	int nodeSize = level->getNodeSize();
 	int gridWidth = level->getLevelWidth();
 	int gridHeight = level->getLevelHeight();
