@@ -226,7 +226,7 @@ void PhysicsSystem::BasicCollisionDetection()
 
 				if (!(*i)->GetBoundingVolume()->isTrigger && !(*j)->GetBoundingVolume()->isTrigger) {
 					if (playerEnemy) {
-						ImpulseResolveCollisionCustom(*info.a, *info.b, info.point, 2.5, 0.66);
+						ImpulseResolveCollisionCustom(*info.a, *info.b, info.point, 1.5, 0.22);
 					}
 					else {
 						ImpulseResolveCollision(*info.a, *info.b, info.point);

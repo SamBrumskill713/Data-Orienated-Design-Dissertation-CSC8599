@@ -475,7 +475,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 playerObject* TutorialGame::AddPlayerToWorld(const Vector3& position, Rendering::Mesh* characterMesh,
 	const float scale, bool isTrigger, int collisionLayer) {
 	float meshSize = scale;
-	float inverseMass = 20.0f;
+	float inverseMass = 50.0f;
 
 	playerObject* character = new playerObject();
 	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
@@ -521,7 +521,7 @@ EnemyObject* TutorialGame::AddEnemyToWorld(const Vector3& position, Rendering::M
     EnemyObject* character = new EnemyObject(data, world);
     character->setPlayer(playerObj);
 
-    AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize, isTrigger);
+    AABBVolume* volume = new AABBVolume(Vector3(1.0f, 0.9f, 1.0f) * meshSize, isTrigger);
     character->SetBoundingVolume(volume);
     volume->collisionLayer = collisionLayer;
 
@@ -719,7 +719,12 @@ void NCL::CSC8503::TutorialGame::initGame()
 	levelItems.clear();
 	gameTime = 60.0f * 3;
 	data = levelCreate();
+	/*for (int i = 0; i < 4; ++i) {
+		enemies.reserve(4);
+		enemies.emplace_back(AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f)
+	}*/
 	enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
+	//AddEnemyToWorld(Vector3(60 + 10, -7, 60), enemyMesh, 3.0f);
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
