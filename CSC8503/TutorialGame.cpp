@@ -57,7 +57,7 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 	enemyMesh = renderer.LoadMesh("Goat.msh");
 	playerMesh = renderer.LoadMesh("Keeper.msh");
 
-	bonusMesh = renderer.LoadMesh("19463_Kitten_Head_v1.msh");
+	//bonusMesh = renderer.LoadMesh("19463_Kitten_Head_v1.msh");
 	capsuleMesh = renderer.LoadMesh("capsule.msh");
 
 	//defaultTex = renderer.LoadTexture("Default.png");
