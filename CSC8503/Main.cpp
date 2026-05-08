@@ -525,7 +525,8 @@ public:
 			window->SetWindowPosition(0, 0);
 		}
 
-		window->SetTitle("Gametech frame time:" + std::to_string(1000.0f * dt));
+		float fps = (dt > 0.0) ? 1.0f / dt : 0.0f;
+		window->SetTitle("GameTech FPS: " + std::to_string((int)fps) + " | Gametech frame time: " + std::to_string(1000.0f * dt));
 
 		// Core game updates
 		gameRef->UpdateGame(dt);
