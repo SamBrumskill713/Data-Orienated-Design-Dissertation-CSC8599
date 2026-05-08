@@ -618,6 +618,7 @@ int main() {
 
 			renderer->Update(dt);
 			renderer->Render();
+			renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
 			Debug::UpdateRenderables(dt);
 		}
 	}
@@ -632,6 +633,7 @@ int main() {
 
 			renderer->Update(dt);
 			renderer->Render();
+			renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
 			Debug::UpdateRenderables(dt);
 		}
 	}
