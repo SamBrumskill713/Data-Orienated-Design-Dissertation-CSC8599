@@ -42,7 +42,6 @@ namespace NCL {
 	};
 
 	struct CollisionVolumeComp {
-		//comment
 		Matrix3 orientation;
 		Vector3 halfExtents;
 		Vector3 halfSizes;
@@ -56,7 +55,38 @@ namespace NCL {
 	struct CollisionVolumeSys {
 		CollisionVolumeComp data;
 
-		
+		CollisionVolumeSys CreateAABB(const Vector3& halfSizes, int layer, bool trigger = false) {
+			data.type = VolumeType::AABB;
+			data.collisionLayer = layer;
+			data.isTrigger = trigger;
+			data.halfSizes = halfSizes;
+		}
+
+		CollisionVolumeSys CreateSphere(float radius, int layer, bool trigger = false) {
+			data.type = VolumeType::Sphere;
+			data.collisionLayer = layer;
+			data.radius = radius;
+			data.isTrigger = trigger;
+		}
+
+		CollisionVolumeSys CreateOBB(const Vector3& halfExtents, int layer, bool trigger = false) {
+			data.type = VolumeType::OBB;
+			data.collisionLayer = layer;
+			data.halfExtents = halfExtents;
+			data.isTrigger = false;
+		}
+
+		CollisionVolumeSys CreateCapsule(float radius, float halfHeight, int layer, bool trigger = false) {
+			data.type = VolumeType::Capsule;
+			data.collisionLayer = layer;
+			data.radius = radius;
+			data.halfHeight = halfHeight;
+			data.isTrigger = trigger;
+		}
+
+		bool isValid() const {
+			data.type != VolumeType::Invalid;
+		}
 
 		bool CanCollideWith(const CollisionVolumeComp& other) const {
 			if (data.collisionLayer < 0 || data.collisionLayer >= LayerCount ||
@@ -65,6 +95,30 @@ namespace NCL {
 			}
 			return CollisionMatrix[data.collisionLayer][other.collisionLayer] ||
 				CollisionMatrix[other.collisionLayer][data.collisionLayer];
+		}
+
+		bool isType(VolumeType type) {
+			return data.type == type;
+		}
+
+		const Vector3& GetAABBHalfSize() {
+			return data.halfSizes;
+		}
+
+		float GetSphereRadius() {
+			return data.radius;
+		}
+
+		const Vector3& GetOBBHalfExtents() {
+			return data.halfExtents;
+		}
+
+		float GetCapsuleRadius() {
+			return data.radius;
+		}
+
+		float GetCapsuleHalfHeight() {
+			return data.halfHeight;
 		}
 	};
 }
