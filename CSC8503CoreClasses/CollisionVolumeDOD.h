@@ -50,6 +50,7 @@ namespace NCL {
 		float radius;
 		int collisionLayer;
 		bool isTrigger;
+		//oops
 	};
 
 	struct CollisionVolumeSys {
