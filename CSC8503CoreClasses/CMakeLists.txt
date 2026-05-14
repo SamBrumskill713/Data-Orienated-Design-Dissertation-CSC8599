@@ -48,12 +48,16 @@ set(Collision_Detection
     "CapsuleVolume.cpp"
     "CollisionDetection.h"
     "CollisionDetection.cpp"
+    "CollisionDetectionDOD.h"
+    "CollisionDetectionDOD.cpp"
     "CollisionVolume.h"
     "CollisionVolumeDOD.h"
     "OBBVolume.h"
     "QuadTree.h"
     "QuadTree.cpp"
+    "QuadTreeDOD.h"
     "Ray.h"
+    "RayDOD.h"
     "SphereVolume.h"
 )
 source_group("Collision Detection" FILES ${Collision_Detection})
@@ -73,14 +77,15 @@ set(Networking
 source_group("Networking" FILES ${Networking})
 
 set(Physics
-    "constraint.h"  
-     "constraint.h"  
+    "constraint.h"   
     "PositionConstraint.cpp"
     "PositionConstraint.h"
     "OrientationConstraint.cpp"
     "OrientationConstraint.h"
     "PhysicsObject.cpp"
     "PhysicsObject.h"
+    "PhysicsObjectDOD.cpp"
+    "PhysicsObjectDOD.h"
     "PhysicsSystem.cpp"
     "PhysicsSystem.h"
     "PhysicsSystemDOD.cpp"
@@ -91,18 +96,26 @@ source_group("Physics" FILES ${Physics})
 set(Header_Files
     "Debug.h"
     "GameObject.h"
+    "GameObjectDOD.h"
     "GameWorld.h"
+    "GameWorldDOD.h"
     "RenderObject.h"
+    "RenderObjectDOD.h"
     "Transform.h"
+    "TransformDOD.h"
 )
 source_group("Header Files" FILES ${Header_Files})
 
 set(Source_Files
     "Debug.cpp"
     "GameObject.cpp"
+    "GameObjectDOD.cpp"
     "GameWorld.cpp"
+    "GameWorldDOD.cpp"
     "RenderObject.cpp"
+    "RenderObjectDOD.cpp"
     "Transform.cpp"
+    "TransformDOD.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
 
