@@ -81,23 +81,23 @@ namespace NCL {
 
 		CollisionVolumeSys CreateSphere(float radius, int layer, bool trigger = false) {
 			data.type = VolumeType::Sphere;
-			data.collisionLayer = layer;
 			sphereData.radius = radius;
+			data.collisionLayer = layer;
 			data.isTrigger = trigger;
 		}
 
 		CollisionVolumeSys CreateOBB(const Vector3& halfExtents, int layer, bool trigger = false) {
+			OBBData.halfExtents = halfExtents;
 			data.type = VolumeType::OBB;
 			data.collisionLayer = layer;
-			OBBData.halfExtents = halfExtents;
 			data.isTrigger = false;
 		}
 
 		CollisionVolumeSys CreateCapsule(float radius, float halfHeight, int layer, bool trigger = false) {
 			data.type = VolumeType::Capsule;
-			data.collisionLayer = layer;
 			capsuleData.radius = radius;
 			capsuleData.halfHeight = halfHeight;
+			data.collisionLayer = layer;
 			data.isTrigger = trigger;
 		}
 
@@ -119,7 +119,7 @@ namespace NCL {
 		}
 
 		const Vector3& GetAABBHalfSize() {
-			return data.halfSizes;
+			return AABBData.halfSizes;
 		}
 
 		float GetSphereRadius() {
@@ -127,7 +127,7 @@ namespace NCL {
 		}
 
 		const Vector3& GetOBBHalfExtents() {
-			return data.halfExtents;
+			return OBBData.halfExtents;
 		}
 
 		float GetCapsuleRadius() {
