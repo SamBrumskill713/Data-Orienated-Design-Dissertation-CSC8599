@@ -42,45 +42,62 @@ namespace NCL {
 	};
 
 	struct CollisionVolumeComp {
-		Matrix3 orientation;
-		Vector3 halfExtents;
-		Vector3 halfSizes;
 		VolumeType type;
-		float halfHeight;
-		float radius;
 		int collisionLayer;
 		bool isTrigger;
 	};
 
+	struct AABBComp {
+		Vector3 halfSizes;
+	};
+
+	struct SphereComp {
+		float radius;
+	};
+
+	struct OBBComp {
+		Matrix3 orientation;
+		Vector3 halfExtents;
+	};
+
+	struct CapsuleComp {
+		float radius;
+		float halfHeight;
+	};
+
 	struct CollisionVolumeSys {
+		OBBComp OBBData;
+		AABBComp AABBData;
 		CollisionVolumeComp data;
+		CapsuleComp capsuleData;
+		SphereComp sphereData;
 
 		CollisionVolumeSys CreateAABB(const Vector3& halfSizes, int layer, bool trigger = false) {
 			data.type = VolumeType::AABB;
 			data.collisionLayer = layer;
 			data.isTrigger = trigger;
-			data.halfSizes = halfSizes;
+			AABBData.halfSizes = halfSizes;
 		}
 
 		CollisionVolumeSys CreateSphere(float radius, int layer, bool trigger = false) {
 			data.type = VolumeType::Sphere;
 			data.collisionLayer = layer;
-			data.radius = radius;
+			sphereData.radius = radius;
 			data.isTrigger = trigger;
 		}
 
 		CollisionVolumeSys CreateOBB(const Vector3& halfExtents, int layer, bool trigger = false) {
 			data.type = VolumeType::OBB;
 			data.collisionLayer = layer;
-			data.halfExtents = halfExtents;
+			OBBData.halfExtents = halfExtents;
 			data.isTrigger = false;
 		}
 
 		CollisionVolumeSys CreateCapsule(float radius, float halfHeight, int layer, bool trigger = false) {
 			data.type = VolumeType::Capsule;
 			data.collisionLayer = layer;
-			data.radius = radius;
-			data.halfHeight = halfHeight;
+			capsuleData.radius = radius;
+			capsuleData.halfHeight = halfHeight;
 			data.isTrigger = trigger;
 		}
 
@@ -106,7 +123,7 @@ namespace NCL {
 		}
 
 		float GetSphereRadius() {
-			return data.radius;
+			return sphereData.radius;
 		}
 
 		const Vector3& GetOBBHalfExtents() {
@@ -114,11 +131,11 @@ namespace NCL {
 		}
 
 		float GetCapsuleRadius() {
-			return data.radius;
+			return capsuleData.radius;
 		}
 
 		float GetCapsuleHalfHeight() {
-			return data.halfHeight;
+			return capsuleData.halfHeight;
 		}
 	};
 }
