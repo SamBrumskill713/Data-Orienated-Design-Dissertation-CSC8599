@@ -1,4 +1,8 @@
 #pragma once
+#include "Vector.h"
+#include "Quaternion.h"
+#include "Matrix.h"
+
 using namespace NCL::Maths;
 namespace NCL {
 	namespace CSC8503 {
