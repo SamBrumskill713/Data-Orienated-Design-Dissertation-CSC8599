@@ -525,7 +525,8 @@ public:
 			window->SetWindowPosition(0, 0);
 		}
 
-		window->SetTitle("Gametech frame time:" + std::to_string(1000.0f * dt));
+		float fps = (dt > 0.0) ? 1.0f / dt : 0.0f;
+		window->SetTitle("GameTech FPS: " + std::to_string((int)fps) + " | Gametech frame time: " + std::to_string(1000.0f * dt));
 
 		// Core game updates
 		gameRef->UpdateGame(dt);
@@ -585,7 +586,7 @@ int main() {
 
 	Window* w = Window::CreateGameWindow(initInfo);
 
-	TestPushdownAutomata(w);
+	//TestPushdownAutomata(w);
 	//TestNetworking();
 
 	if (!w->HasInitialised()) {
@@ -617,6 +618,7 @@ int main() {
 
 			renderer->Update(dt);
 			renderer->Render();
+			renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
 			Debug::UpdateRenderables(dt);
 		}
 	}
@@ -631,6 +633,7 @@ int main() {
 
 			renderer->Update(dt);
 			renderer->Render();
+			renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
 			Debug::UpdateRenderables(dt);
 		}
 	}
