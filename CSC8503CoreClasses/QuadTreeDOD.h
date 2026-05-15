@@ -8,7 +8,6 @@ namespace NCL {
 	using namespace NCL::Maths;
 	namespace CSC8503 {
 
-		// Quadtree entry - mirrors original
 		template<class T>
 		struct QuadTreeEntryDOD {
 			Vector3 pos;
@@ -22,13 +21,12 @@ namespace NCL {
 			}
 		};
 
-		// Quadtree node - data oriented version
 		template<class T>
 		struct QuadTreeNodeDOD {
 			Vector2 position;
 			Vector2 size;
 			std::vector<QuadTreeEntryDOD<T>> contents;
-			int childrenIndices[4];  // Indices into flat node array (-1 if no child)
+			int childrenIndices[4];  
 
 			QuadTreeNodeDOD() : position(Vector2()), size(Vector2()) {
 				for (int i = 0; i < 4; ++i) {
@@ -91,14 +89,12 @@ namespace NCL {
 
 				QuadTreeNodeDOD<T>& node = nodes[nodeIndex];
 
-				// Check AABB intersection with node bounds
 				if (!CollisionDetectionDOD::AABBTest(pos,
 					Vector3(node.position.x, 0, node.position.y), objSize,
 					Vector3(node.size.x, 1000.0f, node.size.y))) {
 					return;
 				}
 
-				// If node has children, recurse to them
 				if (node.HasChildren()) {
 					for (int i = 0; i < 4; ++i) {
 						if (node.childrenIndices[i] != -1) {
@@ -107,10 +103,8 @@ namespace NCL {
 					}
 				}
 				else {
-					// Add to leaf node
 					node.contents.push_back(QuadTreeEntryDOD<T>(object, pos, objSize));
 
-					// Split if necessary (mirrors original logic)
 					if ((int)node.contents.size() > maxSize && depthLeft > 0) {
 						if (node.IsLeaf()) {
 							SplitNode(nodeIndex);

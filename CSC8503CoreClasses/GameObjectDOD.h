@@ -45,21 +45,17 @@ namespace NCL::CSC8503 {
 		TriggerComp() : isActive(true) {}
 	};
 
-	// Main game object - Array of Structs approach (AABB collision only)
 	struct GameObjectDOD {
-		// CORE COMPONENTS
 		TransformsComp transform;
-		AABBComp collision;              // AABB collision data only
+		AABBComp collision;              
 		PhysicsObjectComp physics;
 		RenderObjectComp render;
 
-		// TYPE-SPECIFIC COMPONENTS
 		PickUpComp pickUp;
 		PlayerComp player;
 		ObstacleComp obstacle;
 		TriggerComp trigger;
 
-		// METADATA
 		std::string name;
 		bool isActive;
 		bool isCollided;
@@ -68,7 +64,6 @@ namespace NCL::CSC8503 {
 		GameObjectType objectType;
 		int collisionLayer;
 
-		// OPTIONAL COMPONENTS
 		void* networkObject;
 
 		GameObjectDOD()
@@ -84,7 +79,6 @@ namespace NCL::CSC8503 {
 		}
 	};
 
-	// Simple array storage for AoS
 	struct GameObjectStorage {
 		std::vector<GameObjectDOD> objects;
 
