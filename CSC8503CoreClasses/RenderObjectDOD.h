@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Vector.h"
 
 using namespace NCL::Maths;
@@ -19,11 +20,16 @@ namespace NCL {
 		};
 
 		struct GameTechMaterial {
-			MaterialType type = MaterialType::Opaque;
-			Texture* diffuseTex = nullptr;
-			Texture* bumpTex = nullptr;
+			MaterialType type;
+			Texture* diffuseTex;
+			Texture* bumpTex;
+
+			GameTechMaterial()
+				: type(MaterialType::Opaque), diffuseTex(nullptr), bumpTex(nullptr) {
+			}
 		};
 
+		// Pure data component - render state
 		struct RenderObjectComp {
 			Mesh* mesh;
 			GameTechMaterial material;
@@ -34,70 +40,33 @@ namespace NCL {
 				material(),
 				colour(Vector4(1.0f, 1.0f, 1.0f, 1.0f)) {
 			}
-
-			RenderObjectComp(Mesh* renderMesh, const GameTechMaterial& renderMaterial)
-				: mesh(renderMesh),
-				material(renderMaterial),
-				colour(Vector4(1.0f, 1.0f, 1.0f, 1.0f)) {
-			}
 		};
 
-		struct RenderObjectSys {
-			RenderObjectComp data;
+		namespace RenderOps {
 
-			Mesh* GetMesh() const {
-				return data.mesh;
+			inline void SetColour(RenderObjectComp& render, const Vector4& c) {
+				render.colour = c;
 			}
 
-			Vector4 GetColour() const {
-				return data.colour;
+			inline void SetMaterial(RenderObjectComp& render, const GameTechMaterial& mat) {
+				render.material = mat;
 			}
 
-			GameTechMaterial GetMaterial() const {
-				return data.material;
+			inline void SetMesh(RenderObjectComp& render, Mesh* mesh) {
+				render.mesh = mesh;
 			}
 
-			RenderObjectSys& SetMesh(Mesh* renderMesh) {
-				data.mesh = renderMesh;
-				return *this;
+			inline void SetDiffuseTexture(RenderObjectComp& render, Texture* tex) {
+				render.material.diffuseTex = tex;
 			}
 
-			RenderObjectSys& SetColour(const Vector4& c) {
-				data.colour = c;
-				return *this;
+			inline void SetBumpTexture(RenderObjectComp& render, Texture* tex) {
+				render.material.bumpTex = tex;
 			}
 
-			RenderObjectSys& SetMaterial(const GameTechMaterial& mat) {
-				data.material = mat;
-				return *this;
+			inline void SetMaterialType(RenderObjectComp& render, MaterialType type) {
+				render.material.type = type;
 			}
-
-			RenderObjectSys& SetDiffuseTexture(Texture* tex) {
-				data.material.diffuseTex = tex;
-				return *this;
-			}
-
-			RenderObjectSys& SetBumpTexture(Texture* tex) {
-				data.material.bumpTex = tex;
-				return *this;
-			}
-
-			RenderObjectSys& SetMaterialType(MaterialType type) {
-				data.material.type = type;
-				return *this;
-			}
-
-			Texture* GetDiffuseTexture() const {
-				return data.material.diffuseTex;
-			}
-
-			Texture* GetBumpTexture() const {
-				return data.material.bumpTex;
-			}
-
-			MaterialType GetMaterialType() const {
-				return data.material.type;
-			}
-		};
+		}
 	}
 }

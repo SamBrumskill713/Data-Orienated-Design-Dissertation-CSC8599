@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Vector.h"
 #include "Quaternion.h"
 #include "Matrix.h"
@@ -18,7 +19,9 @@ namespace NCL::CSC8503 {
 		Vector3 inverseInertia;
 		float inverseMass;
 		float elasticity;
+		float friction;
 		bool isCollided;
+
 		PhysicsObjectComp()
 			: linearVelocity(Vector3()),
 			force(Vector3()),
@@ -27,78 +30,61 @@ namespace NCL::CSC8503 {
 			inverseInertia(Vector3()),
 			inverseMass(1.0f),
 			elasticity(0.8f),
+			friction(0.8f),
 			isCollided(false) {
 		}
 	};
 
-	struct PhysicsObjectSys {
-		PhysicsObjectComp data;
+	namespace PhysicsOps {
 
-		Vector3 GetLinearVelocity() const {
-			return data.linearVelocity;
+		// Update inertia tensor based on orientation
+		inline void UpdateInertiaTensor(PhysicsObjectComp& physics, const Quaternion& orientation) {
+			Matrix3 invOrientation = Quaternion::RotationMatrix<Matrix3>(orientation.Conjugate());
+			Matrix3 orientationMatrix = Quaternion::RotationMatrix<Matrix3>(orientation);
+			physics.inverseInertiaTensor = orientationMatrix * Matrix::Scale3x3(physics.inverseInertia) * invOrientation;
 		}
 
-		Vector3 GetAngularVelocity() const {
-			return data.angularVelocity;
+		// Initialize cube inertia
+		inline void InitCubeInertia(PhysicsObjectComp& physics, const Vector3& scale) {
+			Vector3 fullWidth = scale * 2.0f;
+			Vector3 dimsSqr = fullWidth * fullWidth;
+
+			physics.inverseInertia.x = (12.0f * physics.inverseMass) / (dimsSqr.y + dimsSqr.z);
+			physics.inverseInertia.y = (12.0f * physics.inverseMass) / (dimsSqr.x + dimsSqr.z);
+			physics.inverseInertia.z = (12.0f * physics.inverseMass) / (dimsSqr.x + dimsSqr.y);
 		}
 
-		Vector3 GetTorque() const {
-			return data.torque;
+		// Initialize sphere inertia
+		inline void InitSphereInertia(PhysicsObjectComp& physics, const Vector3& scale) {
+			float radius = Vector::GetMaxElement(scale);
+			float i = 2.5f * physics.inverseMass / (radius * radius);
+			physics.inverseInertia = Vector3(i, i, i);
 		}
 
-		Vector3 GetForce() const {
-			return data.force;
+		// Apply linear impulse
+		inline void ApplyLinearImpulse(PhysicsObjectComp& physics, const Vector3& impulse) {
+			physics.linearVelocity += impulse * physics.inverseMass;
 		}
 
-		float GetInverseMass() const {
-			return data.inverseMass;
+		// Apply angular impulse
+		inline void ApplyAngularImpulse(PhysicsObjectComp& physics, const Vector3& impulse) {
+			physics.angularVelocity += physics.inverseInertiaTensor * impulse;
 		}
 
-		float GetElasticity() const {
-			return data.elasticity;
+		// Add force
+		inline void AddForce(PhysicsObjectComp& physics, const Vector3& addedForce) {
+			physics.force += addedForce;
 		}
 
-		bool GetIsCollider() const {
-			return data.isCollided;
+		// Add torque
+		inline void AddTorque(PhysicsObjectComp& physics, const Vector3& addedTorque) {
+			physics.torque += addedTorque;
 		}
 
-		Matrix3 GetInertiaTensor() const {
-			return data.inverseInertiaTensor;
+		// Clear forces
+		inline void ClearForces(PhysicsObjectComp& physics) {
+			physics.force = Vector3(0, 0, 0);
+			physics.torque = Vector3(0, 0, 0);
 		}
-
-		PhysicsObjectSys& SetInverseMass(float invMass) {
-			data.inverseMass = invMass;
-			return *this;
-		}
-
-		PhysicsObjectSys& SetLinearVelocity(const Vector3& v) {
-			data.linearVelocity = v;
-			return *this;
-		}
-
-		PhysicsObjectSys& SetAngularVelocity(const Vector3& v) {
-			data.angularVelocity = v;
-			return *this;
-		}
-
-		PhysicsObjectSys& SetElasticity(float e) {
-			data.elasticity = e;
-			return *this;
-		}
-
-		void SetIsCollider(bool colliding) {
-			data.isCollided = colliding;
-		}
-
-		// Methods - implementation takes transform data as parameter instead of storing reference
-		void ApplyAngularImpulse(const Vector3& impulse);
-		void ApplyLinearImpulse(const Vector3& impulse);
-		void AddForce(const Vector3& addedForce);
-		void AddForceAtPosition(const Vector3& addedForce, const Vector3& position, const Vector3& transformPosition);
-		void AddTorque(const Vector3& addedTorque);
-		void ClearForces();
-		void InitCubeInertia(const Vector3& scale);
-		void InitSphereInertia(const Vector3& scale);
-		void UpdateInertiaTensor(const Quaternion& orientation);
-	};
+	}
 }
