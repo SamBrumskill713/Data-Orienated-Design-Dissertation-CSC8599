@@ -29,7 +29,6 @@ namespace NCL {
 			}
 		};
 
-		// Pure data component - render state
 		struct RenderObjectComp {
 			Mesh* mesh;
 			GameTechMaterial material;
