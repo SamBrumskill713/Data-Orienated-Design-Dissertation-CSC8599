@@ -112,7 +112,7 @@ void PhysicsSystemDOD::BroadPhase() {
 	QuadTreeDOD<size_t> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
 
 	for (size_t i = 0; i < objects.size(); ++i) {
-		if (!objects[i].isActive || objects[i].physics.inverseMass == 0.0f) {
+		if (!objects[i].isActive) {
 			continue;
 		}
 
@@ -176,7 +176,7 @@ void PhysicsSystemDOD::BasicCollisionDetection() {
 	CollisionInfoDOD collisionInfo;
 
 	for (size_t i = 0; i < objects.size(); ++i) {
-		if (!objects[i].isActive || objects[i].physics.inverseMass == 0.0f) {
+		if (!objects[i].isActive) {
 			continue;
 		}
 

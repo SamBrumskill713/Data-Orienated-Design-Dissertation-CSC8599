@@ -390,7 +390,7 @@ public:
 				// Swap TutorialGame -> NetworkedGame and connect to localhost
 				if (gameRefPtr) {
 					delete gameRefPtr;
-					gameRefPtr = nullptr;
+				 gameRefPtr = nullptr;
 				}
 				gameRefPtr = new NetworkedGame(*world, *renderer, *physics);
 				static_cast<NetworkedGame*>(gameRefPtr)->StartAsClient(127, 0, 0, 1);
@@ -569,20 +569,54 @@ private:
 	GameTechRendererInterface* renderer = nullptr; // ADD THIS MEMBER
 };
 
+struct DODRenderProxy {
+	std::vector<GameObject*> proxyObjects;
+	GameWorldDOD* worldDOD;
+	
+	void Initialize(GameWorldDOD* inWorldDOD, GameWorld* oopWorld) {
+		worldDOD = inWorldDOD;
+		
+		auto& dodObjects = worldDOD->gameObjects.GetObjectArray();
+		for (size_t i = 0; i < dodObjects.size(); ++i) {
+			const GameObjectDOD& dodObj = dodObjects[i];
+			if (!dodObj.isActive) continue;
+			
+			GameObject* proxyObj = new GameObject(dodObj.name);
+			proxyObj->GetTransform().SetPosition(dodObj.transform.position);
+			proxyObj->GetTransform().SetScale(dodObj.transform.scale);
+			proxyObj->GetTransform().SetOrientation(dodObj.transform.orientation);
+			
+			if (dodObj.render.mesh) {
+				GameTechMaterial mat;
+				mat.type = dodObj.render.material.type;
+				mat.diffuseTex = dodObj.render.material.diffuseTex;
+				mat.bumpTex = dodObj.render.material.bumpTex;
+				
+				RenderObject* renderObj = new RenderObject(proxyObj->GetTransform(), dodObj.render.mesh, mat);
+				renderObj->SetColour(dodObj.render.colour);
+				proxyObj->SetRenderObject(renderObj);
+			}
+			
+			oopWorld->AddGameObject(proxyObj);
+			proxyObjects.push_back(proxyObj);
+		}
+	}
+	
+	void UpdateProxies() {
+		auto& dodObjects = worldDOD->gameObjects.GetObjectArray();
+		for (size_t i = 0; i < proxyObjects.size() && i < dodObjects.size(); ++i) {
+			const GameObjectDOD& dodObj = dodObjects[i];
+			proxyObjects[i]->GetTransform().SetPosition(dodObj.transform.position);
+			proxyObjects[i]->GetTransform().SetOrientation(dodObj.transform.orientation);
+		}
+	}
+	
+	void Cleanup() {
+		// Don't delete proxy objects here - let the GameWorld handle cleanup
+		proxyObjects.clear();
+	}
+};
 
-
-/*
-
-The main function should look pretty familar to you!
-We make a window, and then go into a while loop that repeatedly
-runs our 'game' until we press escape. Instead of making a 'renderer'
-and updating it, we instead make a whole game, and repeatedly update that,
-instead.
-
-This time, we've added some extra functionality to the window class - we can
-hide or show the
-
-*/
 int main() {
 	WindowInitialisation initInfo;
 	initInfo.width = 1280;
@@ -631,16 +665,33 @@ int main() {
 		if (gReturnToMenu.load()) {
 			// DOD mode selected
 			gReturnToMenu = false;
-
+			
+			// Clear OOP world
+			world->Clear();
+			
 			GameWorldDOD* worldDOD = new GameWorldDOD();
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
 			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, *renderer, *physicsDOD);
+
+			// Create proxy objects ONCE
+			DODRenderProxy renderProxy;
+			renderProxy.Initialize(worldDOD, world);
 
 			while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
 				if (dt > 0.1f) continue;
 
 				gameDOD->UpdateGame(dt);
+
+				// Update proxy transforms each frame (cheap operation)
+				renderProxy.UpdateProxies();
+
+				// SYNC the OOP world's camera with DOD camera
+				PerspectiveCamera& dodCamera = worldDOD->GetMainCamera();
+				world->GetMainCamera().SetPosition(dodCamera.GetPosition());
+				world->GetMainCamera().SetYaw(dodCamera.GetYaw());
+				world->GetMainCamera().SetPitch(dodCamera.GetPitch());
+				world->GetMainCamera().UpdateCamera(dt);
 
 				float fps = (dt > 0.0) ? 1.0f / dt : 0.0f;
 				w->SetTitle("GameTech DOD FPS: " + std::to_string((int)fps));
@@ -651,6 +702,8 @@ int main() {
 				Debug::UpdateRenderables(dt);
 			}
 
+			renderProxy.Cleanup();
+			world->Clear();  // Clear the OOP world before deleting DOD objects
 			delete gameDOD;
 			delete physicsDOD;
 			delete worldDOD;

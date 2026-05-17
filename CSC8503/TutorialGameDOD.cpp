@@ -15,6 +15,8 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, GameTechRendererInter
 	: gameWorld(inGameWold), renderer(inRenderer), physics(inPhysics) {
 	data.useGravity = true;
 
+	physics.UseGravity(data.useGravity);
+
 	controller = new KeyboardMouseController(*Window::GetWindow()->GetKeyboard(), *Window::GetWindow()->GetMouse());
 	gameWorld.GetMainCamera().SetController(*controller);
 
@@ -71,15 +73,15 @@ void TutorialGameDOD::UpdateGame(float dt) {
 		}*/
 	});
 
-	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 0), Debug::WHITE);
-	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);
 }
 
 void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
 	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
-	CreateAABBGrid(2, 2, 5.0f, 5.0f, Vector3(1, 1, 1));
+	CreateAABBGrid(30, 30, 5.0f, 5.0f, Vector3(1, 1, 1));
 }
 
 size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer)
@@ -89,7 +91,7 @@ size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, f
 	TransformOps::SetPosition(floorObj.transform, position);
 	TransformOps::SetScale(floorObj.transform, Vector3(floorLength, floorHeight, floorLength));
 
-	floorObj.collision.halfSizes = Vector3(floorLength, floorHeight, floorLength);
+	floorObj.collision.halfSizes = Vector3(floorLength * 0.5f, floorHeight * 0.5f, floorLength * 0.5f);  // HALF SIZES!
 	floorObj.physics.inverseMass = 0.0f;
 	floorObj.render.mesh = resources.cubeMesh;
 	floorObj.render.material = resources.checkerMaterial;
@@ -107,7 +109,7 @@ size_t NCL::CSC8503::TutorialGameDOD::addCubeToWorld(const Vector3& position, co
 	TransformOps::SetPosition(cubeObj.transform, position);
 	TransformOps::SetScale(cubeObj.transform, cubeDims);
 
-	cubeObj.collision.halfSizes = cubeDims;
+	cubeObj.collision.halfSizes = cubeDims * 0.5f;  // HALF SIZES!
 	cubeObj.physics.inverseMass = inverseMass;
 	PhysicsOps::InitCubeInertia(cubeObj.physics, cubeDims);
 	PhysicsOps::UpdateInertiaTensor(cubeObj.physics, cubeObj.transform.orientation);
