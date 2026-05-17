@@ -75,6 +75,8 @@ namespace NCL {
 
 			void initGame();
 
+			void initFPSTest();
+
 			void initObstacleTest();
 
 			void CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);

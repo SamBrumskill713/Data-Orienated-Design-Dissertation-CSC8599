@@ -78,7 +78,7 @@ TutorialGame::~TutorialGame() {
 }
 
 void TutorialGame::UpdateGame(float dt) {
-	if (isGameOver || isWin) {
+	/*if (isGameOver || isWin) {
 		if (isWin) {
 			Debug::Print("YOU WIN!",             Vector2(35, 45), Debug::GREEN);
 			Debug::Print("All items delivered.", Vector2(30, 50), Debug::WHITE);
@@ -88,51 +88,51 @@ void TutorialGame::UpdateGame(float dt) {
 		}
 		Debug::Print("Press ESC to quit", Vector2(32, 60), Debug::WHITE);
 		return;
-	}
+	}*/
 
 	world.GetMainCamera().UpdateCamera(dt);
 	if (useGravity) physics.UseGravity(useGravity);
 
-	gameTime -= dt;
+	/*gameTime -= dt;*/
 
 
-	if (allowLocalPlayerControl && playerObj && playerGroundCollision && levelFloor) {
-		playerGroundCollision->GetTransform().SetPosition(
-			playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
-		movePlayerObject(dt);
+	//if (allowLocalPlayerControl && playerObj && playerGroundCollision && levelFloor) {
+	//	playerGroundCollision->GetTransform().SetPosition(
+	//		playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
+	//	movePlayerObject(dt);
 
-		attachCameraToPlayer(); 
+	//	attachCameraToPlayer(); 
 
-		
-		/*Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(),
-			Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
-		Debug::debugDrawAABBs(levelFloor->GetTransform().GetPosition(), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
-		Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.0f, 16);
-		Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
-		Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
-		Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
-		Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
-		Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
-		Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
-		Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);*/
-		// Score is now printed in the unified HUD below
-	}
+	//	
+	//	/*Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(),
+	//		Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
+	//	Debug::debugDrawAABBs(levelFloor->GetTransform().GetPosition(), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
+	//	Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.0f, 16);
+	//	Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
+	//	Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
+	//	Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
+	//	Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
+	//	Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
+	//	Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
+	//	Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);*/
+	//	// Score is now printed in the unified HUD below
+	//}
 
-	if (!allowLocalPlayerControl && cameraTarget) {
+	/*if (!allowLocalPlayerControl && cameraTarget) {
 		attachCameraToPlayer();
-	}
+	}*/
 
-	if (trigVol) {
-		/*Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
-			Debug::BLUE, 0.1f);*/
-	}
+	//if (trigVol) {
+	//	/*Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
+	//		Debug::BLUE, 0.1f);*/
+	//}
 
-	if (outOfBounds) {
-		/*Debug::debugDrawAABBs(outOfBounds->GetTransform().GetPosition(), outOfBounds->GetTransform().GetScale(),
-			Debug::BLUE, 0.1f);*/
-	}
+	//if (outOfBounds) {
+	//	/*Debug::debugDrawAABBs(outOfBounds->GetTransform().GetPosition(), outOfBounds->GetTransform().GetScale(),
+	//		Debug::BLUE, 0.1f);*/
+	//}
 
-	int itemsRemaining = 0;
+	/*int itemsRemaining = 0;
 	if (data) {
 		for (auto* p : levelItems) {
 			if (p && p->getIsRendered()) {
@@ -192,11 +192,16 @@ void TutorialGame::UpdateGame(float dt) {
 		world.Clear();
 		physics.Clear();
 		initObstacleTest();
-	}
+	}*/
+
+	physics.Update(dt);
 
 	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
 
-	if (testStateObject) testStateObject->Update(dt);
+	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	//Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);
+
+	/*if (testStateObject) testStateObject->Update(dt);*/
 
 	/*if (!inSelectionMode) {
 		world.GetMainCamera().UpdateCamera(dt);
@@ -397,8 +402,8 @@ void TutorialGame::movePlayerObject(float dt)
 void TutorialGame::InitWorld() {
 	world.ClearAndErase();
 	physics.Clear();
-
-	initGame();
+	initFPSTest();
+	//initGame();
 }
 
 /*
@@ -739,6 +744,14 @@ void NCL::CSC8503::TutorialGame::initGame()
 	}*/
 	enemyAI = AddEnemyToWorld(Vector3(60, -7, 60), enemyMesh, 3.0f);
 	//AddEnemyToWorld(Vector3(60 + 10, -7, 60), enemyMesh, 3.0f);
+}
+
+void NCL::CSC8503::TutorialGame::initFPSTest()
+{
+	world.Clear();
+	physics.Clear();
+	AddFloorToWorld(Vector3(0, -5, 0), 500, 500);
+	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {

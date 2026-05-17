@@ -81,7 +81,7 @@ void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
 	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
-	CreateAABBGrid(30, 30, 5.0f, 5.0f, Vector3(1, 1, 1));
+	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
 }
 
 size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer)
