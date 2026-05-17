@@ -17,7 +17,6 @@ namespace NCL {
 		// Use the existing GameTechMaterial from RenderObject.h
 		// MaterialType is already defined in RenderObject.h
 
-		// Pure data component - render state
 		struct RenderObjectComp {
 			Mesh* mesh;
 			GameTechMaterial material;
