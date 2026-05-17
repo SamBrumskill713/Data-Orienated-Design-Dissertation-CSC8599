@@ -70,7 +70,7 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 	glassMaterial.type = MaterialType::Transparent;
 	glassMaterial.diffuseTex = glassTex;
 
-	InitCamera();
+	//InitCamera();
 	InitWorld();
 }
 

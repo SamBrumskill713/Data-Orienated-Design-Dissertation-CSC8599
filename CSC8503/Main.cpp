@@ -28,8 +28,6 @@
 #include "TutorialGameDOD.h"
 #include "PhysicsObjectDOD.h"
 
-
-
 #ifdef USEOPENGL
 #include "GameTechRenderer.h"
 #define CAN_COMPILE
@@ -370,6 +368,12 @@ public:
 				return PushdownResult::Pop; // proceed to gameplay
 			}
 
+			if (choice == "DOD Benchmark") {
+				confirmPressed = false;
+				gReturnToMenu = true; // Use this flag to signal DOD mode
+				return PushdownResult::Pop;
+			}
+
 			if (choice == "Host Online") {
 				// Swap TutorialGame -> NetworkedGame and host
 				if (gameRefPtr) {
@@ -450,7 +454,7 @@ private:
 	Window* window = nullptr;
 	GameTechRendererInterface* renderer = nullptr;
 
-	std::vector<std::string> options{ "Play", "Host Online", "Join Online", "Quit" };
+	std::vector<std::string> options{ "Play", "DOD Benchmark", "Host Online", "Join Online", "Quit" };
 	int currentIndex = 0;
 	bool confirmPressed = false;
 	bool quitRequested = false;
@@ -580,16 +584,12 @@ hide or show the
 
 */
 int main() {
-	//TestBehaviourTree();
 	WindowInitialisation initInfo;
 	initInfo.width = 1280;
 	initInfo.height = 720;
 	initInfo.windowTitle = "CSC8503 Game technology!";
 
 	Window* w = Window::CreateGameWindow(initInfo);
-
-	//TestPushdownAutomata(w);
-	//TestNetworking();
 
 	if (!w->HasInitialised()) {
 		return -1;
@@ -609,69 +609,69 @@ int main() {
 
 	TutorialGame* g = new TutorialGame(*world, *renderer, *physics);
 
-	// Intro menu loop
-	{
-		PushdownMachine menuMachine(new IntroMenuState(g, world, physics, w, renderer));
-		while (w->UpdateWindow()) {
-			float dt = w->GetTimer().GetTimeDeltaSeconds();
-			if (!menuMachine.Update(dt)) {
-				break;
-			}
+	// Main loop - menu and gameplay
+	while (w->UpdateWindow()) {
+		// Show menu
+		{
+			PushdownMachine menuMachine(new IntroMenuState(g, world, physics, w, renderer));
+			while (w->UpdateWindow()) {
+				float dt = w->GetTimer().GetTimeDeltaSeconds();
+				if (!menuMachine.Update(dt)) {
+					break;
+				}
 
-			renderer->Update(dt);
-			renderer->Render();
-			renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
-			Debug::UpdateRenderables(dt);
+				renderer->Update(dt);
+				renderer->Render();
+				renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
+				Debug::UpdateRenderables(dt);
+			}
 		}
-	}
 
-	{
-		PushdownMachine gameMachine(new GamePlayState(g, world, physics, w, renderer));
-		while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
-			float dt = w->GetTimer().GetTimeDeltaSeconds();
-			if (!gameMachine.Update(dt)) {
-				break;
+		// Check what was selected
+		if (gReturnToMenu.load()) {
+			// DOD mode selected
+			gReturnToMenu = false;
+
+			GameWorldDOD* worldDOD = new GameWorldDOD();
+			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
+			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, *renderer, *physicsDOD);
+
+			while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+				float dt = w->GetTimer().GetTimeDeltaSeconds();
+				if (dt > 0.1f) continue;
+
+				gameDOD->UpdateGame(dt);
+
+				float fps = (dt > 0.0) ? 1.0f / dt : 0.0f;
+				w->SetTitle("GameTech DOD FPS: " + std::to_string((int)fps));
+
+				renderer->Update(dt);
+				renderer->Render();
+				renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
+				Debug::UpdateRenderables(dt);
 			}
 
-			renderer->Update(dt);
-			renderer->Render();
-			renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
-			Debug::UpdateRenderables(dt);
+			delete gameDOD;
+			delete physicsDOD;
+			delete worldDOD;
+		}
+		else {
+			// Standard gameplay
+			PushdownMachine gameMachine(new GamePlayState(g, world, physics, w, renderer));
+			while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+				float dt = w->GetTimer().GetTimeDeltaSeconds();
+				if (!gameMachine.Update(dt)) {
+					break;
+				}
+
+				renderer->Update(dt);
+				renderer->Render();
+				renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
+				Debug::UpdateRenderables(dt);
+			}
 		}
 	}
 
 	Window::DestroyGameWindow();
-	//TestPathfinding();
-	//w->GetTimer().GetTimeDeltaSeconds();
-	//while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
-	//	float dt = w->GetTimer().GetTimeDeltaSeconds();
-	//	if (dt > 0.1f) {
-	//		std::cout << "Skipping large time delta" << std::endl;
-	//		continue; 
-	//	}
-	//	if (Window::GetKeyboard()->KeyPressed(KeyCodes::PRIOR)) {
-	//		w->ShowConsole(true);
-	//	}
-	//	if (Window::GetKeyboard()->KeyPressed(KeyCodes::NEXT)) {
-	//		w->ShowConsole(false);
-	//	}
-
-	//	if (Window::GetKeyboard()->KeyPressed(KeyCodes::T)) {
-	//		w->SetWindowPosition(0, 0);
-	//	}
-
-	//	w->SetTitle("Gametech frame time:" + std::to_string(1000.0f * dt));
-
-	//	g->UpdateGame(dt);
-
-	//	world->UpdateWorld(dt);
-	//	physics->Update(dt);
-	//	renderer->Update(dt);	
-	//	renderer->Render();
-	//	
-	//	Debug::UpdateRenderables(dt);
-	//	//TestStateMachine();
-	//	//DisplayPathfinding();
-	//}
-	//Window::DestroyGameWindow();
+	return 0;
 }
