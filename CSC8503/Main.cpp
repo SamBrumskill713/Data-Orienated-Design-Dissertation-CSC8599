@@ -25,6 +25,8 @@
 #include "BehaviourAction.h"
 
 #include "PhysicsSystem.h"
+#include "TutorialGameDOD.h"
+#include "PhysicsObjectDOD.h"
 
 
 
@@ -185,7 +187,7 @@ void TestBehaviourTree() {
 			return state;
 		});
 
-	BehaviourSequence* sequence = 
+	BehaviourSequence* sequence =
 		new BehaviourSequence("Room Sequence");
 	sequence->AddChild(findKey);
 	sequence->AddChild(goToRoom);
@@ -254,11 +256,11 @@ class GameScreen : public PushdownState {
 		return PushdownResult::NoChange;
 	}
 	void OnAwake() override {
-			std::cout << "Preparing to mine coins!\n";
+		std::cout << "Preparing to mine coins!\n";
 	}
-	protected:
-		int coinsMinded = 0;
-		float pauseReminder = 1;
+protected:
+	int coinsMinded = 0;
+	float pauseReminder = 1;
 };
 
 class IntroScreen : public PushdownState {
@@ -348,7 +350,7 @@ void TestNetworking()
 
 class IntroMenuState : public PushdownState {
 public:
-	explicit IntroMenuState(TutorialGame*& game, GameWorld* gw, PhysicsSystem* phys, Window* win, 
+	explicit IntroMenuState(TutorialGame*& game, GameWorld* gw, PhysicsSystem* phys, Window* win,
 		GameTechRendererInterface* rend)
 		: gameRefPtr(game), world(gw), physics(phys), window(win), renderer(rend) {
 	}
@@ -571,10 +573,10 @@ The main function should look pretty familar to you!
 We make a window, and then go into a while loop that repeatedly
 runs our 'game' until we press escape. Instead of making a 'renderer'
 and updating it, we instead make a whole game, and repeatedly update that,
-instead. 
+instead.
 
 This time, we've added some extra functionality to the window class - we can
-hide or show the 
+hide or show the
 
 */
 int main() {
@@ -591,7 +593,7 @@ int main() {
 
 	if (!w->HasInitialised()) {
 		return -1;
-	}	
+	}
 
 	w->ShowOSPointer(false);
 	w->LockMouseToWindow(true);

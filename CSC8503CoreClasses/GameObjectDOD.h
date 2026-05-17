@@ -134,5 +134,9 @@ namespace NCL::CSC8503 {
 		void Clear() {
 			objects.clear();
 		}
+
+		void Update(float dt) {
+			
+		}
 	};
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vector.h"
+#include "RenderObject.h"
 
 using namespace NCL::Maths;
 
@@ -13,21 +14,8 @@ namespace NCL {
 	using namespace NCL::Rendering;
 
 	namespace CSC8503 {
-		enum class MaterialType {
-			Opaque,
-			Transparent,
-			Effect
-		};
-
-		struct GameTechMaterial {
-			MaterialType type;
-			Texture* diffuseTex;
-			Texture* bumpTex;
-
-			GameTechMaterial()
-				: type(MaterialType::Opaque), diffuseTex(nullptr), bumpTex(nullptr) {
-			}
-		};
+		// Use the existing GameTechMaterial from RenderObject.h
+		// MaterialType is already defined in RenderObject.h
 
 		// Pure data component - render state
 		struct RenderObjectComp {
@@ -42,6 +30,7 @@ namespace NCL {
 			}
 		};
 
+		// Free functions for render operations - pure DOD
 		namespace RenderOps {
 
 			inline void SetColour(RenderObjectComp& render, const Vector4& c) {

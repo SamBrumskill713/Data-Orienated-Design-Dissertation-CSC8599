@@ -28,14 +28,16 @@ namespace NCL {
 			}
 		};
 
-		struct TutorialGameRosources {
+		struct TutorialGameResources {
 			Rendering::Mesh* cubeMesh;
 			Rendering::Mesh* sphereMesh;
 
 			Rendering::Texture* defaultTex;
 			Rendering::Texture* checkerTex;
 
-			TutorialGameRosources()
+			GameTechMaterial checkerMaterial;
+
+			TutorialGameResources()
 				:cubeMesh(nullptr), sphereMesh(nullptr), defaultTex(nullptr), checkerTex(nullptr) {
 			}
 		};
@@ -46,13 +48,11 @@ namespace NCL {
 			~TutorialGameDOD();
 
 			TutorialGameData data;
-			TutorialGameRosources resources;
+			TutorialGameResources resources;
 
 			void InitWorld();
 			void UpdateGame(float dt);
-			void initTest();
-
-			void ClearGame();
+			void InitTest();
 
 		private:
 			GameWorldDOD& gameWorld;
@@ -63,13 +63,10 @@ namespace NCL {
 			void InitCamera();
 			void LoadResources();
 
-			size_t AddFloorToWorld(const Vector3& position, float floorHeight, float floorLenght, int collisionLayer = 0);
+			size_t AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer = 0);
 			size_t addCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass = 10.0f, int collisionLayer = 0);
 			size_t addSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, int collisionLayer = 0);
 			void CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims);
-
-			void UpdateCamera(float dt);
-			void UpdatePhysics(float dt);
 
 			void HandleInput(float dt);
 		};
