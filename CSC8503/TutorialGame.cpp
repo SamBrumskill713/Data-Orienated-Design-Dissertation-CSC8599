@@ -199,6 +199,7 @@ void TutorialGame::UpdateGame(float dt) {
 	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
 
 	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	
 	//Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);
 
 	/*if (testStateObject) testStateObject->Update(dt);*/
@@ -485,6 +486,11 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 	cube->GetPhysicsObject()->SetInverseMass(inverseMass);
 	cube->GetPhysicsObject()->InitCubeInertia();
+	cube->GetRenderObject()->SetColour(Vector4(
+		0.5f + (rand() / (float)RAND_MAX) * 0.5f,
+		0.5f + (rand() / (float)RAND_MAX) * 0.5f,
+		0.5f + (rand() / (float)RAND_MAX) * 0.5f,
+		1.0f));
 
 	world.AddGameObject(cube);
 
