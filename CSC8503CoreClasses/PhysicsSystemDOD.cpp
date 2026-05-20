@@ -6,7 +6,7 @@
 using namespace NCL;
 using namespace NCL::CSC8503;
 
-const int IDEAL_HZ = 120;
+const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
 
 PhysicsSystemDOD::PhysicsSystemDOD(GameWorldDOD& world)
