@@ -11,8 +11,8 @@
 using namespace NCL;
 using namespace CSC8503;
 
-TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, GameTechRendererInterface& inRenderer, PhysicsSystemDOD& inPhysics) 
-	: gameWorld(inGameWold), renderer(inRenderer), physics(inPhysics) {
+TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, GameTechRendererInterface& inRenderer, PhysicsSystemDOD& inPhysics)
+	: gameWorld(inGameWold), rendererOOP(inRenderer), physics(inPhysics) {
 	data.useGravity = true;
 
 	physics.UseGravity(data.useGravity);
@@ -47,13 +47,18 @@ void TutorialGameDOD::InitCamera() {
 }
 
 void TutorialGameDOD::LoadResources() {
-	resources.cubeMesh = renderer.LoadMesh("cube.msh");
-	resources.sphereMesh = renderer.LoadMesh("sphere.msh");
+	resources.cubeMesh = rendererOOP.LoadMesh("cube.msh");
+	resources.sphereMesh = rendererOOP.LoadMesh("sphere.msh");
 
-	resources.checkerTex = renderer.LoadTexture("checkerboard.png");
-	
+	resources.checkerTex = rendererOOP.LoadTexture("checkerboard.png");
+
 	resources.checkerMaterial.type = MaterialType::Opaque;
 	resources.checkerMaterial.diffuseTex = resources.checkerTex;
+
+	// Debug output
+	std::cout << "Cube Mesh: " << (resources.cubeMesh ? "LOADED" : "NULL") << std::endl;
+	std::cout << "Checker Texture: " << (resources.checkerTex ? "LOADED" : "NULL") << std::endl;
+	std::cout << "Material Type: " << (int)resources.checkerMaterial.type << std::endl;
 }
 
 void TutorialGameDOD::InitWorld() {
@@ -81,7 +86,10 @@ void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
 	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
-	CreateAABBGrid(30, 30, 5.0f, 5.0f, Vector3(1, 1, 1));
+	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
+
+	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
+	std::cout << "Cubes added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 }
 
 size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer)
@@ -132,7 +140,7 @@ void TutorialGameDOD::CreateAABBGrid(int numRows, int numCols, float rowSpacing,
 	for (int x = 1; x < numCols + 1; ++x) {
 		for (int z = 1; z < numRows + 1; ++z) {
 			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
-			addCubeToWorld(position, cubeDims, 1.0f);
+			addCubeToWorld(position, cubeDims * Vector3(2, 2, 2), 1.0f);
 		}
 	}
 }

@@ -390,7 +390,7 @@ public:
 				// Swap TutorialGame -> NetworkedGame and connect to localhost
 				if (gameRefPtr) {
 					delete gameRefPtr;
-				 gameRefPtr = nullptr;
+					gameRefPtr = nullptr;
 				}
 				gameRefPtr = new NetworkedGame(*world, *renderer, *physics);
 				static_cast<NetworkedGame*>(gameRefPtr)->StartAsClient(127, 0, 0, 1);
@@ -572,36 +572,36 @@ private:
 struct DODRenderProxy {
 	std::vector<GameObject*> proxyObjects;
 	GameWorldDOD* worldDOD;
-	
+
 	void Initialize(GameWorldDOD* inWorldDOD, GameWorld* oopWorld) {
 		worldDOD = inWorldDOD;
-		
+
 		auto& dodObjects = worldDOD->gameObjects.GetObjectArray();
 		for (size_t i = 0; i < dodObjects.size(); ++i) {
 			const GameObjectDOD& dodObj = dodObjects[i];
 			if (!dodObj.isActive) continue;
-			
+
 			GameObject* proxyObj = new GameObject(dodObj.name);
 			proxyObj->GetTransform().SetPosition(dodObj.transform.position);
 			proxyObj->GetTransform().SetScale(dodObj.transform.scale);
 			proxyObj->GetTransform().SetOrientation(dodObj.transform.orientation);
-			
+
 			if (dodObj.render.mesh) {
 				GameTechMaterial mat;
 				mat.type = dodObj.render.material.type;
 				mat.diffuseTex = dodObj.render.material.diffuseTex;
 				mat.bumpTex = dodObj.render.material.bumpTex;
-				
+
 				RenderObject* renderObj = new RenderObject(proxyObj->GetTransform(), dodObj.render.mesh, mat);
 				renderObj->SetColour(dodObj.render.colour);
 				proxyObj->SetRenderObject(renderObj);
 			}
-			
+
 			oopWorld->AddGameObject(proxyObj);
 			proxyObjects.push_back(proxyObj);
 		}
 	}
-	
+
 	void UpdateProxies() {
 		auto& dodObjects = worldDOD->gameObjects.GetObjectArray();
 		for (size_t i = 0; i < proxyObjects.size() && i < dodObjects.size(); ++i) {
@@ -610,7 +610,7 @@ struct DODRenderProxy {
 			proxyObjects[i]->GetTransform().SetOrientation(dodObj.transform.orientation);
 		}
 	}
-	
+
 	void Cleanup() {
 		// Don't delete proxy objects here - let the GameWorld handle cleanup
 		proxyObjects.clear();
@@ -665,10 +665,10 @@ int main() {
 		if (gReturnToMenu.load()) {
 			// DOD mode selected
 			gReturnToMenu = false;
-			
+
 			// Clear OOP world
 			world->Clear();
-			
+
 			GameWorldDOD* worldDOD = new GameWorldDOD();
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
 			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, *renderer, *physicsDOD);

@@ -4,6 +4,7 @@
 #include "Texture.h"
 #include "GameWorldDOD.h"
 #include "PhysicsSystemDOD.h"
+#include "GameTechRendererDOD.h"
 
 namespace NCL {
 	class Controller;
@@ -56,7 +57,8 @@ namespace NCL {
 
 		private:
 			GameWorldDOD& gameWorld;
-			GameTechRendererInterface& renderer;
+			GameTechRendererInterface& rendererOOP;
+			//RendererSystemDOD& rendererDOD;
 			PhysicsSystemDOD& physics;
 			Controller* controller;
 
