@@ -5,6 +5,11 @@
 #include "OGLTexture.h"
 #include "OGLMesh.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include "Win32Window.h"
+#endif
+
 using namespace NCL;
 using namespace Rendering;
 using namespace CSC8503;
@@ -18,6 +23,11 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 	window = windowPtr;
 	resources.screenWidth = window->GetScreenSize().x;
 	resources.screenHeight = window->GetScreenSize().y;
+
+#ifdef _WIN32
+	NCL::Win32Code::Win32Window* realWindow = (NCL::Win32Code::Win32Window*)windowPtr;
+	deviceContext = GetDC(realWindow->GetHandle());
+#endif
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -65,17 +75,39 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 		"/Cubemap/skyrender0005.png"
 	};
 
+	uint32_t width[6] = { 0 };
+	uint32_t height[6] = { 0 };
+	uint32_t channels[6] = { 0 };
+	uint32_t flags[6] = { 0 };
+
+	std::vector<char*> texData(6, nullptr);
+
+	// Load all 6 cubemap faces
+	for (int i = 0; i < 6; ++i) {
+		TextureLoader::LoadTexture(filenames[i], texData[i], width[i], height[i], channels[i], flags[i]);
+		if (i > 0 && (width[i] != width[0] || height[i] != height[0])) {
+			std::cout << "Cubemap texture size mismatch!" << std::endl;
+			return;
+		}
+	}
+
 	glGenTextures(1, &resources.skyboxTex);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, resources.skyboxTex);
 
+	GLenum type = channels[0] == 4 ? GL_RGBA : GL_RGB;
+
+	// Upload all 6 faces to the cubemap
 	for (int i = 0; i < 6; ++i) {
-		OGLTexture* tex = (OGLTexture*)LoadTexture(filenames[i]);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[i], height[i], 0, type, GL_UNSIGNED_BYTE, texData[i]);
 	}
+
+	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 	//Debug Texture Mesh
 	resources.debugTexMesh = new OGLMesh();
@@ -195,6 +227,15 @@ void RendererSystemDOD::Destroy() {
 	window = nullptr;
 }
 
+void NCL::CSC8503::RendererSystemDOD::swapBuffers()
+{
+#ifdef _WIN32
+	if (deviceContext) {
+		::SwapBuffers(deviceContext);
+	}
+#endif
+}
+
 void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererData& frameData) {
 	frameData.opaqueObjectIndices.clear();
 	frameData.transparentObjectIndices.clear();
@@ -245,20 +286,22 @@ void RendererSystemDOD::RenderSkyboxPass(GameTechRendererData& frameData) {
 
 	int projLocation = glGetUniformLocation(resources.skyboxShader->GetProgramID(), "projMatrix");
 	int viewLocation = glGetUniformLocation(resources.skyboxShader->GetProgramID(), "viewMatrix");
+	int texLocation = glGetUniformLocation(resources.skyboxShader->GetProgramID(), "cubeTex");
 
 	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
 	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
 
-	glBindVertexArray(((Rendering::OGLMesh*)resources.skyboxMesh)->GetVAO());
-
-	glUniform1i(glGetUniformLocation(resources.skyboxShader->GetProgramID(), "cubeTex"), 0);
+	// Set texture uniform BEFORE binding texture
+	glUniform1i(texLocation, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, resources.skyboxTex);
 
+	glBindVertexArray(((Rendering::OGLMesh*)resources.skyboxMesh)->GetVAO());
 	glDrawElements(GL_TRIANGLES, ((Rendering::OGLMesh*)resources.skyboxMesh)->GetIndexCount(), GL_UNSIGNED_INT, 0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
 }
 
 void RendererSystemDOD::RenderShadowMapPass(GameWorldDOD& world, GameTechRendererData& frameData) {

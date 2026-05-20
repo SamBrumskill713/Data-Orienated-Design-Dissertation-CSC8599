@@ -11,8 +11,8 @@
 using namespace NCL;
 using namespace CSC8503;
 
-TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, GameTechRendererInterface& inRenderer, PhysicsSystemDOD& inPhysics)
-	: gameWorld(inGameWold), rendererOOP(inRenderer), physics(inPhysics) {
+TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& inRenderer, PhysicsSystemDOD& inPhysics)
+	: gameWorld(inGameWold), rendererDOD(inRenderer), physics(inPhysics) {
 	data.useGravity = true;
 
 	physics.UseGravity(data.useGravity);
@@ -47,10 +47,10 @@ void TutorialGameDOD::InitCamera() {
 }
 
 void TutorialGameDOD::LoadResources() {
-	resources.cubeMesh = rendererOOP.LoadMesh("cube.msh");
-	resources.sphereMesh = rendererOOP.LoadMesh("sphere.msh");
+	resources.cubeMesh = rendererDOD.LoadMesh("cube.msh");
+	resources.sphereMesh = rendererDOD.LoadMesh("sphere.msh");
 
-	resources.checkerTex = rendererOOP.LoadTexture("checkerboard.png");
+	resources.checkerTex = rendererDOD.LoadTexture("checkerboard.png");
 
 	resources.checkerMaterial.type = MaterialType::Opaque;
 	resources.checkerMaterial.diffuseTex = resources.checkerTex;
@@ -85,9 +85,9 @@ void TutorialGameDOD::UpdateGame(float dt) {
 void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
-	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
+	physics.data.useBroadPhase = true;
+	AddFloorToWorld(Vector3(0, -5, 0), 2, 10000);
 	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
-
 	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
 	std::cout << "Cubes added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 }

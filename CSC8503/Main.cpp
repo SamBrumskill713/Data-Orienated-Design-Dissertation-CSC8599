@@ -27,6 +27,7 @@
 #include "PhysicsSystem.h"
 #include "TutorialGameDOD.h"
 #include "PhysicsObjectDOD.h"
+#include "GameTechRendererDOD.h"
 
 #ifdef USEOPENGL
 #include "GameTechRenderer.h"
@@ -569,54 +570,6 @@ private:
 	GameTechRendererInterface* renderer = nullptr; // ADD THIS MEMBER
 };
 
-struct DODRenderProxy {
-	std::vector<GameObject*> proxyObjects;
-	GameWorldDOD* worldDOD;
-
-	void Initialize(GameWorldDOD* inWorldDOD, GameWorld* oopWorld) {
-		worldDOD = inWorldDOD;
-
-		auto& dodObjects = worldDOD->gameObjects.GetObjectArray();
-		for (size_t i = 0; i < dodObjects.size(); ++i) {
-			const GameObjectDOD& dodObj = dodObjects[i];
-			if (!dodObj.isActive) continue;
-
-			GameObject* proxyObj = new GameObject(dodObj.name);
-			proxyObj->GetTransform().SetPosition(dodObj.transform.position);
-			proxyObj->GetTransform().SetScale(dodObj.transform.scale);
-			proxyObj->GetTransform().SetOrientation(dodObj.transform.orientation);
-
-			if (dodObj.render.mesh) {
-				GameTechMaterial mat;
-				mat.type = dodObj.render.material.type;
-				mat.diffuseTex = dodObj.render.material.diffuseTex;
-				mat.bumpTex = dodObj.render.material.bumpTex;
-
-				RenderObject* renderObj = new RenderObject(proxyObj->GetTransform(), dodObj.render.mesh, mat);
-				renderObj->SetColour(dodObj.render.colour);
-				proxyObj->SetRenderObject(renderObj);
-			}
-
-			oopWorld->AddGameObject(proxyObj);
-			proxyObjects.push_back(proxyObj);
-		}
-	}
-
-	void UpdateProxies() {
-		auto& dodObjects = worldDOD->gameObjects.GetObjectArray();
-		for (size_t i = 0; i < proxyObjects.size() && i < dodObjects.size(); ++i) {
-			const GameObjectDOD& dodObj = dodObjects[i];
-			proxyObjects[i]->GetTransform().SetPosition(dodObj.transform.position);
-			proxyObjects[i]->GetTransform().SetOrientation(dodObj.transform.orientation);
-		}
-	}
-
-	void Cleanup() {
-		// Don't delete proxy objects here - let the GameWorld handle cleanup
-		proxyObjects.clear();
-	}
-};
-
 int main() {
 	WindowInitialisation initInfo;
 	initInfo.width = 1280;
@@ -666,44 +619,82 @@ int main() {
 			// DOD mode selected
 			gReturnToMenu = false;
 
-			// Clear OOP world
+			// Clear OOP world and renderer state
 			world->Clear();
+			//Debug::ClearAllDebugText();
+
+			// Clear the framebuffer to black before starting DOD benchmark
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			w->UpdateWindow();  // Swap buffers to show the cleared screen
 
 			GameWorldDOD* worldDOD = new GameWorldDOD();
+			RendererSystemDOD rendererDOD;
+			GameTechRendererData frameData;
+			rendererDOD.Initialise(w);
+
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
-			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, *renderer, *physicsDOD);
+			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, rendererDOD, *physicsDOD);
 
-			// Create proxy objects ONCE
-			DODRenderProxy renderProxy;
-			renderProxy.Initialize(worldDOD, world);
+			bool dodBenchmarkRunning = true;
+			int frameCount = 0;
+			double totalTime = 0.0;
+			std::vector<float> frameTimes;
+			frameTimes.reserve(500);
 
-			while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+			while (w->UpdateWindow() && dodBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
-				if (dt > 0.1f) continue;
+
+				// Don't skip frames - keep them all for accurate measurement
+				if (dt > 0.5f) {
+					std::cout << "Skipping massive frame: " << dt << "s" << std::endl;
+					continue;
+				}
 
 				gameDOD->UpdateGame(dt);
 
-				// Update proxy transforms each frame (cheap operation)
-				renderProxy.UpdateProxies();
+				frameData.viewMatrix = worldDOD->GetMainCamera().BuildViewMatrix();
+				frameData.projMatrix = worldDOD->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
+				frameData.cameraPos = worldDOD->GetMainCamera().GetPosition();
+				rendererDOD.RenderFrame(*worldDOD, frameData);
+				rendererDOD.swapBuffers();
 
-				// SYNC the OOP world's camera with DOD camera
-				PerspectiveCamera& dodCamera = worldDOD->GetMainCamera();
-				world->GetMainCamera().SetPosition(dodCamera.GetPosition());
-				world->GetMainCamera().SetYaw(dodCamera.GetYaw());
-				world->GetMainCamera().SetPitch(dodCamera.GetPitch());
-				world->GetMainCamera().UpdateCamera(dt);
+				frameCount++;
+				totalTime += dt;
+				frameTimes.push_back(dt);
 
-				float fps = (dt > 0.0) ? 1.0f / dt : 0.0f;
-				w->SetTitle("GameTech DOD FPS: " + std::to_string((int)fps));
+				// Update title every frame with current FPS
+				if (frameCount % 1 == 0) {
+					float currentFps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
+					w->SetTitle("GameTech DOD FPS: " + std::to_string((int)currentFps) +
+						" (Frame " + std::to_string(frameCount) + ")");
+				}
 
-				renderer->Update(dt);
-				renderer->Render();
-				renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
-				Debug::UpdateRenderables(dt);
+				// Check for ESC to exit DOD benchmark
+				if (Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+					// Calculate statistics
+					std::sort(frameTimes.begin(), frameTimes.end());
+
+					float minFrameTime = frameTimes.front();
+					float maxFrameTime = frameTimes.back();
+					float avgFrameTime = totalTime / frameCount;
+					float medianFrameTime = frameTimes[frameCount / 2];
+
+					std::cout << "\n=== DOD Benchmark Results ===" << std::endl;
+					std::cout << "Total Frames: " << frameCount << std::endl;
+					std::cout << "Total Time: " << totalTime << " seconds" << std::endl;
+					std::cout << "Average FPS: " << (frameCount / totalTime) << std::endl;
+					std::cout << "\nFrame Time Statistics:" << std::endl;
+					std::cout << "  Min: " << (minFrameTime * 1000.0f) << " ms (" << (1.0f / minFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Max: " << (maxFrameTime * 1000.0f) << " ms (" << (1.0f / maxFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Avg: " << (avgFrameTime * 1000.0f) << " ms (" << (1.0f / avgFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Med: " << (medianFrameTime * 1000.0f) << " ms (" << (1.0f / medianFrameTime) << " FPS)" << std::endl;
+					std::cout << "============================\n" << std::endl;
+
+					dodBenchmarkRunning = false;
+				}
 			}
-
-			renderProxy.Cleanup();
-			world->Clear();  // Clear the OOP world before deleting DOD objects
+			rendererDOD.Destroy();
 			delete gameDOD;
 			delete physicsDOD;
 			delete worldDOD;

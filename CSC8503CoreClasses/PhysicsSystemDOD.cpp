@@ -6,7 +6,7 @@
 using namespace NCL;
 using namespace NCL::CSC8503;
 
-const int IDEAL_HZ = 120;
+const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
 
 PhysicsSystemDOD::PhysicsSystemDOD(GameWorldDOD& world)
@@ -107,6 +107,7 @@ void PhysicsSystemDOD::ClearForces() {
 
 void PhysicsSystemDOD::BroadPhase() {
 	broadphasePairs.clear();
+	
 	auto& objects = gameWorld.gameObjects.GetObjectArray();
 
 	QuadTreeDOD<size_t> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
