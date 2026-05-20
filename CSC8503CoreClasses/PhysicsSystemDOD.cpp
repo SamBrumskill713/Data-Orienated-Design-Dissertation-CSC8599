@@ -107,6 +107,7 @@ void PhysicsSystemDOD::ClearForces() {
 
 void PhysicsSystemDOD::BroadPhase() {
 	broadphasePairs.clear();
+	
 	auto& objects = gameWorld.gameObjects.GetObjectArray();
 
 	QuadTreeDOD<size_t> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);

@@ -85,10 +85,10 @@ void TutorialGameDOD::UpdateGame(float dt) {
 void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
+	physics.data.useBroadPhase = true;
 	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
 	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
-
-	CreateAABBGrid(50, 50, 5.0f, 5.0f, Vector3(1, 1, 1));
+	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
 	std::cout << "Cubes added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 }
 

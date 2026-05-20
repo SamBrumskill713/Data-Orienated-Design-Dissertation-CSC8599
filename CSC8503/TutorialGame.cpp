@@ -758,6 +758,7 @@ void NCL::CSC8503::TutorialGame::initFPSTest()
 	physics.Clear();
 	AddFloorToWorld(Vector3(0, -5, 0), 500, 500);
 	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
+	
 }
 
 void TutorialGame::CreateSphereGrid(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
