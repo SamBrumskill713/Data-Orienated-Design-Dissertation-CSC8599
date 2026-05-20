@@ -72,6 +72,7 @@ namespace NCL {
 			void Initialise(Window* windowPtr);
 			void Destroy();
 			void swapBuffers();
+			void SetVerticalSync(int interval);
 
 			Mesh* LoadMesh(const std::string& name);
 			Texture* LoadTexture(const std::string& name);

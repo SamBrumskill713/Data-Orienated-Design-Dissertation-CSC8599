@@ -88,7 +88,7 @@ void TutorialGameDOD::InitTest() {
 	physics.data.useBroadPhase = true;
 	AddFloorToWorld(Vector3(0, -5, 0), 2, 10000);
 	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
-	CreateAABBGrid(30, 30, 5.0f, 5.0f, Vector3(1, 1, 1));
+	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
 	std::cout << "Cubes added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 }
 

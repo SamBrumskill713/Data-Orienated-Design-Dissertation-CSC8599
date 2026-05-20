@@ -632,6 +632,7 @@ int main() {
 			RendererSystemDOD rendererDOD;
 			GameTechRendererData frameData;
 			rendererDOD.Initialise(w);
+			rendererDOD.SetVerticalSync(1);
 
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
 			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, rendererDOD, *physicsDOD);

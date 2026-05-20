@@ -8,6 +8,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include "Win32Window.h"
+#include "glad/wgl.h"
 #endif
 
 using namespace NCL;
@@ -234,6 +235,14 @@ void NCL::CSC8503::RendererSystemDOD::swapBuffers()
 		::SwapBuffers(deviceContext);
 	}
 #endif
+}
+
+void NCL::CSC8503::RendererSystemDOD::SetVerticalSync(int interval)
+{
+	static auto wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	if (wglSwapIntervalEXT) {
+		wglSwapIntervalEXT(interval);
+	}
 }
 
 void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererData& frameData) {
