@@ -5,6 +5,7 @@ set(PROJECT_NAME CSC8503)
 ################################################################################
 #set(Header_Files
 #    "GameTechRenderer.h"
+#    "GameTechRendererDOD.h"
 #    "NetworkedGame.h"
 #    "NetworkPlayer.h"
 #    "StateGameObject.h"
@@ -17,6 +18,7 @@ source_group("Header Files" FILES ${Header_Files})
 
 #set(Source_Files
 #    "GameTechRenderer.cpp"
+#    "GameTechRendererDOD.cpp"
 #    "Main.cpp"
 #    "NetworkedGame.cpp"
 #    "NetworkPlayer.cpp"
