@@ -685,29 +685,60 @@ int main() {
 			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, rendererDOD, *physicsDOD);
 
 			bool dodBenchmarkRunning = true;
+			int frameCount = 0;
+			double totalTime = 0.0;
+			std::vector<float> frameTimes;
+			frameTimes.reserve(500);
+
 			while (w->UpdateWindow() && dodBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
-				if (dt > 0.1f) continue;
 
-				const_cast<std::vector<Debug::DebugStringEntry>&>(Debug::GetDebugStrings()).clear();
-				const_cast<std::vector<Debug::DebugLineEntry>&>(Debug::GetDebugLines()).clear();
-				const_cast<std::vector<Debug::DebugTexEntry>&>(Debug::GetDebugTex()).clear();
+				// Don't skip frames - keep them all for accurate measurement
+				if (dt > 0.1f) {
+					std::cout << "Skipping massive frame: " << dt << "s" << std::endl;
+					continue;
+				}
 
 				gameDOD->UpdateGame(dt);
 
 				frameData.viewMatrix = worldDOD->GetMainCamera().BuildViewMatrix();
 				frameData.projMatrix = worldDOD->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
 				frameData.cameraPos = worldDOD->GetMainCamera().GetPosition();
-
 				rendererDOD.RenderFrame(*worldDOD, frameData);
+				rendererDOD.swapBuffers();
 
-				float fps = (dt > 0.0) ? 1.0f / dt : 0.0f;
-				w->SetTitle("GameTech DOD FPS: " + std::to_string((int)fps));
+				frameCount++;
+				totalTime += dt;
+				frameTimes.push_back(dt);
 
-				//Debug::UpdateRenderables(dt);
+				// Update title every frame with current FPS
+				if (frameCount % 1 == 0) {
+					float currentFps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
+					w->SetTitle("GameTech DOD FPS: " + std::to_string((int)currentFps) +
+						" (Frame " + std::to_string(frameCount) + ")");
+				}
 
 				// Check for ESC to exit DOD benchmark
 				if (Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+					// Calculate statistics
+					std::sort(frameTimes.begin(), frameTimes.end());
+
+					float minFrameTime = frameTimes.front();
+					float maxFrameTime = frameTimes.back();
+					float avgFrameTime = totalTime / frameCount;
+					float medianFrameTime = frameTimes[frameCount / 2];
+
+					std::cout << "\n=== DOD Benchmark Results ===" << std::endl;
+					std::cout << "Total Frames: " << frameCount << std::endl;
+					std::cout << "Total Time: " << totalTime << " seconds" << std::endl;
+					std::cout << "Average FPS: " << (frameCount / totalTime) << std::endl;
+					std::cout << "\nFrame Time Statistics:" << std::endl;
+					std::cout << "  Min: " << (minFrameTime * 1000.0f) << " ms (" << (1.0f / minFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Max: " << (maxFrameTime * 1000.0f) << " ms (" << (1.0f / maxFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Avg: " << (avgFrameTime * 1000.0f) << " ms (" << (1.0f / avgFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Med: " << (medianFrameTime * 1000.0f) << " ms (" << (1.0f / medianFrameTime) << " FPS)" << std::endl;
+					std::cout << "============================\n" << std::endl;
+
 					dodBenchmarkRunning = false;
 				}
 			}
