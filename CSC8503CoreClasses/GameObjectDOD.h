@@ -18,64 +18,29 @@ namespace NCL::CSC8503 {
 		Obstacle = 4
 	};
 
-	struct PickUpComp {
-		int type;
-		int pointValue;
-		bool isRendered;
-
-		PickUpComp() : type(0), pointValue(1), isRendered(true) {}
-	};
-
-	struct PlayerComp {
-		Vector3 respawnPosition;
-		int score;
-		bool hasPickup;
-		std::vector<size_t> carriedPickupIndices;
-
-		PlayerComp() : respawnPosition(Vector3()), score(0), hasPickup(false) {}
-	};
-
-	struct ObstacleComp {
-		bool destructible;
-		ObstacleComp() : destructible(false) {}
-	};
-
-	struct TriggerComp {
-		bool isActive;
-		TriggerComp() : isActive(true) {}
-	};
-
 	struct GameObjectDOD {
-		TransformsComp transform;
-		AABBComp collision;              
 		PhysicsObjectComp physics;
+		TransformsComp transform;        
 		RenderObjectComp render;
-
-		PickUpComp pickUp;
-		PlayerComp player;
-		ObstacleComp obstacle;
-		TriggerComp trigger;
-
 		std::string name;
+		Vector3 broadphaseAABB;
+		AABBComp collision;
+		int worldID;
+		int collisionLayer;
 		bool isActive;
 		bool isCollided;
-		int worldID;
-		Vector3 broadphaseAABB;
 		GameObjectType objectType;
-		int collisionLayer;
-
-		void* networkObject;
 
 		GameObjectDOD()
 			: name(""), isActive(true), isCollided(false), worldID(-1),
 			broadphaseAABB(Vector3(0, 0, 0)), objectType(GameObjectType::Default),
-			collisionLayer(0), networkObject(nullptr) {
+			collisionLayer(0){
 		}
 
 		GameObjectDOD(const std::string& objName, GameObjectType type = GameObjectType::Default)
 			: name(objName), isActive(true), isCollided(false), worldID(-1),
 			broadphaseAABB(Vector3(0, 0, 0)), objectType(type),
-			collisionLayer(0), networkObject(nullptr) {
+			collisionLayer(0){
 		}
 	};
 
