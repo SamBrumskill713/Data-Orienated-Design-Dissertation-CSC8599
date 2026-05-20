@@ -94,7 +94,7 @@ void TutorialGameDOD::InitTest() {
 
 size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer)
 {
-	GameObjectDOD& floorObj = gameWorld.gameObjects.AddObject("Floor");
+	GameObjectDOD& floorObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(floorObj.transform, position);
 	TransformOps::SetScale(floorObj.transform, Vector3(floorLength, floorHeight, floorLength));
@@ -112,7 +112,7 @@ size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, f
 
 size_t NCL::CSC8503::TutorialGameDOD::addCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass, int collisionLayer)
 {
-	GameObjectDOD& cubeObj = gameWorld.gameObjects.AddObject("Cube");
+	GameObjectDOD& cubeObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(cubeObj.transform, position);
 	TransformOps::SetScale(cubeObj.transform, cubeDims);

@@ -22,7 +22,6 @@ namespace NCL::CSC8503 {
 		PhysicsObjectComp physics;
 		TransformsComp transform;        
 		RenderObjectComp render;
-		std::string name;
 		Vector3 broadphaseAABB;
 		AABBComp collision;
 		int worldID;
@@ -32,13 +31,13 @@ namespace NCL::CSC8503 {
 		GameObjectType objectType;
 
 		GameObjectDOD()
-			: name(""), isActive(true), isCollided(false), worldID(-1),
+			:isActive(true), isCollided(false), worldID(-1),
 			broadphaseAABB(Vector3(0, 0, 0)), objectType(GameObjectType::Default),
 			collisionLayer(0){
 		}
 
 		GameObjectDOD(const std::string& objName, GameObjectType type = GameObjectType::Default)
-			: name(objName), isActive(true), isCollided(false), worldID(-1),
+			:isActive(true), isCollided(false), worldID(-1),
 			broadphaseAABB(Vector3(0, 0, 0)), objectType(type),
 			collisionLayer(0){
 		}
@@ -47,8 +46,9 @@ namespace NCL::CSC8503 {
 	struct GameObjectStorage {
 		std::vector<GameObjectDOD> objects;
 
-		GameObjectDOD& AddObject(const std::string& name = "", GameObjectType type = GameObjectType::Default) {
-			objects.emplace_back(name, type);
+		GameObjectDOD& AddObject(GameObjectType type = GameObjectType::Default) {
+			objects.emplace_back();
+			objects.back().objectType = type;
 			return objects.back();
 		}
 
@@ -98,10 +98,6 @@ namespace NCL::CSC8503 {
 
 		void Clear() {
 			objects.clear();
-		}
-
-		void Update(float dt) {
-			
 		}
 	};
 }
