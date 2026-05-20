@@ -27,6 +27,7 @@
 #include "PhysicsSystem.h"
 #include "TutorialGameDOD.h"
 #include "PhysicsObjectDOD.h"
+#include "GameTechRendererDOD.h"
 
 #ifdef USEOPENGL
 #include "GameTechRenderer.h"
@@ -666,44 +667,51 @@ int main() {
 			// DOD mode selected
 			gReturnToMenu = false;
 
-			// Clear OOP world
+			// Clear OOP world and renderer state
 			world->Clear();
+			//Debug::ClearAllDebugText();
+
+			// Clear the framebuffer to black before starting DOD benchmark
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			w->UpdateWindow();  // Swap buffers to show the cleared screen
 
 			GameWorldDOD* worldDOD = new GameWorldDOD();
+			RendererSystemDOD rendererDOD;
+			GameTechRendererData frameData;
+			rendererDOD.Initialise(w);
+
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
-			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, *renderer, *physicsDOD);
+			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, rendererDOD, *physicsDOD);
 
-			// Create proxy objects ONCE
-			DODRenderProxy renderProxy;
-			renderProxy.Initialize(worldDOD, world);
-
-			while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+			bool dodBenchmarkRunning = true;
+			while (w->UpdateWindow() && dodBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
 				if (dt > 0.1f) continue;
 
+				const_cast<std::vector<Debug::DebugStringEntry>&>(Debug::GetDebugStrings()).clear();
+				const_cast<std::vector<Debug::DebugLineEntry>&>(Debug::GetDebugLines()).clear();
+				const_cast<std::vector<Debug::DebugTexEntry>&>(Debug::GetDebugTex()).clear();
+
 				gameDOD->UpdateGame(dt);
 
-				// Update proxy transforms each frame (cheap operation)
-				renderProxy.UpdateProxies();
+				frameData.viewMatrix = worldDOD->GetMainCamera().BuildViewMatrix();
+				frameData.projMatrix = worldDOD->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
+				frameData.cameraPos = worldDOD->GetMainCamera().GetPosition();
 
-				// SYNC the OOP world's camera with DOD camera
-				PerspectiveCamera& dodCamera = worldDOD->GetMainCamera();
-				world->GetMainCamera().SetPosition(dodCamera.GetPosition());
-				world->GetMainCamera().SetYaw(dodCamera.GetYaw());
-				world->GetMainCamera().SetPitch(dodCamera.GetPitch());
-				world->GetMainCamera().UpdateCamera(dt);
+				rendererDOD.RenderFrame(*worldDOD, frameData);
 
 				float fps = (dt > 0.0) ? 1.0f / dt : 0.0f;
 				w->SetTitle("GameTech DOD FPS: " + std::to_string((int)fps));
 
-				renderer->Update(dt);
-				renderer->Render();
-				renderer->SetVerticalSync(VerticalSyncState::VSync_OFF);
-				Debug::UpdateRenderables(dt);
-			}
+				//Debug::UpdateRenderables(dt);
 
-			renderProxy.Cleanup();
-			world->Clear();  // Clear the OOP world before deleting DOD objects
+				// Check for ESC to exit DOD benchmark
+				if (Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+					dodBenchmarkRunning = false;
+				}
+			}
+			rendererDOD.Destroy();
 			delete gameDOD;
 			delete physicsDOD;
 			delete worldDOD;

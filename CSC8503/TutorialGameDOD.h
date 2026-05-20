@@ -45,7 +45,7 @@ namespace NCL {
 
 		class TutorialGameDOD {
 		public:
-			TutorialGameDOD(GameWorldDOD& gameWorld, GameTechRendererInterface& renderer, PhysicsSystemDOD& physics);
+			TutorialGameDOD(GameWorldDOD& gameWorld, RendererSystemDOD& renderer, PhysicsSystemDOD& physics);
 			~TutorialGameDOD();
 
 			TutorialGameData data;
@@ -57,8 +57,8 @@ namespace NCL {
 
 		private:
 			GameWorldDOD& gameWorld;
-			GameTechRendererInterface& rendererOOP;
-			//RendererSystemDOD& rendererDOD;
+			//GameTechRendererInterface& rendererOOP;
+			RendererSystemDOD& rendererDOD;
 			PhysicsSystemDOD& physics;
 			Controller* controller;
 
