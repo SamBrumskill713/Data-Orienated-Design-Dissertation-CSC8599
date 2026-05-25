@@ -30,7 +30,7 @@ namespace NCL {
 		struct GameTechRendererResources {
 			Rendering::OGLMesh* skyboxMesh;
 			Rendering::OGLMesh* debugTexMesh;
-			
+
 			Rendering::OGLShader* defaultShader;
 			Rendering::OGLShader* skyboxShader;
 			Rendering::OGLShader* shadowShader;
