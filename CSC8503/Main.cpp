@@ -641,8 +641,6 @@ int main() {
 					continue;
 				}
 
-				gameDOD->UpdateGame(dt);
-
 				frameData.viewMatrix = worldDOD->GetMainCamera().BuildViewMatrix();
 				frameData.projMatrix = worldDOD->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
 				frameData.cameraPos = worldDOD->GetMainCamera().GetPosition();
