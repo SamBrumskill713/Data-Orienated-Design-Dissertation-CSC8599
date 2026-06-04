@@ -679,7 +679,7 @@ int main() {
 
 			while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
-				if (dt > 0.1f) continue;
+				if (dt > 0.5f) continue;
 
 				gameDOD->UpdateGame(dt);
 
