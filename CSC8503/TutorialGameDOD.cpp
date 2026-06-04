@@ -85,6 +85,7 @@ void TutorialGameDOD::UpdateGame(float dt) {
 void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
+	physics.data.useBroadPhase = true;
 	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
 	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 
