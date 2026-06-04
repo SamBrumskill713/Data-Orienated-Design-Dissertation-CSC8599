@@ -11,8 +11,8 @@
 using namespace NCL;
 using namespace CSC8503;
 
-TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, GameTechRendererInterface& inRenderer, PhysicsSystemDOD& inPhysics)
-	: gameWorld(inGameWold), rendererOOP(inRenderer), physics(inPhysics) {
+TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& inRenderer, PhysicsSystemDOD& inPhysics)
+	: gameWorld(inGameWold), rendererDOD(inRenderer), physics(inPhysics) {
 	data.useGravity = true;
 
 	physics.UseGravity(data.useGravity);
@@ -47,10 +47,10 @@ void TutorialGameDOD::InitCamera() {
 }
 
 void TutorialGameDOD::LoadResources() {
-	resources.cubeMesh = rendererOOP.LoadMesh("cube.msh");
-	resources.sphereMesh = rendererOOP.LoadMesh("sphere.msh");
+	resources.cubeMesh = rendererDOD.LoadMesh("cube.msh");
+	resources.sphereMesh = rendererDOD.LoadMesh("sphere.msh");
 
-	resources.checkerTex = rendererOOP.LoadTexture("checkerboard.png");
+	resources.checkerTex = rendererDOD.LoadTexture("checkerboard.png");
 
 	resources.checkerMaterial.type = MaterialType::Opaque;
 	resources.checkerMaterial.diffuseTex = resources.checkerTex;
@@ -95,7 +95,7 @@ void TutorialGameDOD::InitTest() {
 
 size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer)
 {
-	GameObjectDOD& floorObj = gameWorld.gameObjects.AddObject("Floor");
+	GameObjectDOD& floorObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(floorObj.transform, position);
 	TransformOps::SetScale(floorObj.transform, Vector3(floorLength, floorHeight, floorLength));
@@ -113,7 +113,7 @@ size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, f
 
 size_t NCL::CSC8503::TutorialGameDOD::addCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass, int collisionLayer)
 {
-	GameObjectDOD& cubeObj = gameWorld.gameObjects.AddObject("Cube");
+	GameObjectDOD& cubeObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(cubeObj.transform, position);
 	TransformOps::SetScale(cubeObj.transform, cubeDims);

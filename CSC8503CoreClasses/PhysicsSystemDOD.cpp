@@ -6,7 +6,7 @@
 using namespace NCL;
 using namespace NCL::CSC8503;
 
-const int IDEAL_HZ = 120;
+const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
 
 PhysicsSystemDOD::PhysicsSystemDOD(GameWorldDOD& world)
@@ -107,17 +107,25 @@ void PhysicsSystemDOD::ClearForces() {
 
 void PhysicsSystemDOD::BroadPhase() {
 	broadphasePairs.clear();
+
 	auto& objects = gameWorld.gameObjects.GetObjectArray();
 
 	QuadTreeDOD<size_t> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
 
 	for (size_t i = 0; i < objects.size(); ++i) {
-		if (!objects[i].isActive) {
+		if (!objects[i].isActive || objects[i].physics.inverseMass == 0.0f) {
 			continue;
 		}
 
 		Vector3 halfSize = objects[i].collision.halfSizes;
 		quadTree.Insert(i, objects[i].transform.position, halfSize * 2.0f);
+	}
+
+	std::vector<size_t> dynamicObjects;
+	for (size_t i = 0; i < objects.size(); ++i) {
+		if (objects[i].isActive && objects[i].physics.inverseMass != 0.0f) {
+			dynamicObjects.push_back(i);
+		}
 	}
 
 	quadTree.OperateOnContents(
@@ -137,6 +145,22 @@ void PhysicsSystemDOD::BroadPhase() {
 		}
 	);
 
+	for (size_t i = 0; i < objects.size(); ++i) {
+		if (!objects[i].isActive || objects[i].physics.inverseMass != 0.0f) {
+			continue;
+		}
+
+		for (size_t j : dynamicObjects) {
+			size_t idxA = i;
+			size_t idxB = j;
+			if (idxA > idxB) {
+				std::swap(idxA, idxB);
+			}
+
+			broadphasePairs.push_back(BroadphasePair(idxA, idxB));
+		}
+	}
+
 	std::sort(broadphasePairs.begin(), broadphasePairs.end());
 	broadphasePairs.erase(std::unique(broadphasePairs.begin(), broadphasePairs.end()), broadphasePairs.end());
 }
@@ -154,6 +178,10 @@ void PhysicsSystemDOD::NarrowPhase() {
 		GameObjectDOD& objB = objects[pair.indexB];
 
 		if (!objA.isActive || !objB.isActive) {
+			continue;
+		}
+
+		if (objA.physics.inverseMass == 0.0f && objB.physics.inverseMass == 0.0f) {
 			continue;
 		}
 

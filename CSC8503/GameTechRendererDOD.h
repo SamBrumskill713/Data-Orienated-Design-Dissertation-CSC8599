@@ -6,6 +6,10 @@
 #include "OGLTexture.h"
 #include <vector>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 
 namespace NCL {
 	namespace Rendering {
@@ -26,7 +30,7 @@ namespace NCL {
 		struct GameTechRendererResources {
 			Rendering::OGLMesh* skyboxMesh;
 			Rendering::OGLMesh* debugTexMesh;
-			
+
 			Rendering::OGLShader* defaultShader;
 			Rendering::OGLShader* skyboxShader;
 			Rendering::OGLShader* shadowShader;
@@ -59,9 +63,16 @@ namespace NCL {
 		struct RendererSystemDOD {
 			GameTechRendererResources resources;
 			Window* window;
+#ifdef _WIN32
+			HDC deviceContext = nullptr;
+#else
+			void* deviceContext = nullptr;
+#endif
 
 			void Initialise(Window* windowPtr);
 			void Destroy();
+			void swapBuffers();
+			void SetVerticalSync(int interval);
 
 			Mesh* LoadMesh(const std::string& name);
 			Texture* LoadTexture(const std::string& name);

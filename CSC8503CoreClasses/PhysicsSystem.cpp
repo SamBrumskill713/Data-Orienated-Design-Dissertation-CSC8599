@@ -57,7 +57,7 @@ bool useSimpleContainer = false;
 int constraintIterationCount = 10;
 
 //This is the fixed timestep we'd LIKE to have
-const int   idealHZ = 120;
+const int   idealHZ = 60;
 const float idealDT = 1.0f / idealHZ;
 
 /*
