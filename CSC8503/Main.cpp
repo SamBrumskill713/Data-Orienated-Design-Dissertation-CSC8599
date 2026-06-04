@@ -632,6 +632,9 @@ int main() {
 
 			while (w->UpdateWindow() && dodBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
+				if (dt > 0.5f) continue;
+
+				gameDOD->UpdateGame(dt);
 
 				// Don't skip frames - keep them all for accurate measurement
 				if (dt > 0.5f) {
