@@ -757,7 +757,7 @@ void NCL::CSC8503::TutorialGame::initFPSTest()
 	world.Clear();
 	physics.Clear();
 	AddFloorToWorld(Vector3(0, -5, 0), 10000, 10000);
-	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
+	CreateAABBGrid(50, 50, 5.0f, 5.0f, Vector3(1, 1, 1));
 	
 }
 

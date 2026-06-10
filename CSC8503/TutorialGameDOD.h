@@ -67,10 +67,7 @@ namespace NCL {
 
 			size_t AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer = 0);
 			size_t addCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass = 10.0f, int collisionLayer = 0);
-			size_t addSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, int collisionLayer = 0);
 			void CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims);
-
-			void HandleInput(float dt);
 		};
 	}
 

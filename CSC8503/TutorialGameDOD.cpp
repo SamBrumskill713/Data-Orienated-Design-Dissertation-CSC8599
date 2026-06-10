@@ -86,15 +86,16 @@ void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
 	physics.data.useBroadPhase = true;
-	AddFloorToWorld(Vector3(0, -5, 0), 2, 10000);
+	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
 	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
-	CreateAABBGrid(20, 20, 5.0f, 5.0f, Vector3(1, 1, 1));
+
+	CreateAABBGrid(90, 90, 5.0f, 5.0f, Vector3(1, 1, 1));
 	std::cout << "Cubes added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 }
 
 size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer)
 {
-	GameObjectDOD& floorObj = gameWorld.gameObjects.AddObject("Floor");
+	GameObjectDOD& floorObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(floorObj.transform, position);
 	TransformOps::SetScale(floorObj.transform, Vector3(floorLength, floorHeight, floorLength));
@@ -112,7 +113,7 @@ size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, f
 
 size_t NCL::CSC8503::TutorialGameDOD::addCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass, int collisionLayer)
 {
-	GameObjectDOD& cubeObj = gameWorld.gameObjects.AddObject("Cube");
+	GameObjectDOD& cubeObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(cubeObj.transform, position);
 	TransformOps::SetScale(cubeObj.transform, cubeDims);

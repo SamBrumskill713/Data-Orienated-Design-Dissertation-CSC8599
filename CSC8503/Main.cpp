@@ -537,12 +537,8 @@ public:
 
 		// Core game updates
 		gameRef->UpdateGame(dt);
-
-		// Only tick world/physics if not in end state (keeps the scene paused)
-		if (!gameRef->IsGameOver() && !gameRef->IsWin()) {
-			world->UpdateWorld(dt);
-			physics->Update(dt);
-		}
+		world->UpdateWorld(dt);
+		physics->Update(dt);
 
 		// If a return to menu was requested, push the IntroMenuState
 		if (gReturnToMenu.load()) {
@@ -550,15 +546,6 @@ public:
 			*newState = new IntroMenuState(gameRef, world, physics, window, renderer);
 			return PushdownResult::Push;
 		}
-
-		// Detect end state and push end screen
-		if (gameRef->IsGameOver() || gameRef->IsWin()) {
-			const bool didWin = gameRef->IsWin();
-			const int score = gameRef->GetPlayerScore();
-			*newState = new EndGameState(gameRef, window, didWin, score);
-			return PushdownResult::Push;
-		}
-
 		return PushdownResult::NoChange;
 	}
 
@@ -567,7 +554,7 @@ private:
 	GameWorld* world = nullptr;
 	PhysicsSystem* physics = nullptr;
 	Window* window = nullptr;
-	GameTechRendererInterface* renderer = nullptr; // ADD THIS MEMBER
+	GameTechRendererInterface* renderer = nullptr; 
 };
 
 int main() {
@@ -632,6 +619,7 @@ int main() {
 			RendererSystemDOD rendererDOD;
 			GameTechRendererData frameData;
 			rendererDOD.Initialise(w);
+			rendererDOD.SetVerticalSync(1);
 
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
 			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, rendererDOD, *physicsDOD);
@@ -645,13 +633,13 @@ int main() {
 			while (w->UpdateWindow() && dodBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
 
+				gameDOD->UpdateGame(dt);
+
 				// Don't skip frames - keep them all for accurate measurement
 				if (dt > 0.5f) {
 					std::cout << "Skipping massive frame: " << dt << "s" << std::endl;
 					continue;
 				}
-
-				gameDOD->UpdateGame(dt);
 
 				frameData.viewMatrix = worldDOD->GetMainCamera().BuildViewMatrix();
 				frameData.projMatrix = worldDOD->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
@@ -702,6 +690,7 @@ int main() {
 		else {
 			// Standard gameplay
 			PushdownMachine gameMachine(new GamePlayState(g, world, physics, w, renderer));
+
 			while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
 				if (!gameMachine.Update(dt)) {

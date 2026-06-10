@@ -8,6 +8,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include "Win32Window.h"
+#include "glad/wgl.h"
 #endif
 
 using namespace NCL;
@@ -17,7 +18,7 @@ using namespace CSC8503;
 #define SHADOWSIZE 4096
 
 static Matrix4 biasMatrix = Matrix::Translation(Vector3(0.5f, 0.5f, 0.5f)) * Matrix::Scale(Vector3(0.5f, 0.5f, 0.5f));
-static Matrix4 shadowMatrix; // Computed during shadow pass, used in opaque/transparent passes
+static Matrix4 shadowMatrix;
 
 void RendererSystemDOD::Initialise(Window* windowPtr) {
 	window = windowPtr;
@@ -109,14 +110,12 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-	//Debug Texture Mesh
 	resources.debugTexMesh = new OGLMesh();
 	resources.debugTexMesh->SetVertexPositions({ Vector3(-1, 1, 0), Vector3(-1, -1, 0), Vector3(1, -1, 0), Vector3(1, 1, 0) });
 	resources.debugTexMesh->SetVertexTextureCoords({ Vector2(0, 1), Vector2(0, 0), Vector2(1, 0), Vector2(1, 1) });
 	resources.debugTexMesh->SetVertexIndices({ 0, 1, 2, 2, 3, 0 });
 	resources.debugTexMesh->UploadToGPU();
 
-	// Initialisation for Debugging
 	glGenVertexArrays(1, &resources.lineVAO);
 	glGenVertexArrays(1, &resources.textVAO);
 
@@ -147,7 +146,7 @@ Texture* RendererSystemDOD::LoadTexture(const std::string& name) {
 }
 
 void RendererSystemDOD::Destroy() {
-	// Clean up shader resources
+
 	if (resources.defaultShader) {
 		delete resources.defaultShader;
 		resources.defaultShader = nullptr;
@@ -165,7 +164,6 @@ void RendererSystemDOD::Destroy() {
 		resources.debugShader = nullptr;
 	}
 
-	// Clean up mesh resources
 	if (resources.skyboxMesh) {
 		delete resources.skyboxMesh;
 		resources.skyboxMesh = nullptr;
@@ -175,7 +173,6 @@ void RendererSystemDOD::Destroy() {
 		resources.debugTexMesh = nullptr;
 	}
 
-	// Clean up texture resources
 	if (resources.shadowTex != 0) {
 		glDeleteTextures(1, &resources.shadowTex);
 		resources.shadowTex = 0;
@@ -185,13 +182,11 @@ void RendererSystemDOD::Destroy() {
 		resources.skyboxTex = 0;
 	}
 
-	// Clean up framebuffer resources
 	if (resources.shadowFBO != 0) {
 		glDeleteFramebuffers(1, &resources.shadowFBO);
 		resources.shadowFBO = 0;
 	}
 
-	// Clean up debug VAOs and VBOs
 	if (resources.lineVAO != 0) {
 		glDeleteVertexArrays(1, &resources.lineVAO);
 		resources.lineVAO = 0;
@@ -218,7 +213,6 @@ void RendererSystemDOD::Destroy() {
 		resources.textTexVBO = 0;
 	}
 
-	// Clear data vectors
 	resources.debugLineData.clear();
 	resources.debugTextPos.clear();
 	resources.debugTextColours.clear();
@@ -236,15 +230,22 @@ void NCL::CSC8503::RendererSystemDOD::swapBuffers()
 #endif
 }
 
+void NCL::CSC8503::RendererSystemDOD::SetVerticalSync(int interval)
+{
+	static auto wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	if (wglSwapIntervalEXT) {
+		wglSwapIntervalEXT(interval);
+	}
+}
+
 void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererData& frameData) {
 	frameData.opaqueObjectIndices.clear();
 	frameData.transparentObjectIndices.clear();
 
 	Vector3 camPos = frameData.cameraPos;
 
-	// Extract all active objects and bucket them by material type
 	auto& objects = world.gameObjects.GetObjectArray();
-	std::vector<std::pair<size_t, float>> objectDistances; // (index, distanceFromCamera)
+	std::vector<std::pair<size_t, float>> objectDistances; 
 	objectDistances.reserve(objects.size());
 
 	for (size_t i = 0; i < objects.size(); ++i) {
@@ -254,11 +255,9 @@ void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererDa
 		float distSq = Vector::LengthSquared(camPos - obj.transform.position);
 		objectDistances.emplace_back(i, distSq);
 
-		// Bucket by material type (all are opaque in the benchmark for now)
 		frameData.opaqueObjectIndices.push_back(i);
 	}
 
-	// Sort opaque objects front-to-back
 	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(),
 		[&](size_t a, size_t b) {
 			float distA = Vector::LengthSquared(camPos - objects[a].transform.position);
@@ -267,7 +266,6 @@ void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererDa
 		}
 	);
 
-	// Sort transparent objects back-to-front
 	std::sort(frameData.transparentObjectIndices.rbegin(), frameData.transparentObjectIndices.rend(),
 		[&](size_t a, size_t b) {
 			float distA = Vector::LengthSquared(camPos - objects[a].transform.position);
@@ -346,7 +344,6 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 
 	glUseProgram(resources.defaultShader->GetProgramID());
 
-	// Set up shader uniforms
 	int projLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "projMatrix");
 	int viewLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "viewMatrix");
 	int modelLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "modelMatrix");
@@ -362,7 +359,6 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 	int shadowTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowTex");
 	int shadowLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowMatrix");
 
-	// Set global shader state
 	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
 	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
 
@@ -376,7 +372,6 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 	glUniform3fv(lightColourLocation, 1, (float*)&sunCol);
 	glUniform1f(lightRadiusLocation, sunRadius);
 
-	// Bind shadow texture
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, resources.shadowTex);
 	glUniform1i(shadowTexLocation, 1);
@@ -399,7 +394,7 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 		glUniformMatrix4fv(shadowLocation, 1, false, (float*)&fullShadowMat);
 
 		glUniform4fv(colourLocation, 1, (float*)&obj.render.colour);
-		glUniform1i(hasVColLocation, 0); // DOD benchmark doesn't use vertex colours
+		glUniform1i(hasVColLocation, 0); 
 		glUniform1i(hasTexLocation, diffuseTex ? 1 : 0);
 
 		glBindVertexArray(((Rendering::OGLMesh*)obj.render.mesh)->GetVAO());
@@ -415,7 +410,6 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 
 	glUseProgram(resources.defaultShader->GetProgramID());
 
-	// Set up shader uniforms (same as opaque pass)
 	int projLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "projMatrix");
 	int viewLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "viewMatrix");
 	int modelLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "modelMatrix");
@@ -431,7 +425,6 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	int shadowTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowTex");
 	int shadowLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowMatrix");
 
-	// Set global shader state
 	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
 	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
 
@@ -445,7 +438,6 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	glUniform3fv(lightColourLocation, 1, (float*)&sunCol);
 	glUniform1f(lightRadiusLocation, sunRadius);
 
-	// Bind shadow texture
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, resources.shadowTex);
 	glUniform1i(shadowTexLocation, 1);
