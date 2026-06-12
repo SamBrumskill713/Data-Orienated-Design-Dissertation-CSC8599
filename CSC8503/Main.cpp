@@ -369,7 +369,7 @@ public:
 				return PushdownResult::Pop; // proceed to gameplay
 			}
 
-			if (choice == "DOD Benchmark") {
+			if (choice == "DOD(AOS) Benchmark") {
 				confirmPressed = false;
 				gReturnToMenu = true; // Use this flag to signal DOD mode
 				return PushdownResult::Pop;
@@ -455,7 +455,7 @@ private:
 	Window* window = nullptr;
 	GameTechRendererInterface* renderer = nullptr;
 
-	std::vector<std::string> options{ "Play", "DOD Benchmark", "Host Online", "Join Online", "Quit" };
+	std::vector<std::string> options{ "Play", "DOD(AOS) Benchmark", "Host Online", "Join Online", "Quit" };
 	int currentIndex = 0;
 	bool confirmPressed = false;
 	bool quitRequested = false;
