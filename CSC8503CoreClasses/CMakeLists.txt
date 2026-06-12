@@ -104,6 +104,7 @@ set(Header_Files
     "RenderObjectDOD.h"
     "Transform.h"
     "TransformDOD.h"
+    "TransformSOA.h"
 )
 source_group("Header Files" FILES ${Header_Files})
 
@@ -116,7 +117,6 @@ set(Source_Files
     "RenderObject.cpp"
     "RenderObjectDOD.cpp"
     "Transform.cpp"
-    "TransformDOD.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
 
