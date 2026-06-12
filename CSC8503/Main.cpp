@@ -369,7 +369,7 @@ public:
 				return PushdownResult::Pop; // proceed to gameplay
 			}
 
-			if (choice == "DOD Benchmark") {
+			if (choice == "DOD(AOS) Benchmark") {
 				confirmPressed = false;
 				gReturnToMenu = true; // Use this flag to signal DOD mode
 				return PushdownResult::Pop;
@@ -455,7 +455,7 @@ private:
 	Window* window = nullptr;
 	GameTechRendererInterface* renderer = nullptr;
 
-	std::vector<std::string> options{ "Play", "DOD Benchmark", "Host Online", "Join Online", "Quit" };
+	std::vector<std::string> options{ "Play", "DOD(AOS) Benchmark", "Host Online", "Join Online", "Quit" };
 	int currentIndex = 0;
 	bool confirmPressed = false;
 	bool quitRequested = false;
@@ -517,7 +517,7 @@ public:
 	}
 
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
-		if (dt > 0.1f) {
+		if (dt > 0.5f) {
 			std::cout << "Skipping large time delta" << std::endl;
 			return PushdownResult::NoChange;
 		}
@@ -610,9 +610,9 @@ int main() {
 			world->Clear();
 			//Debug::ClearAllDebugText();
 
-			// Clear the framebuffer to black before starting DOD benchmark
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			//// Clear the framebuffer to black before starting DOD benchmark
+			//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			w->UpdateWindow();  // Swap buffers to show the cleared screen
 
 			GameWorldDOD* worldDOD = new GameWorldDOD();
