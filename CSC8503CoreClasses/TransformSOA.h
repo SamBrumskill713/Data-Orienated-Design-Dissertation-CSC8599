@@ -70,26 +70,26 @@ namespace NCL::CSC8503 {
 			UpdateMatrixSOA(Transforms, index);
 		}
 
-		inline void UpdateMatrices(TransformCompSOA Transforms) {
+		inline void UpdateAllMatrices(TransformCompSOA Transforms) {
 			int count = GetCount(Transforms);
 			for (size_t i = 0; i < count; ++i) {
 				UpdateMatrixSOA(Transforms, i);
 			}
 		}
 
-		inline void SetPositions(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Positions) {
+		inline void SetAllPositions(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Positions) {
 			for (size_t i = 0; i < indices.size(); ++i) {
 				SetScaleSOA(Transforms, Positions[i], indices[i]);
 			}
 		}
 
-		inline void SetScales(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Scales) {
+		inline void SetAllScales(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Scales) {
 			for (size_t i = 0; i < indices.size(); ++i) {
 				SetScaleSOA(Transforms, Scales[i], indices[i]);
 			}
 		}
 
-		inline void SetOrientations(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Quaternion>& Orientations) {
+		inline void SetAllOrientations(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Quaternion>& Orientations) {
 			for (size_t i = 0; i < indices.size(); ++i) {
 				SetOrientationSOA(Transforms, Orientations[i], indices[i]);
 			}
