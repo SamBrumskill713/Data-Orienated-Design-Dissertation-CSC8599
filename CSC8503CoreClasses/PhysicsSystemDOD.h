@@ -97,7 +97,6 @@ namespace NCL::CSC8503 {
 		void IntegrateAccel(float dt);
 		void IntegrateVelocity(float dt);
 		void ClearForces();
-		void DetectCollisions();
 		void UpdateCollisionList();
 
 		void BroadPhase();

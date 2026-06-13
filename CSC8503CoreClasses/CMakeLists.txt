@@ -59,6 +59,7 @@ set(Collision_Detection
     "QuadTree.h"
     "QuadTree.cpp"
     "QuadTreeDOD.h"
+    "QuadTreeSOA.h"
     "Ray.h"
     "RayDOD.h"
     "SphereVolume.h"
