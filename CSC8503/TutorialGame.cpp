@@ -198,6 +198,11 @@ void TutorialGame::UpdateGame(float dt) {
 
 	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
 
+	GameObjectIterator first, last;
+	world.GetObjectIterators(first, last);
+	int objectCount = std::distance(first, last);
+	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 10), Debug::WHITE);
+
 	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
 	
 	//Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);
