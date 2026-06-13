@@ -50,6 +50,8 @@ set(Collision_Detection
     "CollisionDetection.cpp"
     "CollisionDetectionDOD.h"
     "CollisionDetectionDOD.cpp"
+    "CollisionDetectionSOA.h"
+    "CollisionDetectionSOA.cpp"
     "CollisionVolume.h"
     "CollisionVolumeDOD.h"
     "CollisionVolumeSOA.h"
