@@ -78,223 +78,30 @@ TutorialGame::~TutorialGame() {
 }
 
 void TutorialGame::UpdateGame(float dt) {
-	/*if (isGameOver || isWin) {
-		if (isWin) {
-			Debug::Print("YOU WIN!",             Vector2(35, 45), Debug::GREEN);
-			Debug::Print("All items delivered.", Vector2(30, 50), Debug::WHITE);
-		} else {
-			Debug::Print("GAME OVER!",        Vector2(33, 45), Debug::RED);
-			Debug::Print("Time ran out.",     Vector2(34, 50), Debug::WHITE);
-		}
-		Debug::Print("Press ESC to quit", Vector2(32, 60), Debug::WHITE);
-		return;
-	}*/
 
 	world.GetMainCamera().UpdateCamera(dt);
 	if (useGravity) physics.UseGravity(useGravity);
 
-	/*gameTime -= dt;*/
-
-
-	//if (allowLocalPlayerControl && playerObj && playerGroundCollision && levelFloor) {
-	//	playerGroundCollision->GetTransform().SetPosition(
-	//		playerObj->GetTransform().GetPosition() + Vector3(0, -3.0f, 0));
-	//	movePlayerObject(dt);
-
-	//	attachCameraToPlayer(); 
-
-	//	
-	//	/*Debug::debugDrawAABBs(playerObj->GetTransform().GetPosition(),
-	//		Vector3(0.3f, 0.9f, 0.3f) * 3.0f, Debug::RED, 0.0f);
-	//	Debug::debugDrawAABBs(levelFloor->GetTransform().GetPosition(), Vector3(50, 2, 50), Debug::GREEN, 0.01f);
-	//	Debug::debugDrawSphere(playerGroundCollision->GetTransform().GetPosition(), 0.5f, Debug::BLUE, 0.0f, 16);
-	//	Debug::Print("Player X:" + std::to_string(playerObj->GetTransform().GetPosition().x), Vector2(0, 10), Debug::WHITE);
-	//	Debug::Print("Player Y:" + std::to_string(playerObj->GetTransform().GetPosition().y), Vector2(0, 15), Debug::WHITE);
-	//	Debug::Print("Player Z:" + std::to_string(playerObj->GetTransform().GetPosition().z), Vector2(0, 20), Debug::WHITE);
-	//	Debug::Print("isCollided: " + std::to_string(playerGroundCollision->getIsCollided()), Vector2(0, 25), Debug::WHITE);
-	//	Debug::Print("player isCollided: " + std::to_string(playerObj->getIsCollided()), Vector2(0, 30), Debug::WHITE);
-	//	Debug::Print("player isTrigger: " + std::to_string(playerObj->GetBoundingVolume()->isTrigger), Vector2(0, 45), Debug::WHITE);
-	//	Debug::Print("player Inventory Size: " + std::to_string(playerObj->getpickUpSize()), Vector2(0, 50), Debug::WHITE);*/
-	//	// Score is now printed in the unified HUD below
-	//}
-
-	/*if (!allowLocalPlayerControl && cameraTarget) {
-		attachCameraToPlayer();
-	}*/
-
-	//if (trigVol) {
-	//	/*Debug::debugDrawAABBs(trigVol->GetTransform().GetPosition(), trigVol->GetTransform().GetScale(),
-	//		Debug::BLUE, 0.1f);*/
-	//}
-
-	//if (outOfBounds) {
-	//	/*Debug::debugDrawAABBs(outOfBounds->GetTransform().GetPosition(), outOfBounds->GetTransform().GetScale(),
-	//		Debug::BLUE, 0.1f);*/
-	//}
-
-	/*int itemsRemaining = 0;
-	if (data) {
-		for (auto* p : levelItems) {
-			if (p && p->getIsRendered()) {
-				++itemsRemaining;
-			}
-		}
-
-		levelItems.erase(
-			std::remove_if(levelItems.begin(), levelItems.end(),
-				[](pickUpObject* p) {
-					return p == nullptr || !p->getIsRendered();
-				}),
-			levelItems.end()
-		);
-
-		if (!isWin && levelItems.empty()) {
-			std::cout << "win\n";
-			Debug::Print("You Got all the items delivered. You Win!", Vector2(0, 85));
-			isWin = true; 
-		}
-
-		if (!isGameOver && gameTime <= 0.0f) {
-			Debug::Print("Game Over!", Vector2(0, 70));
-			gameTime = 0.0f;
-			isGameOver = true; 
-		}
+	frameTimeSamples.push_back(dt);
+	if (frameTimeSamples.size() > FPS_SAMPLE_SIZE) {
+		frameTimeSamples.erase(frameTimeSamples.begin());
 	}
 
-	{
-		playerObject* scorePlayer = nullptr;
-		if (allowLocalPlayerControl && playerObj) {
-			scorePlayer = playerObj;
-		} else if (cameraTarget) {
-			scorePlayer = dynamic_cast<playerObject*>(cameraTarget);
-		}
-		const int score = scorePlayer ? scorePlayer->getScore() : 0;
-
-		const float timeLeft = std::max(0.0f, gameTime);
-		Debug::Print("Items Remaining: " + std::to_string(itemsRemaining), Vector2(0, 20), Debug::WHITE);
-		Debug::Print("Time Left: " + std::to_string((int)timeLeft), Vector2(0, 15), Debug::WHITE);
-		Debug::Print("Player Score: " + std::to_string(score), Vector2(0, 10), Debug::WHITE);
+	float totalTime = 0.0f;
+	for (float sample : frameTimeSamples) {
+		totalTime += sample;
 	}
+	averageFPS = frameTimeSamples.size() / totalTime;
 
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F)) {
-		world.Clear();
-		physics.Clear();
-		initAITest();
-	}
-
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::I)) {
-		world.Clear();
-		physics.Clear();
-		InitTriggerTest();
-	}
-
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::B)) {
-		world.Clear();
-		physics.Clear();
-		initObstacleTest();
-	}*/
-
-	physics.Update(dt);
-
-	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
-
+	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("Avg FPS: " + std::to_string((int)averageFPS), Vector2(0, 10), Debug::WHITE);
 	GameObjectIterator first, last;
 	world.GetObjectIterators(first, last);
 	int objectCount = std::distance(first, last);
-	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 15), Debug::WHITE);
 
-	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
-	
-	//Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);
-
-	/*if (testStateObject) testStateObject->Update(dt);*/
-
-	/*if (!inSelectionMode) {
-		world.GetMainCamera().UpdateCamera(dt);
-	}*/
-	//if (lockedObject != nullptr) {
-	//	Vector3 objPos = lockedObject->GetTransform().GetPosition();
-	//	Vector3 camPos = objPos + lockedOffset;
-
-	//	Matrix4 temp = Matrix::View(camPos, objPos, Vector3(0, 1, 0));
-
-	//	Matrix4 modelMat = Matrix::Inverse(temp);
-
-	//	Quaternion q(modelMat);
-	//	Vector3 angles = q.ToEuler(); //nearly there now!
-
-	//	world.GetMainCamera().SetPosition(camPos);
-	//	world.GetMainCamera().SetPitch(angles.x);
-	//	world.GetMainCamera().SetYaw(angles.y);
-	//}
-
-	//if (Window::GetKeyboard()->KeyPressed(KeyCodes::F1)) {
-	//	InitWorld(); //We can reset the simulation at any time with F1
-	//	selectionObject = nullptr;
-	//}
-
-	//if (Window::GetKeyboard()->KeyPressed(KeyCodes::F2)) {
-	//	InitCamera(); //F2 will reset the camera to a specific default place
-	//}
-	// 
-	//Running certain physics updates in a consistent order might cause some
-	//bias in the calculations - the same objects might keep 'winning' the constraint
-	//allowing the other one to stretch too much etc. Shuffling the order so that it
-	//is random every frame can help reduce such bias.
-	//if (Window::GetKeyboard()->KeyPressed(KeyCodes::F9)) {
-	//	world.ShuffleConstraints(true);
-	//}
-	//if (Window::GetKeyboard()->KeyPressed(KeyCodes::F10)) {
-	//	world.ShuffleConstraints(false);
-	//}
-
-	//if (Window::GetKeyboard()->KeyPressed(KeyCodes::F7)) {
-	//	world.ShuffleObjects(true);
-	//}
-	//if (Window::GetKeyboard()->KeyPressed(KeyCodes::F8)) {
-	//	world.ShuffleObjects(false);
-	//}
-
-	//if (lockedObject) {
-	//	LockedObjectMovement();
-	//}
-	//else {
-	//	DebugObjectMovement();
-	//}
-
-	/*RayCollision closestCollision;
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::K) && selectionObject) {
-		Vector3 rayPos;
-		Vector3 rayDir;
-
-		rayDir = selectionObject->GetTransform().GetOrientation() * Vector3(0, 0, -1);
-
-		rayPos = selectionObject->GetTransform().GetPosition();
-
-		Ray r = Ray(rayPos, rayDir);
-
-		if (world.Raycast(r, closestCollision, true, selectionObject)) {
-			if (objClosest) {
-				objClosest->GetRenderObject()->SetColour(Vector4(1, 1, 1, 1));
-			}
-			objClosest = (GameObject*)closestCollision.node;
-
-			objClosest->GetRenderObject()->SetColour(Vector4(1, 0, 1, 1));
-		}
-	}*/
-
-	//This year we can draw debug textures as well!
-	//Debug::DrawTex(*defaultTex, Vector2(10, 10), Vector2(5, 5), Debug::WHITE);
-	//Debug::DrawLine(Vector3(), Vector3(0, 100, 0), Vector4(1, 0, 0, 1));
-	/*if (useGravity) {
-		Debug::Print("(G)ravity on", Vector2(5, 95), Debug::RED);
-	}
-	else {
-		Debug::Print("(G)ravity off", Vector2(5, 95), Debug::RED);
-	}*/
-
-	/*SelectObject();
-	MoveSelectedObject();*/
+	physics.Update(dt);
+	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
 }
 
 int TutorialGame::GetPlayerScore() const {

@@ -195,6 +195,11 @@ namespace NCL {
 
 			GameObject* objClosest = nullptr;
 			StateGameObject* testStateObject = nullptr;
+			float fpsUpdateTimer = 0.0f;
+			int frameCount = 0;
+			float averageFPS = 0.0f;
+			std::vector<float> frameTimeSamples;
+			static constexpr int FPS_SAMPLE_SIZE = 60;
 		};	
 	}
 }
