@@ -159,67 +159,6 @@ namespace NCL {
 					render.bumpTextures[i] = bumpTex;
 				}
 			}
-
-			inline std::vector<int> GetObjectsWithDiffuseTexture(const RenderObjectCompSOA& render, Texture* texture) {
-				std::vector<int> result;
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					if (render.diffuseTextures[i] == texture) {
-						result.push_back(i);
-					}
-				}
-				return result;
-			}
-
-			inline std::vector<int> GetObjectsWithBumpTexture(const RenderObjectCompSOA& render, Texture* texture) {
-				std::vector<int> result;
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					if (render.bumpTextures[i] == texture) {
-						result.push_back(i);
-					}
-				}
-				return result;
-			}
-
-			inline std::vector<int> GetObjectsWithMaterialType(const RenderObjectCompSOA& render, MaterialType type) {
-				std::vector<int> result;
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					if (render.materialTypes[i] == type) {
-						result.push_back(i);
-					}
-				}
-				return result;
-			}
-
-			inline Texture* GetDiffuseTexture(const RenderObjectCompSOA& render, int index) {
-				return render.diffuseTextures[index];
-			}
-
-			inline Texture* GetBumpTexture(const RenderObjectCompSOA& render, int index) {
-				return render.bumpTextures[index];
-			}
-
-			inline MaterialType GetMaterialType(const RenderObjectCompSOA& render, int index) {
-				return render.materialTypes[index];
-			}
-
-			inline Vector4 GetColour(const RenderObjectCompSOA& render, int index) {
-				return render.colours[index];
-			}
-
-			inline Mesh* GetMesh(const RenderObjectCompSOA& render, int index) {
-				return render.meshes[index];
-			}
-
-			inline GameTechMaterial GetMaterial(const RenderObjectCompSOA& render, int index) {
-				GameTechMaterial mat;
-				mat.type = render.materialTypes[index];
-				mat.diffuseTex = render.diffuseTextures[index];
-				mat.bumpTex = render.bumpTextures[index];
-				return mat;
-			}
 		}
 	}
 }

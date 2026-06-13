@@ -23,7 +23,7 @@ namespace NCL::CSC8503 {
 
 	namespace PhysicsOpsSOA {
 
-		inline int GetCount(PhysicsObjectCompSOA& bodyData) {
+		inline int GetCount(const PhysicsObjectCompSOA& bodyData) {
 			return bodyData.inverseMassSOA.size();
 		}
 
@@ -146,10 +146,11 @@ namespace NCL::CSC8503 {
 			}
 		}
 
-		inline void ClearAllForces(PhysicsObjectCompSOA& bodyData, std::vector<int>& indices) {
+		inline void ClearAllForces(PhysicsObjectCompSOA& bodyData) {
 			int count = GetCount(bodyData);
 			for (int i = 0; i < count; ++i) {
-				ClearForces(bodyData, indices[i]);
+				bodyData.forceSOA[i] = Vector3(0, 0, 0);
+				bodyData.torqueSOA[i] = Vector3(0, 0, 0);
 			}
 		}
 	}

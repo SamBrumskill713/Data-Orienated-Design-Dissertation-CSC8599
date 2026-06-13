@@ -72,7 +72,7 @@ namespace NCL::CSC8503 {
 
 		inline void UpdateAllMatrices(TransformCompSOA Transforms) {
 			int count = GetCount(Transforms);
-			for (size_t i = 0; i < count; ++i) {
+			for (int i = 0; i < count; ++i) {
 				UpdateMatrixSOA(Transforms, i);
 			}
 		}
