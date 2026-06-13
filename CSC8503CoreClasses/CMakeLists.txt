@@ -94,6 +94,8 @@ set(Physics
     "PhysicsSystem.h"
     "PhysicsSystemDOD.cpp"
     "PhysicsSystemDOD.h"
+    "PhysicsSystemSOA.cpp"
+    "PhysicsSystemSOA.h"
 )
 source_group("Physics" FILES ${Physics})
 
@@ -104,6 +106,7 @@ set(Header_Files
     "GameObjectSOA.h"
     "GameWorld.h"
     "GameWorldDOD.h"
+    "GameWorldSOA.h"
     "RenderObject.h"
     "RenderObjectDOD.h"
     "RenderObjectSOA.h"
@@ -119,6 +122,7 @@ set(Source_Files
     "GameObjectDOD.cpp"
     "GameWorld.cpp"
     "GameWorldDOD.cpp"
+    "GameWorldSOA.cpp"
     "RenderObject.cpp"
     "Transform.cpp"
 )

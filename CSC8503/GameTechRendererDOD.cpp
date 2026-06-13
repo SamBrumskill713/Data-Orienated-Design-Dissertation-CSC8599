@@ -475,28 +475,13 @@ void RendererSystemDOD::RenderFrame(GameWorldDOD& world, GameTechRendererData& f
 	glEnable(GL_CULL_FACE);
 	glClearColor(1, 1, 1, 1);
 
-	// Set up viewport and clear
 	glViewport(0, 0, resources.screenWidth, resources.screenHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Build render lists from DOD data (front-to-back sorting)
 	BuildRenderFrame(world, frameData);
 
-	// Execute render passes in order (matching OOP renderer)
 	RenderShadowMapPass(world, frameData);
 	RenderSkyboxPass(frameData);
 	RenderOpaquePass(world, frameData);
 	RenderTransparentPass(world, frameData);
-
-	// TODO: Debug rendering passes (RenderLines, RenderTextures, RenderText)
-	// glDisable(GL_CULL_FACE);
-	// glDisable(GL_BLEND);
-	// glDisable(GL_DEPTH_TEST);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// RenderLines();
-	// RenderTextures();
-	// RenderText();
-	// glDisable(GL_BLEND);
-	// glEnable(GL_DEPTH_TEST);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
