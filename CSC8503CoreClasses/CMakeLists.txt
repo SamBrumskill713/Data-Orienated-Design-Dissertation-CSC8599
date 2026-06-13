@@ -115,7 +115,6 @@ set(Source_Files
     "GameWorld.cpp"
     "GameWorldDOD.cpp"
     "RenderObject.cpp"
-    "RenderObjectDOD.cpp"
     "Transform.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
