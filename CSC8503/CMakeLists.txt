@@ -26,6 +26,7 @@ source_group("Header Files" FILES ${Header_Files})
 #    "TutorialGame.cpp"
 #)
 file(GLOB Source_Files *.cpp)
+list(APPEND Source_Files "${CMAKE_CURRENT_SOURCE_DIR}/TutorialGameSOA.cpp")
 
 if(USE_VULKAN)
 	file(GLOB SHADER_FILES ${ASSET_ROOT}/Shaders/VK/*.*)

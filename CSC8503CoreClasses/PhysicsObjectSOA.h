@@ -115,6 +115,10 @@ namespace NCL::CSC8503 {
 			bodyData.torqueSOA[index] = Vector3(0, 0, 0);
 		}
 
+		inline void SetInverseMass(PhysicsObjectCompSOA& bodyData, float mass, int index) {
+			bodyData.inverseMassSOA[index] = mass;
+		}
+
 		inline void UpdateAllIntertiaTensors(PhysicsObjectCompSOA& bodyData, std::vector<Quaternion>& orientations, std::vector<int>& indices) {
 			int count = GetCount(bodyData);
 			for (int i = 0; i < count && i < (int)orientations.size(); ++i) {

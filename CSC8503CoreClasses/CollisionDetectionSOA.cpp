@@ -85,12 +85,11 @@ bool CollisionDetectionSOA::AABBIntersection(int indexA, int indexB,
 	const Vector3& posA = gameObjects.transforms.positions[indexA];
 	const Vector3& posB = gameObjects.transforms.positions[indexB];
 
-	Vector3 halfSizeA(0.5f, 0.5f, 0.5f);
-	Vector3 halfSizeB(0.5f, 0.5f, 0.5f);
+	Vector3 halfSizeA = gameObjects.collision.AABBDataSOA.halfSizesSOA[indexA];
+	Vector3 halfSizeB = gameObjects.collision.AABBDataSOA.halfSizesSOA[indexB];
 
 	if (AABBTest(posA, posB, halfSizeA, halfSizeB)) {
 		Vector3 delta = posB - posA;
-		Vector3 normal = Vector::Normalise(delta);
 
 		float overlapX = (halfSizeA.x + halfSizeB.x) - abs(delta.x);
 		float overlapY = (halfSizeA.y + halfSizeB.y) - abs(delta.y);
@@ -98,7 +97,18 @@ bool CollisionDetectionSOA::AABBIntersection(int indexA, int indexB,
 
 		float penetration = std::min({ overlapX, overlapY, overlapZ });
 
-		collisionInfo.AddContactPoint(posA, posB, normal, penetration);
+		Vector3 normal(0, 0, 0);
+
+		if (penetration == overlapX) {
+			normal.x = delta.x > 0.0f ? 1.0f : -1.0f;
+		}
+		else if (penetration == overlapY) {
+			normal.y = delta.y > 0.0f ? 1.0f : -1.0f;
+		}
+		else {
+			normal.z = delta.z > 0.0f ? 1.0f : -1.0f;
+		}
+		collisionInfo.AddContactPoint(Vector3(0, 0, 0), Vector3(0, 0, 0), normal, penetration);
 		return true;
 	}
 

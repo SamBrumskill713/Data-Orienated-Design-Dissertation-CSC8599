@@ -45,55 +45,56 @@ void PhysicsSystemSOA::Update(float dt) {
 
 void PhysicsSystemSOA::IntegrateAccel(float dt) {
 	int count = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
+	auto& objects = gameWorld.gameObjects;
 
 	for (int i = 0; i < count; ++i) {
-		if (!gameWorld.gameObjects.isActive[i]) {
+		if (!objects.isActive[i]) {
 			continue;
 		}
 
-		float inverseMass = gameWorld.gameObjects.physics.inverseMassSOA[i];
+		float inverseMass = objects.physics.inverseMassSOA[i];
 		if (inverseMass == 0.0f) {
 			continue;
 		}
 
-		Vector3 accel = gameWorld.gameObjects.physics.forceSOA[i] * inverseMass;
+		Vector3 accel = objects.physics.forceSOA[i] * inverseMass;
 		if (data.applyGravity) {
 			accel += data.gravity;
 		}
+		objects.physics.linearVelocitySOA[i] += accel * dt;
 
-		gameWorld.gameObjects.physics.linearVelocitySOA[i] += accel * dt;
-
-		PhysicsOpsSOA::UpdateInertiaTensor(gameWorld.gameObjects.physics, gameWorld.gameObjects.transforms.orientations[i], i);
-		Vector3 angAccel = gameWorld.gameObjects.physics.inverseInertiaTensorSOA[i] * gameWorld.gameObjects.physics.torqueSOA[i];
-		gameWorld.gameObjects.physics.angularVelocitySOA[i] += angAccel * dt;
+		PhysicsOpsSOA::UpdateInertiaTensor(objects.physics, objects.transforms.orientations[i], i);
+		Vector3 angAccel = objects.physics.inverseInertiaTensorSOA[i] * objects.physics.torqueSOA[i];
+		objects.physics.angularVelocitySOA[i] += angAccel * dt;
 	}
 }
 
 void PhysicsSystemSOA::IntegrateVelocity(float dt) {
 	int count = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
+	auto& objects = gameWorld.gameObjects;
 	const float LINEAR_DAMPING = 0.4f * dt;
 	const float ANGULAR_DAMPING = 0.4f * dt;
 
 	for (int i = 0; i < count; ++i) {
-		if (!gameWorld.gameObjects.isActive[i]) {
+		if (!objects.isActive[i]) {
 			continue;
 		}
 
-		if (gameWorld.gameObjects.physics.inverseMassSOA[i] == 0.0f) {
+		if (objects.physics.inverseMassSOA[i] == 0.0f) {
 			continue;
 		}
 
-		gameWorld.gameObjects.transforms.positions[i] += gameWorld.gameObjects.physics.linearVelocitySOA[i] * dt;
-		gameWorld.gameObjects.physics.linearVelocitySOA[i] *= (1.0f - LINEAR_DAMPING);
+		objects.transforms.positions[i] += objects.physics.linearVelocitySOA[i] * dt;
+		objects.physics.linearVelocitySOA[i] *= (1.0f - LINEAR_DAMPING);
 
-		gameWorld.gameObjects.transforms.orientations[i] = gameWorld.gameObjects.transforms.orientations[i] +
-			(Quaternion(gameWorld.gameObjects.physics.angularVelocitySOA[i] * dt * 0.5f, 0.0f) * gameWorld.gameObjects.transforms.orientations[i]);
-		gameWorld.gameObjects.transforms.orientations[i].Normalise();
+		objects.transforms.orientations[i] = objects.transforms.orientations[i] +
+			(Quaternion(objects.physics.angularVelocitySOA[i] * dt * 0.5f, 0.0f) * objects.transforms.orientations[i]);
+		objects.transforms.orientations[i].Normalise();
 
-		gameWorld.gameObjects.physics.angularVelocitySOA[i] *= (1.0f - ANGULAR_DAMPING);
-
-		TransformOpsSOA::UpdateAllMatrices(gameWorld.gameObjects.transforms);
+		objects.physics.angularVelocitySOA[i] *= (1.0f - ANGULAR_DAMPING);
 	}
+
+	TransformOpsSOA::UpdateAllMatrices(objects.transforms);
 }
 
 void PhysicsSystemSOA::ClearForces() {
@@ -113,20 +114,24 @@ void PhysicsSystemSOA::BroadPhase() {
 	QuadTreeSOA<int> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
 
 	for (int i = 0; i < count; ++i) {
-		if (!gameWorld.gameObjects.isActive[i] || gameWorld.gameObjects.physics.inverseMassSOA[i] == 0.0f) {
+		if (!gameWorld.gameObjects.isActive[i]) {
 			continue;
 		}
 
-		// For broadphase, use a simple bounding box approximation
-		Vector3 halfSize(1.0f, 1.0f, 1.0f);  // Default, could be from collision volume
+		Vector3 halfSize = gameWorld.gameObjects.collision.AABBDataSOA.halfSizesSOA[i];
 		quadTree.Insert(i, gameWorld.gameObjects.transforms.positions[i], halfSize * 2.0f);
 	}
 
-	std::vector<int> dynamicObjects;
+	cachedDynamicObjects.clear();
 	for (int i = 0; i < count; ++i) {
 		if (gameWorld.gameObjects.isActive[i] && gameWorld.gameObjects.physics.inverseMassSOA[i] != 0.0f) {
-			dynamicObjects.push_back(i);
+			cachedDynamicObjects.push_back(i);
 		}
+	}
+
+	int estimatedPairs = (int)(cachedDynamicObjects.size() * 10);
+	if (broadphasePairs.capacity() < (size_t)estimatedPairs) {
+		broadphasePairs.reserve(estimatedPairs);
 	}
 
 	quadTree.OperateOnContents(
@@ -135,6 +140,11 @@ void PhysicsSystemSOA::BroadPhase() {
 				for (size_t j = i + 1; j < contents.size(); ++j) {
 					int idxA = contents[i].object;
 					int idxB = contents[j].object;
+
+					if (gameWorld.gameObjects.physics.inverseMassSOA[idxA] == 0.0f &&
+						gameWorld.gameObjects.physics.inverseMassSOA[idxB] == 0.0f) {
+						continue;
+					}
 
 					if (idxA > idxB) {
 						std::swap(idxA, idxB);
@@ -151,7 +161,7 @@ void PhysicsSystemSOA::BroadPhase() {
 			continue;
 		}
 
-		for (int j : dynamicObjects) {
+		for (int j : cachedDynamicObjects) {
 			int idxA = i;
 			int idxB = j;
 			if (idxA > idxB) {
@@ -163,7 +173,8 @@ void PhysicsSystemSOA::BroadPhase() {
 	}
 
 	std::sort(broadphasePairs.begin(), broadphasePairs.end());
-	broadphasePairs.erase(std::unique(broadphasePairs.begin(), broadphasePairs.end()), broadphasePairs.end());
+	auto last = std::unique(broadphasePairs.begin(), broadphasePairs.end());
+	broadphasePairs.erase(last, broadphasePairs.end());
 }
 
 void PhysicsSystemSOA::NarrowPhase() {
@@ -210,7 +221,12 @@ void PhysicsSystemSOA::BasicCollisionDetection() {
 		}
 
 		for (int j = i + 1; j < count; ++j) {
-			if (!gameWorld.gameObjects.isActive[j] || gameWorld.gameObjects.physics.inverseMassSOA[j] == 0.0f) {
+			if (!gameWorld.gameObjects.isActive[j]) {
+				continue;
+			}
+
+			if (gameWorld.gameObjects.physics.inverseMassSOA[i] == 0.0f &&
+				gameWorld.gameObjects.physics.inverseMassSOA[j] == 0.0f) {
 				continue;
 			}
 
@@ -272,6 +288,10 @@ void PhysicsSystemSOA::ImpulseResolveCollision(int indexA, int indexB, const Vec
 	Vector3 contactVel = fullVelB - fullVelA;
 	float impulseForce = Vector::Dot(contactVel, normal);
 
+	if (impulseForce >= 0.0f) {
+		return;
+	}
+
 	Vector3 inertiaA = Vector::Cross(physicsA.inverseInertiaTensorSOA[indexA] *
 		Vector::Cross(localA, normal), localA);
 	Vector3 inertiaB = Vector::Cross(physicsB.inverseInertiaTensorSOA[indexB] *
@@ -287,8 +307,12 @@ void PhysicsSystemSOA::ImpulseResolveCollision(int indexA, int indexB, const Vec
 	PhysicsOpsSOA::ApplyLinearImpulse(physicsA, -fullImpulse, indexA);
 	PhysicsOpsSOA::ApplyLinearImpulse(physicsB, fullImpulse, indexB);
 
-	PhysicsOpsSOA::ApplyAngularImpulse(physicsA, Vector::Cross(localA, -fullImpulse), indexA);
-	PhysicsOpsSOA::ApplyAngularImpulse(physicsB, Vector::Cross(localB, fullImpulse), indexB);
+	if (physicsA.inverseMassSOA[indexA] > 0.0f) {
+		PhysicsOpsSOA::ApplyAngularImpulse(physicsA, Vector::Cross(localA, -fullImpulse), indexA);
+	}
+	if (physicsB.inverseMassSOA[indexB] > 0.0f) {
+		PhysicsOpsSOA::ApplyAngularImpulse(physicsB, Vector::Cross(localB, fullImpulse), indexB);
+	}
 
 	TransformOpsSOA::UpdateMatrixSOA(transformsA, indexA);
 	TransformOpsSOA::UpdateMatrixSOA(transformsB, indexB);

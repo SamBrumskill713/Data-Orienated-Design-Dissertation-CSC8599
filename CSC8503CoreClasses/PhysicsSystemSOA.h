@@ -94,6 +94,7 @@ namespace NCL::CSC8503 {
 		GameWorldSOA& gameWorld;
 		std::vector<ActiveCollisionSOA> activeCollisions;
 		std::vector<BroadphasePairSOA> broadphasePairs;
+		std::vector<int> cachedDynamicObjects;
 
 		void IntegrateAccel(float dt);
 		void IntegrateVelocity(float dt);

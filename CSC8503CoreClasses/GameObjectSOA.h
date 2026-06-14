@@ -6,19 +6,11 @@
 #include "CollisionVolumeSOA.h"
 #include "PhysicsObjectSOA.h"
 #include "RenderObjectSOA.h"
+#include "GameObjectDOD.h"
 
 using namespace NCL::Maths;
 
 namespace NCL::CSC8503 {
-
-	enum class GameObjectType : uint8_t {
-		Default = 0,
-		Trigger = 1,
-		PickUp = 2,
-		Player = 3,
-		Obstacle = 4
-	};
-
 	struct GameObjectCompSOA {
 		std::vector<int> worldIDs;
 		std::vector<GameObjectType> objectTypes;
@@ -54,6 +46,8 @@ namespace NCL::CSC8503 {
 			PhysicsOpsSOA::AddPhysicsBody(gameObjects.physics);
 			RenderOpsSOA::AddRenderObject(gameObjects.render);
 
+			gameObjects.collision.CreateAABB(Vector3(0.5f, 0.5f, 0.5f), 0, false);
+
 			return index;
 		}
 
@@ -81,6 +75,7 @@ namespace NCL::CSC8503 {
 			TransformOpsSOA::RemoveTransform(gameObjects.transforms, index);
 			PhysicsOpsSOA::RemovePhysicsBody(gameObjects.physics, index);
 			RenderOpsSOA::RemoveRenderObject(gameObjects.render, index);
+			gameObjects.collision.RemoveCollisionVolume(index);
 		}
 
 		inline void GetObjectsByType(const GameObjectCompSOA& gameObjects, GameObjectType type, std::vector<int>& outIndices) {
@@ -129,6 +124,11 @@ namespace NCL::CSC8503 {
 			gameObjects.render.diffuseTextures.clear();
 			gameObjects.render.bumpTextures.clear();
 			gameObjects.render.colours.clear();
+			gameObjects.collision.dataSOA.typeSOA.clear();
+			gameObjects.collision.dataSOA.collisionLayerSOA.clear();
+			gameObjects.collision.dataSOA.isTriggerSOA.clear();
+			gameObjects.collision.AABBDataSOA.halfSizesSOA.clear();
+			gameObjects.collision.typeDataIndex.clear();
 		}
 	}
 }
