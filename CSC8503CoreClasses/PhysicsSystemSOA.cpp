@@ -92,9 +92,9 @@ void PhysicsSystemSOA::IntegrateVelocity(float dt) {
 		objects.transforms.orientations[i].Normalise();
 
 		objects.physics.angularVelocitySOA[i] *= (1.0f - ANGULAR_DAMPING);
-	}
 
-	TransformOpsSOA::UpdateAllMatrices(objects.transforms);
+		TransformOpsSOA::UpdateMatrixSOA(objects.transforms, i);
+	}
 }
 
 void PhysicsSystemSOA::ClearForces() {
@@ -114,7 +114,7 @@ void PhysicsSystemSOA::BroadPhase() {
 	QuadTreeSOA<int> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
 
 	for (int i = 0; i < count; ++i) {
-		if (!gameWorld.gameObjects.isActive[i]) {
+		if (!gameWorld.gameObjects.isActive[i] || gameWorld.gameObjects.physics.inverseMassSOA[i] == 0) {
 			continue;
 		}
 
@@ -129,10 +129,10 @@ void PhysicsSystemSOA::BroadPhase() {
 		}
 	}
 
-	int estimatedPairs = (int)(cachedDynamicObjects.size() * 10);
-	if (broadphasePairs.capacity() < (size_t)estimatedPairs) {
-		broadphasePairs.reserve(estimatedPairs);
-	}
+	//int estimatedPairs = (int)(cachedDynamicObjects.size() * 10);
+	//if (broadphasePairs.capacity() < (size_t)estimatedPairs) {
+	//	broadphasePairs.reserve(estimatedPairs);
+	//}
 
 	quadTree.OperateOnContents(
 		[&](std::vector<QuadTreeEntrySOA<int>>& contents) {
@@ -140,11 +140,6 @@ void PhysicsSystemSOA::BroadPhase() {
 				for (size_t j = i + 1; j < contents.size(); ++j) {
 					int idxA = contents[i].object;
 					int idxB = contents[j].object;
-
-					if (gameWorld.gameObjects.physics.inverseMassSOA[idxA] == 0.0f &&
-						gameWorld.gameObjects.physics.inverseMassSOA[idxB] == 0.0f) {
-						continue;
-					}
 
 					if (idxA > idxB) {
 						std::swap(idxA, idxB);

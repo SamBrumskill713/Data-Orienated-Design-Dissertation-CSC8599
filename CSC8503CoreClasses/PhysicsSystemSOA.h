@@ -18,6 +18,7 @@ namespace NCL::CSC8503 {
 		float dTOffset;
 		bool applyGravity;
 		bool useBroadPhase;
+		std::vector<int> indices;
 		int numCollisionFrames;
 
 		PhysicsSystemDataSOA()
