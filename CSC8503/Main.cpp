@@ -32,6 +32,7 @@
 #include "TutorialGameSOA.h"
 #include "PhysicsSystemSOA.h"
 #include "GameWorldSOA.h"
+#include "GameTechRendererSOA.h"
 
 #ifdef USEOPENGL
 #include "GameTechRenderer.h"
@@ -626,7 +627,7 @@ int main() {
 			RendererSystemDOD rendererDOD;
 			GameTechRendererData frameData;
 			rendererDOD.Initialise(w);
-			rendererDOD.SetVerticalSync(1);
+			rendererDOD.SetVerticalSync(0);
 
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
 			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, rendererDOD, *physicsDOD);
@@ -697,23 +698,19 @@ int main() {
 
 			GameWorldSOA* worldSOA = new GameWorldSOA();
 			RendererSystemDOD rendererDOD;
-			GameTechRendererData frameData;
-			rendererDOD.Initialise(w);
-			rendererDOD.SetVerticalSync(1);
+			RendererSystemSOA rendererSOA;
+			GameTechRendererDataSOA frameData;
+			rendererSOA.Initialise(w);
+			rendererSOA.SetVerticalSync(0);
 
 			PhysicsSystemSOA* physicsSOA = new PhysicsSystemSOA(*worldSOA);
-			TutorialGameSOA* gameSOA = new TutorialGameSOA(*worldSOA, rendererDOD, *physicsSOA);
+			TutorialGameSOA* gameSOA = new TutorialGameSOA(*worldSOA, rendererSOA, *physicsSOA);
 
 			bool soaBenchmarkRunning = true;
 			int frameCount = 0;
 			double totalTime = 0.0;
 			std::vector<float> frameTimes;
 			frameTimes.reserve(500);
-
-			// Pre-allocate frame proxy objects to avoid repeated allocations
-			std::vector<GameObjectDOD> frameProxyObjects;
-			int maxObjectCount = worldSOA->GetObjectCount();
-			frameProxyObjects.reserve(maxObjectCount + 100);  // Reserve slightly more than needed
 
 			while (w->UpdateWindow() && soaBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
@@ -724,57 +721,12 @@ int main() {
 					continue;
 				}
 
-				// Build proxy data fresh for this frame only - OPTIMIZED
-				frameProxyObjects.clear();
-				int objectCount = worldSOA->GetObjectCount();
-				const auto& soaObjects = worldSOA->gameObjects;
-
-				// Reserve only if needed
-				if ((int)frameProxyObjects.capacity() < objectCount) {
-					frameProxyObjects.reserve(objectCount + 50);
-				}
-
-				// Batch copy data - use references to reduce indirection
-				const auto& transforms = soaObjects.transforms;
-				const auto& render = soaObjects.render;
-				const auto& physics = soaObjects.physics;
-
-				for (int i = 0; i < objectCount; ++i) {
-					if (!soaObjects.isActive[i]) continue;
-
-					// Construct directly in vector to avoid copy
-					frameProxyObjects.emplace_back();
-					GameObjectDOD& proxyObj = frameProxyObjects.back();
-					
-					// Direct member assignment - no intermediate copies
-					proxyObj.transform.position = transforms.positions[i];
-					proxyObj.transform.scale = transforms.scales[i];
-					proxyObj.transform.orientation = transforms.orientations[i];
-					proxyObj.transform.matrix = transforms.matrices[i];
-
-					proxyObj.render.mesh = render.meshes[i];
-					proxyObj.render.colour = render.colours[i];
-
-					GameTechMaterial& mat = proxyObj.render.material;
-					mat.type = render.materialTypes[i];
-					mat.diffuseTex = render.diffuseTextures[i];
-					mat.bumpTex = render.bumpTextures[i];
-
-					proxyObj.isActive = soaObjects.isActive[i];
-				}
-
 				frameData.viewMatrix = worldSOA->GetMainCamera().BuildViewMatrix();
 				frameData.projMatrix = worldSOA->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
 				frameData.cameraPos = worldSOA->GetMainCamera().GetPosition();
 
-				// Create temporary world wrapper for rendering
-				GameWorldDOD tempWorldDOD;
-				tempWorldDOD.gameObjects.objects = frameProxyObjects;
-				tempWorldDOD.data.sunPosition = worldSOA->GetSunPosition();
-				tempWorldDOD.data.sunColour = worldSOA->GetSunColour();
-
-				rendererDOD.RenderFrame(tempWorldDOD, frameData);
-				rendererDOD.swapBuffers();
+				rendererSOA.RenderFrame(*worldSOA, frameData);
+				rendererSOA.SwapBuffers();
 
 				frameCount++;
 				totalTime += dt;
@@ -782,7 +734,7 @@ int main() {
 
 				if (frameCount % 1 == 0) {
 					float currentFps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
-					w->SetTitle("GameTech SOA (DOD Renderer) FPS: " + std::to_string((int)currentFps) +
+					w->SetTitle("GameTech SOA FPS: " + std::to_string((int)currentFps) +
 						" (Frame " + std::to_string(frameCount) + ")");
 				}
 
@@ -793,7 +745,7 @@ int main() {
 					float avgFrameTime = totalTime / frameCount;
 					float medianFrameTime = frameTimes[frameCount / 2];
 
-					std::cout << "\n=== SOA Benchmark Results (DOD Renderer) ===" << std::endl;
+					std::cout << "\n=== SOA Benchmark Results ===" << std::endl;
 					std::cout << "Total Frames: " << frameCount << std::endl;
 					std::cout << "Total Time: " << totalTime << " seconds" << std::endl;
 					std::cout << "Average FPS: " << (frameCount / totalTime) << std::endl;
@@ -808,7 +760,7 @@ int main() {
 				}
 			}
 
-			rendererDOD.Destroy();
+			rendererSOA.Destroy();
 			delete gameSOA;
 			delete physicsSOA;
 			delete worldSOA;

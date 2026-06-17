@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Window.h"
 #include "GameWorldDOD.h"
 #include "OGLShader.h"

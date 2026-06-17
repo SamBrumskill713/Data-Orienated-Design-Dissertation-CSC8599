@@ -5,6 +5,7 @@
 #include "GameWorldSOA.h"
 #include "PhysicsSystemSOA.h"
 #include "GameTechRendererDOD.h"
+#include "GameTechRendererSOA.h"
 
 namespace NCL {
 	class Controller;
@@ -45,7 +46,7 @@ namespace NCL {
 
 		class TutorialGameSOA {
 		public:
-			TutorialGameSOA(GameWorldSOA& gameWorld, RendererSystemDOD& renderer, PhysicsSystemSOA& physics);
+			TutorialGameSOA(GameWorldSOA& gameWorld, RendererSystemSOA& renderer, PhysicsSystemSOA& physics);
 			~TutorialGameSOA();
 
 			TutorialGameDataSOA data;
@@ -57,7 +58,8 @@ namespace NCL {
 
 		private:
 			GameWorldSOA& gameWorld;
-			RendererSystemDOD& rendererDOD;
+			//RendererSystemDOD& rendererDOD;
+			RendererSystemSOA& rendererSOA;
 			PhysicsSystemSOA& physics;
 			Controller* controller;
 

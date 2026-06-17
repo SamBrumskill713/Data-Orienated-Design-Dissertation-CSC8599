@@ -12,8 +12,8 @@
 using namespace NCL;
 using namespace CSC8503;
 
-TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemDOD& inRenderer, PhysicsSystemSOA& inPhysics)
-	: gameWorld(inGameWorld), rendererDOD(inRenderer), physics(inPhysics) {
+TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& inRenderer, PhysicsSystemSOA& inPhysics)
+	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics) {
 	data.useGravity = true;
 
 	physics.UseGravity(data.useGravity);
@@ -51,10 +51,10 @@ void TutorialGameSOA::InitCamera() {
 }
 
 void TutorialGameSOA::LoadResources() {
-	resources.cubeMesh = rendererDOD.LoadMesh("cube.msh");
-	resources.sphereMesh = rendererDOD.LoadMesh("sphere.msh");
+	resources.cubeMesh = rendererSOA.LoadMesh("cube.msh");
+	resources.sphereMesh = rendererSOA.LoadMesh("sphere.msh");
 
-	resources.checkerTex = rendererDOD.LoadTexture("checkerboard.png");
+	resources.checkerTex = rendererSOA.LoadTexture("checkerboard.png");
 
 	resources.checkerMaterial.type = MaterialType::Opaque;
 	resources.checkerMaterial.diffuseTex = resources.checkerTex;

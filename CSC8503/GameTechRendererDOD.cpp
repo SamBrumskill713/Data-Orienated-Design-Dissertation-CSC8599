@@ -2,11 +2,8 @@
 #include "TextureLoader.h"
 #include "MshLoader.h"
 #include "Debug.h"
-#include "OGLTexture.h"
-#include "OGLMesh.h"
 
 #ifdef _WIN32
-#include <windows.h>
 #include "Win32Window.h"
 #include "glad/wgl.h"
 #endif
@@ -55,6 +52,10 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 	glBindFramebuffer(GL_FRAMEBUFFER, resources.shadowFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, resources.shadowTex, 0);
 	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "Shadow framebuffer is not complete!" << std::endl;
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glClearColor(1, 1, 1, 1);
@@ -109,28 +110,6 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-	resources.debugTexMesh = new OGLMesh();
-	resources.debugTexMesh->SetVertexPositions({ Vector3(-1, 1, 0), Vector3(-1, -1, 0), Vector3(1, -1, 0), Vector3(1, 1, 0) });
-	resources.debugTexMesh->SetVertexTextureCoords({ Vector2(0, 1), Vector2(0, 0), Vector2(1, 0), Vector2(1, 1) });
-	resources.debugTexMesh->SetVertexIndices({ 0, 1, 2, 2, 3, 0 });
-	resources.debugTexMesh->UploadToGPU();
-
-	glGenVertexArrays(1, &resources.lineVAO);
-	glGenVertexArrays(1, &resources.textVAO);
-
-	glGenBuffers(1, &resources.lineVertVBO);
-	glGenBuffers(1, &resources.textVertVBO);
-	glGenBuffers(1, &resources.textColourVBO);
-	glGenBuffers(1, &resources.textTexVBO);
-
-	resources.debugLineData.reserve(10000);
-	resources.debugTextPos.reserve(10000);
-	resources.debugTextColours.reserve(10000);
-	resources.debugTextUVs.reserve(10000);
-
-	resources.lineCount = 0;
-	resources.textCount = 0;
 }
 
 Mesh* RendererSystemDOD::LoadMesh(const std::string& name) {
@@ -187,41 +166,10 @@ void RendererSystemDOD::Destroy() {
 		resources.shadowFBO = 0;
 	}
 
-	if (resources.lineVAO != 0) {
-		glDeleteVertexArrays(1, &resources.lineVAO);
-		resources.lineVAO = 0;
-	}
-	if (resources.textVAO != 0) {
-		glDeleteVertexArrays(1, &resources.textVAO);
-		resources.textVAO = 0;
-	}
-
-	if (resources.lineVertVBO != 0) {
-		glDeleteBuffers(1, &resources.lineVertVBO);
-		resources.lineVertVBO = 0;
-	}
-	if (resources.textVertVBO != 0) {
-		glDeleteBuffers(1, &resources.textVertVBO);
-		resources.textVertVBO = 0;
-	}
-	if (resources.textColourVBO != 0) {
-		glDeleteBuffers(1, &resources.textColourVBO);
-		resources.textColourVBO = 0;
-	}
-	if (resources.textTexVBO != 0) {
-		glDeleteBuffers(1, &resources.textTexVBO);
-		resources.textTexVBO = 0;
-	}
-
-	resources.debugLineData.clear();
-	resources.debugTextPos.clear();
-	resources.debugTextColours.clear();
-	resources.debugTextUVs.clear();
-
 	window = nullptr;
 }
 
-void NCL::CSC8503::RendererSystemDOD::swapBuffers()
+void RendererSystemDOD::swapBuffers()
 {
 #ifdef _WIN32
 	if (deviceContext) {
@@ -294,8 +242,8 @@ void RendererSystemDOD::RenderSkyboxPass(GameTechRendererData& frameData) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, resources.skyboxTex);
 
-	glBindVertexArray(((Rendering::OGLMesh*)resources.skyboxMesh)->GetVAO());
-	glDrawElements(GL_TRIANGLES, ((Rendering::OGLMesh*)resources.skyboxMesh)->GetIndexCount(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(resources.skyboxMesh->GetVAO());
+	glDrawElements(GL_TRIANGLES,resources.skyboxMesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
