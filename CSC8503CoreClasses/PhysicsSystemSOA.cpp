@@ -25,26 +25,26 @@ void PhysicsSystemSOA::Update(float dt) {
 	float realDT = IDEAL_DT;
 
 	while (data.dTOffset > realDT) {
-		IntegrateAccel(realDT);
+		int count = gameWorld.GetObjectCount();
+		IntegrateAccel(realDT, count);
 
 		if (data.useBroadPhase) {
-			BroadPhase();
+			BroadPhase(count);
 			NarrowPhase();
 		}
 		else {
-			BasicCollisionDetection();
+			BasicCollisionDetection(count);
 		}
 
-		IntegrateVelocity(realDT);
+		IntegrateVelocity(realDT, count);
 		ClearForces();
-		UpdateCollisionList();
+		UpdateCollisionList(count);
 
 		data.dTOffset -= realDT;
 	}
 }
 
-void PhysicsSystemSOA::IntegrateAccel(float dt) {
-	int count = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
+void PhysicsSystemSOA::IntegrateAccel(float dt, int count) {
 	auto& objects = gameWorld.gameObjects;
 
 	for (int i = 0; i < count; ++i) {
@@ -63,14 +63,14 @@ void PhysicsSystemSOA::IntegrateAccel(float dt) {
 		}
 		objects.physics.linearVelocitySOA[i] += accel * dt;
 
-		PhysicsOpsSOA::UpdateInertiaTensor(objects.physics, objects.transforms.orientations[i], i);
 		Vector3 angAccel = objects.physics.inverseInertiaTensorSOA[i] * objects.physics.torqueSOA[i];
 		objects.physics.angularVelocitySOA[i] += angAccel * dt;
 	}
+
+	PhysicsOpsSOA::UpdateAllIntertiaTensors(objects.physics, objects.transforms.orientations);
 }
 
-void PhysicsSystemSOA::IntegrateVelocity(float dt) {
-	int count = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
+void PhysicsSystemSOA::IntegrateVelocity(float dt, int count) {
 	auto& objects = gameWorld.gameObjects;
 	const float LINEAR_DAMPING = 0.4f * dt;
 	const float ANGULAR_DAMPING = 0.4f * dt;
@@ -92,24 +92,18 @@ void PhysicsSystemSOA::IntegrateVelocity(float dt) {
 		objects.transforms.orientations[i].Normalise();
 
 		objects.physics.angularVelocitySOA[i] *= (1.0f - ANGULAR_DAMPING);
-
-		TransformOpsSOA::UpdateMatrixSOA(objects.transforms, i);
 	}
+
+	TransformOpsSOA::UpdateAllMatrices(objects.transforms);
 }
 
 void PhysicsSystemSOA::ClearForces() {
-	int count = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
-	for (int i = 0; i < count; ++i) {
-		if (gameWorld.gameObjects.isActive[i]) {
-			PhysicsOpsSOA::ClearForces(gameWorld.gameObjects.physics, i);
-		}
-	}
+	auto& objects = gameWorld.gameObjects;
+	PhysicsOpsSOA::ClearAllForces(objects.physics);
 }
 
-void PhysicsSystemSOA::BroadPhase() {
+void PhysicsSystemSOA::BroadPhase(int count) {
 	broadphasePairs.clear();
-
-	int count = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
 
 	QuadTreeSOA<int> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
 
@@ -206,8 +200,7 @@ void PhysicsSystemSOA::NarrowPhase() {
 	}
 }
 
-void PhysicsSystemSOA::BasicCollisionDetection() {
-	int count = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
+void PhysicsSystemSOA::BasicCollisionDetection(int count) {
 	CollisionInfoSOA collisionInfo;
 
 	for (int i = 0; i < count; ++i) {
@@ -239,9 +232,8 @@ void PhysicsSystemSOA::BasicCollisionDetection() {
 	}
 }
 
-void PhysicsSystemSOA::UpdateCollisionList() {
+void PhysicsSystemSOA::UpdateCollisionList(int count) {
 	auto& objects = gameWorld.gameObjects;
-	int count = GameObjectOpsSOA::GetObjectCount(objects);
 
 	for (auto it = activeCollisions.begin(); it != activeCollisions.end(); ) {
 		it->framesLeft--;

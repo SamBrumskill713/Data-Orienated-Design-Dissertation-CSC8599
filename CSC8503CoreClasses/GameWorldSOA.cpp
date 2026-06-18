@@ -25,6 +25,49 @@ void GameWorldSOA::Clear() {
 	data.worldStateCounter = 0;
 }
 
+void NCL::CSC8503::GameWorldSOA::reserveCapacity(int estimatedCapacity)
+{
+	// Reserve main object arrays
+	gameObjects.worldIDs.reserve(estimatedCapacity);
+	gameObjects.objectTypes.reserve(estimatedCapacity);
+	gameObjects.isActive.reserve(estimatedCapacity);
+	gameObjects.isCollided.reserve(estimatedCapacity);
+	gameObjects.collisionLayers.reserve(estimatedCapacity);
+	gameObjects.broadphaseAABBs.reserve(estimatedCapacity);
+
+	// Reserve transform arrays
+	gameObjects.transforms.positions.reserve(estimatedCapacity);
+	gameObjects.transforms.matrices.reserve(estimatedCapacity);
+	gameObjects.transforms.orientations.reserve(estimatedCapacity);
+	gameObjects.transforms.scales.reserve(estimatedCapacity);
+
+	// Reserve physics arrays
+	gameObjects.physics.inverseInertiaTensorSOA.reserve(estimatedCapacity);
+	gameObjects.physics.linearVelocitySOA.reserve(estimatedCapacity);
+	gameObjects.physics.forceSOA.reserve(estimatedCapacity);
+	gameObjects.physics.angularVelocitySOA.reserve(estimatedCapacity);
+	gameObjects.physics.torqueSOA.reserve(estimatedCapacity);
+	gameObjects.physics.inverseInertiaSOA.reserve(estimatedCapacity);
+	gameObjects.physics.inverseMassSOA.reserve(estimatedCapacity);
+	gameObjects.physics.elasticitySOA.reserve(estimatedCapacity);
+	gameObjects.physics.frictionSOA.reserve(estimatedCapacity);
+	gameObjects.physics.isCollidedSOA.reserve(estimatedCapacity);
+
+	// Reserve render arrays
+	gameObjects.render.meshes.reserve(estimatedCapacity);
+	gameObjects.render.materialTypes.reserve(estimatedCapacity);
+	gameObjects.render.diffuseTextures.reserve(estimatedCapacity);
+	gameObjects.render.bumpTextures.reserve(estimatedCapacity);
+	gameObjects.render.colours.reserve(estimatedCapacity);
+
+	// Reserve collision arrays
+	gameObjects.collision.dataSOA.typeSOA.reserve(estimatedCapacity);
+	gameObjects.collision.dataSOA.collisionLayerSOA.reserve(estimatedCapacity);
+	gameObjects.collision.dataSOA.isTriggerSOA.reserve(estimatedCapacity);
+	gameObjects.collision.AABBDataSOA.halfSizesSOA.reserve(estimatedCapacity);
+	gameObjects.collision.typeDataIndex.reserve(estimatedCapacity);
+}
+
 bool GameWorldSOA::Raycast(Ray& r, RayCollisionSOA& closestCollision, bool closestObject, int ignoreObjectIndex) const {
 	RayCollisionSOA collision;
 	bool found = false;

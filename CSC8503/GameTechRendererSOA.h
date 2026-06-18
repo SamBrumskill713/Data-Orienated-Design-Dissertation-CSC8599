@@ -19,9 +19,40 @@
 
 namespace NCL {
 	namespace CSC8503{
+
+		struct ShaderUniformCache {
+			// Default shader uniforms
+			GLint defaultShader_proj = -1;
+			GLint defaultShader_view = -1;
+			GLint defaultShader_model = -1;
+			GLint defaultShader_colour = -1;
+			GLint defaultShader_hasVertexColours = -1;
+			GLint defaultShader_hasTexture = -1;
+			GLint defaultShader_sunPos = -1;
+			GLint defaultShader_sunColour = -1;
+			GLint defaultShader_sunRadius = -1;
+			GLint defaultShader_cameraPos = -1;
+			GLint defaultShader_shadowTex = -1;
+			GLint defaultShader_shadowMatrix = -1;
+			GLint defaultShader_mainTex = -1;
+
+			// Skybox shader uniforms
+			GLint skyboxShader_proj = -1;
+			GLint skyboxShader_view = -1;
+			GLint skyboxShader_cubeTex = -1;
+
+			// Shadow shader uniforms
+			GLint shadowShader_mvp = -1;
+		};
+
 		struct GameTechRendererDataSOA {
 			std::vector<size_t> opaqueObjectIndices;
 			std::vector<size_t> transparentObjectIndices;
+			std::vector<OGLMesh*> cachedMeshPtrs;
+			bool meshCacheDirty = true;
+
+			std::unordered_map<size_t, std::vector<size_t>> textureToObjectIndices;
+			bool textureBatchDirty = true;
 
 			Matrix4 viewMatrix;
 			Matrix4 projMatrix;
@@ -57,6 +88,8 @@ namespace NCL {
 
 			int screenWidth;
 			int screenHeight;
+
+			ShaderUniformCache uniformCache;
 		};
 
 		struct RendererSystemSOA {
@@ -75,6 +108,9 @@ namespace NCL {
 			Mesh* LoadMesh(const std::string& name);
 			Texture* LoadTexture(const std::string& name);
 
+			void CacheUniformLocations();
+			void UpdateMeshCache(GameWorldSOA& world, GameTechRendererDataSOA& frameData);
+			void BuildTextureBatches(GameWorldSOA& world, GameTechRendererDataSOA& frameData);
 			void BuildRenderFrame(GameWorldSOA& world, GameTechRendererDataSOA& frameData);
 			void RenderSkyBoxPass(GameTechRendererDataSOA& frameData);
 			void RenderOpaquePass(GameWorldSOA& world, GameTechRendererDataSOA& frameData);

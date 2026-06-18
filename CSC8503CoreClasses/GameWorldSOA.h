@@ -80,6 +80,8 @@ namespace NCL::CSC8503 {
 			return data.sunColour;
 		}
 
+		void reserveCapacity(int estimatedCapacity);
+
 		bool Raycast(Ray& r, RayCollisionSOA& closestCollision, bool closestObject = false, int ignoreObjectIndex = -1) const;
 
 		void UpdateWorld(float dt);

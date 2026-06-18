@@ -306,6 +306,7 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 	int cameraLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "cameraPos");
 	int shadowTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowTex");
 	int shadowLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowMatrix");
+	int mainTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex");
 
 	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
 	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
@@ -332,7 +333,7 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex"), 0);
+			glUniform1i(mainTexLocation, 0);
 		}
 
 		Matrix4 modelMatrix = obj.transform.matrix;
@@ -372,6 +373,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	int cameraLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "cameraPos");
 	int shadowTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowTex");
 	int shadowLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowMatrix");
+	int mainTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex");
 
 	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
 	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
@@ -398,7 +400,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex"), 0);
+			glUniform1i(mainTexLocation, 0);
 		}
 
 		Matrix4 modelMatrix = obj.transform.matrix;

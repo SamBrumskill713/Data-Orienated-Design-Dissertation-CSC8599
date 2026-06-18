@@ -9,6 +9,31 @@ using namespace CSC8503;
 static Matrix4 biasMatrix = Matrix::Translation(Vector3(0.5f, 0.5f, 0.5f)) * Matrix::Scale(Vector3(0.5f, 0.5f, 0.5f));
 static Matrix4 shadowMatrix;
 
+void RendererSystemSOA::CacheUniformLocations() {
+	// Cache default shader uniforms
+	SOAResources.uniformCache.defaultShader_proj = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "projMatrix");
+	SOAResources.uniformCache.defaultShader_view = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "viewMatrix");
+	SOAResources.uniformCache.defaultShader_model = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "modelMatrix");
+	SOAResources.uniformCache.defaultShader_colour = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "objectColour");
+	SOAResources.uniformCache.defaultShader_hasVertexColours = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "hasVertexColours");
+	SOAResources.uniformCache.defaultShader_hasTexture = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "hasTexture");
+	SOAResources.uniformCache.defaultShader_sunPos = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunPos");
+	SOAResources.uniformCache.defaultShader_sunColour = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunColour");
+	SOAResources.uniformCache.defaultShader_sunRadius = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunRadius");
+	SOAResources.uniformCache.defaultShader_cameraPos = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "cameraPos");
+	SOAResources.uniformCache.defaultShader_shadowTex = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "shadowTex");
+	SOAResources.uniformCache.defaultShader_shadowMatrix = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "shadowMatrix");
+	SOAResources.uniformCache.defaultShader_mainTex = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "mainTex");
+
+	// Cache skybox shader uniforms
+	SOAResources.uniformCache.skyboxShader_proj = glGetUniformLocation(SOAResources.skyboxShader->GetProgramID(), "projMatrix");
+	SOAResources.uniformCache.skyboxShader_view = glGetUniformLocation(SOAResources.skyboxShader->GetProgramID(), "viewMatrix");
+	SOAResources.uniformCache.skyboxShader_cubeTex = glGetUniformLocation(SOAResources.skyboxShader->GetProgramID(), "cubeTex");
+
+	// Cache shadow shader uniforms
+	SOAResources.uniformCache.shadowShader_mvp = glGetUniformLocation(SOAResources.shadowShader->GetProgramID(), "mvpMatrix");
+}
+
 void RendererSystemSOA::Initialise(Window* winPtr) {
 	window = winPtr;
 	SOAResources.screenWidth = window->GetScreenSize().x;
@@ -102,6 +127,8 @@ void RendererSystemSOA::Initialise(Window* winPtr) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	CacheUniformLocations();
 }
 
 Mesh* RendererSystemSOA::LoadMesh(const std::string& name) {
@@ -114,6 +141,35 @@ Mesh* RendererSystemSOA::LoadMesh(const std::string& name) {
 
 Texture* RendererSystemSOA::LoadTexture(const std::string& name) {
 	return OGLTexture::TextureFromFile(name).release();
+}
+
+void NCL::CSC8503::RendererSystemSOA::UpdateMeshCache(GameWorldSOA& world, GameTechRendererDataSOA& frameData)
+{
+	auto& objects = world.gameObjects;
+
+	if (frameData.meshCacheDirty || frameData.cachedMeshPtrs.size() != objects.render.meshes.size()) {
+		frameData.cachedMeshPtrs.resize(objects.render.meshes.size());
+		for (size_t i = 0; i < objects.render.meshes.size(); ++i) {
+			frameData.cachedMeshPtrs[i] = (OGLMesh*)objects.render.meshes[i];
+		}
+		frameData.meshCacheDirty = false;
+	}
+}
+
+void NCL::CSC8503::RendererSystemSOA::BuildTextureBatches(GameWorldSOA& world, GameTechRendererDataSOA& frameData)
+{
+	if (!frameData.textureBatchDirty) return;
+
+	frameData.textureToObjectIndices.clear();
+	auto& objects = world.gameObjects;
+
+	for (size_t idx : frameData.opaqueObjectIndices) {
+		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
+		size_t texKey = reinterpret_cast<size_t>(diffuseTex);
+		frameData.textureToObjectIndices[texKey].push_back(idx);
+	}
+
+	frameData.textureBatchDirty = false;
 }
 
 void RendererSystemSOA::Destroy() {
@@ -171,7 +227,7 @@ void RendererSystemSOA::SetVerticalSync(int interval) {
 	}
 }
 
-void NCL::CSC8503::RendererSystemSOA::BuildRenderFrame(GameWorldSOA& world, GameTechRendererDataSOA& frameData){
+void NCL::CSC8503::RendererSystemSOA::BuildRenderFrame(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {
 	frameData.opaqueObjectIndices.clear();
 	frameData.transparentObjectIndices.clear();
 	Vector3 camPos = frameData.cameraPos;
@@ -193,31 +249,28 @@ void NCL::CSC8503::RendererSystemSOA::BuildRenderFrame(GameWorldSOA& world, Game
 		float distA = Vector::LengthSquared(camPos - objects.transforms.positions[a]);
 		float distB = Vector::LengthSquared(camPos - objects.transforms.positions[b]);
 		return distA < distB;
-	});
+		});
 
 	std::sort(frameData.transparentObjectIndices.begin(), frameData.transparentObjectIndices.end(), [&](size_t a, size_t b) {
 		float distA = Vector::LengthSquared(camPos - objects.transforms.positions[a]);
 		float distB = Vector::LengthSquared(camPos - objects.transforms.positions[b]);
 		return distA < distB;
-	});
+		});
+
+	frameData.textureBatchDirty = true;
 }
 
-void NCL::CSC8503::RendererSystemSOA::RenderSkyBoxPass(GameTechRendererDataSOA& frameData){
+void NCL::CSC8503::RendererSystemSOA::RenderSkyBoxPass(GameTechRendererDataSOA& frameData) {
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 
 	glUseProgram(SOAResources.skyboxShader->GetProgramID());
 
-	int projLocation = glGetUniformLocation(SOAResources.skyboxShader->GetProgramID(), "projMatrix");
-	int viewLocation = glGetUniformLocation(SOAResources.skyboxShader->GetProgramID(), "viewMatrix");
-	int texLocation = glGetUniformLocation(SOAResources.skyboxShader->GetProgramID(), "cubeTex");
+	glUniformMatrix4fv(SOAResources.uniformCache.skyboxShader_proj, 1, false, (float*)&frameData.projMatrix);
+	glUniformMatrix4fv(SOAResources.uniformCache.skyboxShader_view, 1, false, (float*)&frameData.viewMatrix);
 
-	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
-	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
-
-	// Set texture uniform BEFORE binding texture
-	glUniform1i(texLocation, 0);
+	glUniform1i(SOAResources.uniformCache.skyboxShader_cubeTex, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, SOAResources.skyboxTex);
 
@@ -229,7 +282,7 @@ void NCL::CSC8503::RendererSystemSOA::RenderSkyBoxPass(GameTechRendererDataSOA& 
 	glEnable(GL_BLEND);
 }
 
-void NCL::CSC8503::RendererSystemSOA::RenderOpaquePass(GameWorldSOA& world, GameTechRendererDataSOA& frameData){
+void NCL::CSC8503::RendererSystemSOA::RenderOpaquePass(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {
 	glDisable(GL_BLEND);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -237,129 +290,102 @@ void NCL::CSC8503::RendererSystemSOA::RenderOpaquePass(GameWorldSOA& world, Game
 
 	glUseProgram(SOAResources.defaultShader->GetProgramID());
 
-	int projLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "projMatrix");
-	int viewLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "viewMatrix");
-	int modelLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "modelMatrix");
-	int colourLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "objectColour");
-	int hasVColLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "hasVertexColours");
-	int hasTexLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "hasTexture");
-
-	int lightPosLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunPos");
-	int lightColourLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunColour");
-	int lightRadiusLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunRadius");
-
-	int cameraLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "cameraPos");
-	int shadowTexLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "shadowTex");
-	int shadowLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "shadowMatrix");
-
-	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
-	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
-
-	Vector3 camPos = frameData.cameraPos;
-	glUniform3fv(cameraLocation, 1, &camPos.x);
+	// Set global uniforms once - using cached locations
+	glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_proj, 1, false, (float*)&frameData.projMatrix);
+	glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_view, 1, false, (float*)&frameData.viewMatrix);
+	glUniform3fv(SOAResources.uniformCache.defaultShader_cameraPos, 1, &frameData.cameraPos.x);
 
 	Vector3 sunPos = world.GetSunPosition();
 	Vector3 sunCol = world.GetSunColour();
-	float sunRadius = 10000.0f;
-	glUniform3fv(lightPosLocation, 1, (float*)&sunPos);
-	glUniform3fv(lightColourLocation, 1, (float*)&sunCol);
-	glUniform1f(lightRadiusLocation, sunRadius);
+	glUniform3fv(SOAResources.uniformCache.defaultShader_sunPos, 1, (float*)&sunPos);
+	glUniform3fv(SOAResources.uniformCache.defaultShader_sunColour, 1, (float*)&sunCol);
+	glUniform1f(SOAResources.uniformCache.defaultShader_sunRadius, 10000.0f);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, SOAResources.shadowTex);
-	glUniform1i(shadowTexLocation, 1);
+	glUniform1i(SOAResources.uniformCache.defaultShader_shadowTex, 1);
 
 	auto& objects = world.gameObjects;
-	for (size_t idx : frameData.opaqueObjectIndices) {
-		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
 
+	// Build texture batches if needed
+	BuildTextureBatches(world, frameData);
+
+	// Render all objects grouped by texture
+	for (const auto& [texKey, indices] : frameData.textureToObjectIndices) {
+		OGLTexture* diffuseTex = reinterpret_cast<OGLTexture*>(texKey);
+
+		// Bind texture once for the entire batch
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "mainTex"), 0);
+			glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
 		}
 
-		Matrix4 modelMatrix = objects.transforms.matrices[idx];
-		glUniformMatrix4fv(modelLocation, 1, false, (float*)&modelMatrix);
+		// Render all objects using this texture
+		for (size_t idx : indices) {
+			glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_model, 1, false, (float*)&objects.transforms.matrices[idx]);
 
-		Matrix4 fullShadowMat = shadowMatrix * modelMatrix;
-		glUniformMatrix4fv(shadowLocation, 1, false, (float*)&fullShadowMat);
+			Matrix4 fullShadowMat = SOAResources.shadowMatrix * objects.transforms.matrices[idx];
+			glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_shadowMatrix, 1, false, (float*)&fullShadowMat);
 
-		glUniform4fv(colourLocation, 1, (float*)&objects.render.colours[idx]);
-		glUniform1i(hasVColLocation, 0);
-		glUniform1i(hasTexLocation, diffuseTex ? 1 : 0);
+			glUniform4fv(SOAResources.uniformCache.defaultShader_colour, 1, (float*)&objects.render.colours[idx]);
+			glUniform1i(SOAResources.uniformCache.defaultShader_hasVertexColours, 0);
+			glUniform1i(SOAResources.uniformCache.defaultShader_hasTexture, diffuseTex ? 1 : 0);
 
-		glBindVertexArray(((Rendering::OGLMesh*)objects.render.meshes[idx])->GetVAO());
-		GLuint indexCount = ((Rendering::OGLMesh*)objects.render.meshes[idx])->GetIndexCount();
-		glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+			OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
+			glBindVertexArray(mesh->GetVAO());
+			glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
+		}
 	}
 }
 
-void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world, GameTechRendererDataSOA& frameData){
-	glEnable(GL_BLEND);
+void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {
+	glDisable(GL_BLEND);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
 
 	glUseProgram(SOAResources.defaultShader->GetProgramID());
 
-	int projLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "projMatrix");
-	int viewLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "viewMatrix");
-	int modelLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "modelMatrix");
-	int colourLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "objectColour");
-	int hasVColLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "hasVertexColours");
-	int hasTexLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "hasTexture");
-
-	int lightPosLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunPos");
-	int lightColourLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunColour");
-	int lightRadiusLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "sunRadius");
-
-	int cameraLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "cameraPos");
-	int shadowTexLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "shadowTex");
-	int shadowLocation = glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "shadowMatrix");
-
-	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
-	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
-
-	Vector3 camPos = frameData.cameraPos;
-	glUniform3fv(cameraLocation, 1, &camPos.x);
+	// Set global uniforms once - using cached locations
+	glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_proj, 1, false, (float*)&frameData.projMatrix);
+	glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_view, 1, false, (float*)&frameData.viewMatrix);
+	glUniform3fv(SOAResources.uniformCache.defaultShader_cameraPos, 1, &frameData.cameraPos.x);
 
 	Vector3 sunPos = world.GetSunPosition();
 	Vector3 sunCol = world.GetSunColour();
-	float sunRadius = 10000.0f;
-	glUniform3fv(lightPosLocation, 1, (float*)&sunPos);
-	glUniform3fv(lightColourLocation, 1, (float*)&sunCol);
-	glUniform1f(lightRadiusLocation, sunRadius);
+	glUniform3fv(SOAResources.uniformCache.defaultShader_sunPos, 1, (float*)&sunPos);
+	glUniform3fv(SOAResources.uniformCache.defaultShader_sunColour, 1, (float*)&sunCol);
+	glUniform1f(SOAResources.uniformCache.defaultShader_sunRadius, 10000.0f);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, SOAResources.shadowTex);
-	glUniform1i(shadowTexLocation, 1);
+	glUniform1i(SOAResources.uniformCache.defaultShader_shadowTex, 1);
 
 	auto& objects = world.gameObjects;
+
 	for (size_t idx : frameData.transparentObjectIndices) {
 		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
 
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(glGetUniformLocation(SOAResources.defaultShader->GetProgramID(), "mainTex"), 0);
+			glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
 		}
 
-		Matrix4 modelMatrix = objects.transforms.matrices[idx];
-		glUniformMatrix4fv(modelLocation, 1, false, (float*)&modelMatrix);
+		glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_model, 1, false, (float*)&objects.transforms.matrices[idx]);
 
-		Matrix4 fullShadowMat = shadowMatrix * modelMatrix;
-		glUniformMatrix4fv(shadowLocation, 1, false, (float*)&fullShadowMat);
+		Matrix4 fullShadowMat = SOAResources.shadowMatrix * objects.transforms.matrices[idx];
+		glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_shadowMatrix, 1, false, (float*)&fullShadowMat);
 
-		glUniform4fv(colourLocation, 1, (float*)&objects.render.colours[idx]);
-		glUniform1i(hasVColLocation, 0);
-		glUniform1i(hasTexLocation, diffuseTex ? 1 : 0);
+		glUniform4fv(SOAResources.uniformCache.defaultShader_colour, 1, (float*)&objects.render.colours[idx]);
+		glUniform1i(SOAResources.uniformCache.defaultShader_hasVertexColours, 0);
+		glUniform1i(SOAResources.uniformCache.defaultShader_hasTexture, diffuseTex ? 1 : 0);
 
-		glBindVertexArray(((Rendering::OGLMesh*)objects.render.meshes[idx])->GetVAO());
-		GLuint indexCount = ((Rendering::OGLMesh*)objects.render.meshes[idx])->GetIndexCount();
-		glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+		OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
+		glBindVertexArray(mesh->GetVAO());
+		glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
 	}
-
-	glDisable(GL_BLEND);
 }
 
 void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {
@@ -370,7 +396,6 @@ void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, G
 	glCullFace(GL_FRONT);
 
 	glUseProgram(SOAResources.shadowShader->GetProgramID());
-	int mvpLocation = glGetUniformLocation(SOAResources.shadowShader->GetProgramID(), "mvpMatrix");
 
 	Vector3 sunPos = world.GetSunPosition();
 	Matrix4 shadowViewMatrix = Matrix::View(sunPos, Vector3(0, 0, 0), Vector3(0, 1, 0));
@@ -378,16 +403,18 @@ void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, G
 
 	Matrix4 mvMatrix = shadowProjMatrix * shadowViewMatrix;
 	// Store the biased shadow matrix for later use in opaque/transparent passes
-	shadowMatrix = biasMatrix * mvMatrix;
+	SOAResources.shadowMatrix = biasMatrix * mvMatrix;
 
 	auto& objects = world.gameObjects;
+
 	for (size_t idx : frameData.opaqueObjectIndices) {
 		Matrix4 modelMatrix = objects.transforms.matrices[idx];
 		Matrix4 mvpMatrix = mvMatrix * modelMatrix;
 
-		glUniformMatrix4fv(mvpLocation, 1, false, (float*)&mvpMatrix);
-		glBindVertexArray(((Rendering::OGLMesh*)objects.render.meshes[idx])->GetVAO());
-		glDrawElements(GL_TRIANGLES, ((Rendering::OGLMesh*)objects.render.meshes[idx])->GetIndexCount(), GL_UNSIGNED_INT, 0);
+		glUniformMatrix4fv(SOAResources.uniformCache.shadowShader_mvp, 1, false, (float*)&mvpMatrix);
+		OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
+		glBindVertexArray(mesh->GetVAO());
+		glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
 	}
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -396,7 +423,8 @@ void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, G
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void NCL::CSC8503::RendererSystemSOA::RenderFrame(GameWorldSOA& world, GameTechRendererDataSOA& frameData){
+void NCL::CSC8503::RendererSystemSOA::RenderFrame(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {
+	UpdateMeshCache(world, frameData);
 	glEnable(GL_CULL_FACE);
 	glClearColor(1, 1, 1, 1);
 

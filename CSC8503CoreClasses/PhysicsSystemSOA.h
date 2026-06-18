@@ -97,14 +97,14 @@ namespace NCL::CSC8503 {
 		std::vector<BroadphasePairSOA> broadphasePairs;
 		std::vector<int> cachedDynamicObjects;
 
-		void IntegrateAccel(float dt);
-		void IntegrateVelocity(float dt);
+		void IntegrateAccel(float dt, int count);
+		void IntegrateVelocity(float dt, int count);
 		void ClearForces();
-		void UpdateCollisionList();
+		void UpdateCollisionList(int count);
 
-		void BroadPhase();
+		void BroadPhase(int count);
 		void NarrowPhase();
-		void BasicCollisionDetection();
+		void BasicCollisionDetection(int count);
 
 		void ImpulseResolveCollision(int indexA, int indexB, const Vector3& normal,
 			const Vector3& localA, const Vector3& localB, float penetration);

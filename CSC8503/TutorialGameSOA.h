@@ -24,6 +24,8 @@ namespace NCL {
 			size_t floorIndex;
 			float forceMagnitude;
 			bool useGravity;
+			int x;
+			int y;
 
 			TutorialGameDataSOA()
 				:forceMagnitude(10), objectIndex((size_t)-1), floorIndex((size_t)-1) {

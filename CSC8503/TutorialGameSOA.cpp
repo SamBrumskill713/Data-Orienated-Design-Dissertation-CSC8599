@@ -31,6 +31,9 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
+	data.x = 90;
+	data.y = 90;
+
 	InitCamera();
 	LoadResources();
 	InitWorld();
@@ -87,10 +90,14 @@ void TutorialGameSOA::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
 	physics.data.useBroadPhase = true;
+
+	int estimatedCapacity = 1 + (data.x * data.y);
+	gameWorld.reserveCapacity(estimatedCapacity);
+
 	AddFloorToWorld(Vector3(0, -5, 0), 2, 10000);
 	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 
-	CreateAABBGrid(90, 90, 5.0f, 5.0f, Vector3(1, 1, 1));
+	CreateAABBGrid(data.x, data.y, 5.0f, 5.0f, Vector3(1, 1, 1));
 	std::cout << "Cubes added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 }
 
