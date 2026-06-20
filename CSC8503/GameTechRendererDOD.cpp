@@ -206,19 +206,16 @@ void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererDa
 		frameData.opaqueObjectIndices.push_back(i);
 	}
 
+	// Sort using pre-calculated distances to avoid recalculation during sort
 	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(),
-		[&](size_t a, size_t b) {
-			float distA = Vector::LengthSquared(camPos - objects[a].transform.position);
-			float distB = Vector::LengthSquared(camPos - objects[b].transform.position);
-			return distA < distB;
+		[&objectDistances](size_t a, size_t b) {
+			return objectDistances[a].second < objectDistances[b].second;
 		}
 	);
 
 	std::sort(frameData.transparentObjectIndices.rbegin(), frameData.transparentObjectIndices.rend(),
-		[&](size_t a, size_t b) {
-			float distA = Vector::LengthSquared(camPos - objects[a].transform.position);
-			float distB = Vector::LengthSquared(camPos - objects[b].transform.position);
-			return distA < distB;
+		[&objectDistances](size_t a, size_t b) {
+			return objectDistances[a].second < objectDistances[b].second;
 		}
 	);
 }

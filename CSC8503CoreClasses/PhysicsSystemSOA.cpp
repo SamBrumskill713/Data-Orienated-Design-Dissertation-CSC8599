@@ -65,9 +65,9 @@ void PhysicsSystemSOA::IntegrateAccel(float dt, int count) {
 
 		Vector3 angAccel = objects.physics.inverseInertiaTensorSOA[i] * objects.physics.torqueSOA[i];
 		objects.physics.angularVelocitySOA[i] += angAccel * dt;
-	}
 
-	PhysicsOpsSOA::UpdateAllIntertiaTensors(objects.physics, objects.transforms.orientations);
+		PhysicsOpsSOA::UpdateInertiaTensor(objects.physics, objects.transforms.orientations[i], i);
+	}
 }
 
 void PhysicsSystemSOA::IntegrateVelocity(float dt, int count) {
@@ -92,9 +92,9 @@ void PhysicsSystemSOA::IntegrateVelocity(float dt, int count) {
 		objects.transforms.orientations[i].Normalise();
 
 		objects.physics.angularVelocitySOA[i] *= (1.0f - ANGULAR_DAMPING);
-	}
 
-	TransformOpsSOA::UpdateAllMatrices(objects.transforms);
+		TransformOpsSOA::UpdateMatrixSOA(objects.transforms, i);
+	}
 }
 
 void PhysicsSystemSOA::ClearForces() {
@@ -123,10 +123,10 @@ void PhysicsSystemSOA::BroadPhase(int count) {
 		}
 	}
 
-	//int estimatedPairs = (int)(cachedDynamicObjects.size() * 10);
-	//if (broadphasePairs.capacity() < (size_t)estimatedPairs) {
-	//	broadphasePairs.reserve(estimatedPairs);
-	//}
+	int estimatedPairs = (int)(cachedDynamicObjects.size() * 10);
+	if (broadphasePairs.capacity() < (size_t)estimatedPairs) {
+		broadphasePairs.reserve(estimatedPairs);
+	}
 
 	quadTree.OperateOnContents(
 		[&](std::vector<QuadTreeEntrySOA<int>>& contents) {
@@ -168,12 +168,10 @@ void PhysicsSystemSOA::BroadPhase(int count) {
 
 void PhysicsSystemSOA::NarrowPhase() {
 	CollisionInfoSOA collisionInfo;
+	int count = gameWorld.GetObjectCount();
 
 	for (const auto& pair : broadphasePairs) {
-		int countA = GameObjectOpsSOA::GetObjectCount(gameWorld.gameObjects);
-		int countB = countA;
-
-		if (pair.indexA >= countA || pair.indexB >= countB) {
+		if (pair.indexA >= count || pair.indexB >= count) {
 			continue;
 		}
 

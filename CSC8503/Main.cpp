@@ -690,14 +690,13 @@ int main() {
 			delete physicsDOD;
 			delete worldDOD;
 		}
-				else if (gStartSOABenchmark.load()) {
+		else if (gStartSOABenchmark.load()) {
 			// SOA benchmark mode selected
 			gStartSOABenchmark = false;
 			world->Clear();
 			w->UpdateWindow();
 
 			GameWorldSOA* worldSOA = new GameWorldSOA();
-			RendererSystemDOD rendererDOD;
 			RendererSystemSOA rendererSOA;
 			GameTechRendererDataSOA frameData;
 			rendererSOA.Initialise(w);
@@ -754,7 +753,7 @@ int main() {
 					std::cout << "  Max: " << (maxFrameTime * 1000.0f) << " ms (" << (1.0f / maxFrameTime) << " FPS)" << std::endl;
 					std::cout << "  Avg: " << (avgFrameTime * 1000.0f) << " ms (" << (1.0f / avgFrameTime) << " FPS)" << std::endl;
 					std::cout << "  Med: " << (medianFrameTime * 1000.0f) << " ms (" << (1.0f / medianFrameTime) << " FPS)" << std::endl;
-					std::cout << "==============================================\n" << std::endl;
+					std::cout << "============================\n" << std::endl;
 
 					soaBenchmarkRunning = false;
 				}
