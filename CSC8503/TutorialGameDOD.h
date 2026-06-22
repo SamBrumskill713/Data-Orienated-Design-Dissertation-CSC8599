@@ -23,6 +23,8 @@ namespace NCL {
 			size_t floorIndex;
 			float forceMagnitude;
 			bool useGravity;
+			int x;
+			int y;
 
 			TutorialGameData()
 				:forceMagnitude(10), objectIndex((size_t)-1), floorIndex((size_t)-1) {
@@ -57,7 +59,6 @@ namespace NCL {
 
 		private:
 			GameWorldDOD& gameWorld;
-			//GameTechRendererInterface& rendererOOP;
 			RendererSystemDOD& rendererDOD;
 			PhysicsSystemDOD& physics;
 			Controller* controller;

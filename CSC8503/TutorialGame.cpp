@@ -75,6 +75,10 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 }
 
 TutorialGame::~TutorialGame() {
+	if (controller) {
+		delete controller;
+		controller = nullptr;
+	}
 }
 
 void TutorialGame::UpdateGame(float dt) {

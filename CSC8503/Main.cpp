@@ -685,10 +685,13 @@ int main() {
 					dodBenchmarkRunning = false;
 				}
 			}
-			rendererDOD.Destroy();
 			delete gameDOD;
+			gameDOD = nullptr;
 			delete physicsDOD;
+			physicsDOD = nullptr;
 			delete worldDOD;
+			worldDOD = nullptr;
+			rendererDOD.Destroy();
 		}
 		else if (gStartSOABenchmark.load()) {
 			// SOA benchmark mode selected
@@ -758,11 +761,13 @@ int main() {
 					soaBenchmarkRunning = false;
 				}
 			}
-
-			rendererSOA.Destroy();
 			delete gameSOA;
+			gameSOA = nullptr;
 			delete physicsSOA;
+			physicsSOA = nullptr;
 			delete worldSOA;
+			worldSOA = nullptr;
+			rendererSOA.Destroy();
 		}
 		else {
 			// Standard gameplay

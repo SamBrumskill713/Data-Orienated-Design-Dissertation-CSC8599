@@ -147,10 +147,11 @@ void RendererSystemDOD::Destroy() {
 		delete resources.skyboxMesh;
 		resources.skyboxMesh = nullptr;
 	}
-	if (resources.debugTexMesh) {
-		delete resources.debugTexMesh;
-		resources.debugTexMesh = nullptr;
-	}
+
+	//if (resources.debugTexMesh) {
+	//	delete resources.debugTexMesh;
+	//	resources.debugTexMesh = nullptr;
+	//}
 
 	if (resources.shadowTex != 0) {
 		glDeleteTextures(1, &resources.shadowTex);
