@@ -30,8 +30,8 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& in
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 36;
-	data.y = 36;
+	data.x = 90;
+	data.y = 90;
 
 	InitCamera();
 	LoadResources();

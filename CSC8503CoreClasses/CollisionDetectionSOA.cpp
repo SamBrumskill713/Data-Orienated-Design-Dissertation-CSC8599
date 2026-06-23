@@ -88,13 +88,13 @@ bool CollisionDetectionSOA::AABBIntersection(int indexA, int indexB,
 	Vector3 halfSizeA = gameObjects.collision.AABBDataSOA.halfSizesSOA[indexA];
 	Vector3 halfSizeB = gameObjects.collision.AABBDataSOA.halfSizesSOA[indexB];
 
-	if (AABBTest(posA, posB, halfSizeA, halfSizeB)) {
-		Vector3 delta = posB - posA;
+	Vector3 delta = posB - posA;
 
-		float overlapX = (halfSizeA.x + halfSizeB.x) - abs(delta.x);
-		float overlapY = (halfSizeA.y + halfSizeB.y) - abs(delta.y);
-		float overlapZ = (halfSizeA.z + halfSizeB.z) - abs(delta.z);
+	float overlapX = (halfSizeA.x + halfSizeB.x) - abs(delta.x);
+	float overlapY = (halfSizeA.y + halfSizeB.y) - abs(delta.y);
+	float overlapZ = (halfSizeA.z + halfSizeB.z) - abs(delta.z);
 
+	if (overlapX > 0.0f && overlapY > 0.0f && overlapZ > 0.0f) {
 		float penetration = std::min({ overlapX, overlapY, overlapZ });
 
 		Vector3 normal(0, 0, 0);
