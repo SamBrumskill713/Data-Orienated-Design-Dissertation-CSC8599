@@ -31,8 +31,8 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 100;
-	data.y = 100;
+	data.x = 90;
+	data.y = 90;
 
 	InitCamera();
 	LoadResources();
@@ -80,7 +80,7 @@ void TutorialGameSOA::UpdateGame(float dt) {
 
 	gameWorld.OperateOnContents([this](int objIndex) {
 
-		});
+	});
 
 	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
 	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);

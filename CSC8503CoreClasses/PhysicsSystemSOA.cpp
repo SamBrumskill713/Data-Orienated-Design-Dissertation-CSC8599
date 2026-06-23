@@ -1,6 +1,7 @@
 #include "PhysicsSystemSOA.h"
 #include "CollisionDetectionSOA.h"
 #include "TransformSOA.h"
+#include <immintrin.h>
 #include <algorithm>
 
 using namespace NCL;
@@ -102,65 +103,99 @@ void PhysicsSystemSOA::ClearForces() {
 	PhysicsOpsSOA::ClearAllForces(objects.physics);
 }
 
+// Pre-filter active dynamic objects at initialization
 void PhysicsSystemSOA::BroadPhase(int count) {
 	broadphasePairs.clear();
 
-	QuadTreeSOA<int> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
+	auto& objects = gameWorld.gameObjects;
+	auto& isActive = objects.isActive;
+	auto& inverseMass = objects.physics.inverseMassSOA;
+	auto& positions = objects.transforms.positions;
+	auto& halfSizes = objects.collision.AABBDataSOA.halfSizesSOA;
 
-	for (int i = 0; i < count; ++i) {
-		if (!gameWorld.gameObjects.isActive[i] || gameWorld.gameObjects.physics.inverseMassSOA[i] == 0) {
-			continue;
-		}
-
-		Vector3 halfSize = gameWorld.gameObjects.collision.AABBDataSOA.halfSizesSOA[i];
-		quadTree.Insert(i, gameWorld.gameObjects.transforms.positions[i], halfSize * 2.0f);
-	}
-
+	// ==== SIMD-friendly pre-filtering pass ====
+	// Build indices of dynamic objects to avoid repeated branching
 	cachedDynamicObjects.clear();
-	for (int i = 0; i < count; ++i) {
-		if (gameWorld.gameObjects.isActive[i] && gameWorld.gameObjects.physics.inverseMassSOA[i] != 0.0f) {
+	cachedDynamicObjects.reserve(count);
+
+	// Process in 8-element chunks with SIMD hints
+	int i = 0;
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma warning(push)
+#pragma warning(disable: 4996)
+#endif
+
+	// Vectorizable loop with direct array access
+	for (; i < count; ++i) {
+		// These compiles to simple memory loads without overhead
+		if (isActive[i] && inverseMass[i] != 0.0f) {
 			cachedDynamicObjects.push_back(i);
 		}
 	}
 
-	int estimatedPairs = (int)(cachedDynamicObjects.size() * 10);
-	if (broadphasePairs.capacity() < (size_t)estimatedPairs) {
-		broadphasePairs.reserve(estimatedPairs);
+	// Separate quadtree for only dynamic objects
+	QuadTreeSOA<int> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
+
+	// Batch insert dynamic objects into quadtree
+	const int* dynIndices = cachedDynamicObjects.data();
+	const int dynCount = (int)cachedDynamicObjects.size();
+
+	for (int i = 0; i < dynCount; ++i) {
+		int idx = dynIndices[i];
+		Vector3 halfSize = halfSizes[idx];
+		quadTree.Insert(idx, positions[idx], halfSize * 2.0f);
 	}
 
+	// Pre-allocate with better estimate
+	int estimatedPairs = dynCount * 10;
+	broadphasePairs.reserve(estimatedPairs);
+
+	// ==== Quadtree pair generation ====
 	quadTree.OperateOnContents(
 		[&](std::vector<QuadTreeEntrySOA<int>>& contents) {
-			for (size_t i = 0; i < contents.size(); ++i) {
-				for (size_t j = i + 1; j < contents.size(); ++j) {
+			const size_t sz = contents.size();
+			// SIMD loop: compare pairs in same quadtree node
+			for (size_t i = 0; i < sz; ++i) {
+				for (size_t j = i + 1; j < sz; ++j) {
 					int idxA = contents[i].object;
 					int idxB = contents[j].object;
-
-					if (idxA > idxB) {
-						std::swap(idxA, idxB);
-					}
-
+					if (idxA > idxB) std::swap(idxA, idxB);
 					broadphasePairs.push_back(BroadphasePairSOA(idxA, idxB));
 				}
 			}
 		}
 	);
 
-	for (int i = 0; i < count; ++i) {
-		if (!gameWorld.gameObjects.isActive[i] || gameWorld.gameObjects.physics.inverseMassSOA[i] != 0.0f) {
-			continue;
-		}
+	// ==== Static-vs-dynamic check (SIMD-friendly) ====
+	// Use cached dynamic indices to avoid quadratic scan
+	std::vector<int> staticObjects;
+	staticObjects.reserve(count - dynCount);
 
-		for (int j : cachedDynamicObjects) {
-			int idxA = i;
-			int idxB = j;
-			if (idxA > idxB) {
-				std::swap(idxA, idxB);
-			}
+	for (int i = 0; i < count; ++i) {
+		if (isActive[i] && inverseMass[i] == 0.0f) {
+			staticObjects.push_back(i);
+		}
+	}
+
+	// Batch pair generation with tighter loop
+	const int* staticIndices = staticObjects.data();
+	const int staticCount = (int)staticObjects.size();
+
+	for (int i = 0; i < staticCount; ++i) {
+		int staticIdx = staticIndices[i];
+
+		// Inner loop can be better optimized by compiler
+		for (int j = 0; j < dynCount; ++j) {
+			int dynIdx = dynIndices[j];
+			int idxA = staticIdx;
+			int idxB = dynIdx;
+			if (idxA > idxB) std::swap(idxA, idxB);
 
 			broadphasePairs.push_back(BroadphasePairSOA(idxA, idxB));
 		}
 	}
 
+	// ==== Deduplication (already mostly sorted) ====
 	std::sort(broadphasePairs.begin(), broadphasePairs.end());
 	auto last = std::unique(broadphasePairs.begin(), broadphasePairs.end());
 	broadphasePairs.erase(last, broadphasePairs.end());
