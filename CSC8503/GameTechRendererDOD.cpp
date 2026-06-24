@@ -2,11 +2,8 @@
 #include "TextureLoader.h"
 #include "MshLoader.h"
 #include "Debug.h"
-#include "OGLTexture.h"
-#include "OGLMesh.h"
 
 #ifdef _WIN32
-#include <windows.h>
 #include "Win32Window.h"
 #include "glad/wgl.h"
 #endif
@@ -55,6 +52,10 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 	glBindFramebuffer(GL_FRAMEBUFFER, resources.shadowFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, resources.shadowTex, 0);
 	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "Shadow framebuffer is not complete!" << std::endl;
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glClearColor(1, 1, 1, 1);
@@ -109,28 +110,6 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-	resources.debugTexMesh = new OGLMesh();
-	resources.debugTexMesh->SetVertexPositions({ Vector3(-1, 1, 0), Vector3(-1, -1, 0), Vector3(1, -1, 0), Vector3(1, 1, 0) });
-	resources.debugTexMesh->SetVertexTextureCoords({ Vector2(0, 1), Vector2(0, 0), Vector2(1, 0), Vector2(1, 1) });
-	resources.debugTexMesh->SetVertexIndices({ 0, 1, 2, 2, 3, 0 });
-	resources.debugTexMesh->UploadToGPU();
-
-	glGenVertexArrays(1, &resources.lineVAO);
-	glGenVertexArrays(1, &resources.textVAO);
-
-	glGenBuffers(1, &resources.lineVertVBO);
-	glGenBuffers(1, &resources.textVertVBO);
-	glGenBuffers(1, &resources.textColourVBO);
-	glGenBuffers(1, &resources.textTexVBO);
-
-	resources.debugLineData.reserve(10000);
-	resources.debugTextPos.reserve(10000);
-	resources.debugTextColours.reserve(10000);
-	resources.debugTextUVs.reserve(10000);
-
-	resources.lineCount = 0;
-	resources.textCount = 0;
 }
 
 Mesh* RendererSystemDOD::LoadMesh(const std::string& name) {
@@ -168,10 +147,11 @@ void RendererSystemDOD::Destroy() {
 		delete resources.skyboxMesh;
 		resources.skyboxMesh = nullptr;
 	}
-	if (resources.debugTexMesh) {
-		delete resources.debugTexMesh;
-		resources.debugTexMesh = nullptr;
-	}
+
+	//if (resources.debugTexMesh) {
+	//	delete resources.debugTexMesh;
+	//	resources.debugTexMesh = nullptr;
+	//}
 
 	if (resources.shadowTex != 0) {
 		glDeleteTextures(1, &resources.shadowTex);
@@ -187,41 +167,10 @@ void RendererSystemDOD::Destroy() {
 		resources.shadowFBO = 0;
 	}
 
-	if (resources.lineVAO != 0) {
-		glDeleteVertexArrays(1, &resources.lineVAO);
-		resources.lineVAO = 0;
-	}
-	if (resources.textVAO != 0) {
-		glDeleteVertexArrays(1, &resources.textVAO);
-		resources.textVAO = 0;
-	}
-
-	if (resources.lineVertVBO != 0) {
-		glDeleteBuffers(1, &resources.lineVertVBO);
-		resources.lineVertVBO = 0;
-	}
-	if (resources.textVertVBO != 0) {
-		glDeleteBuffers(1, &resources.textVertVBO);
-		resources.textVertVBO = 0;
-	}
-	if (resources.textColourVBO != 0) {
-		glDeleteBuffers(1, &resources.textColourVBO);
-		resources.textColourVBO = 0;
-	}
-	if (resources.textTexVBO != 0) {
-		glDeleteBuffers(1, &resources.textTexVBO);
-		resources.textTexVBO = 0;
-	}
-
-	resources.debugLineData.clear();
-	resources.debugTextPos.clear();
-	resources.debugTextColours.clear();
-	resources.debugTextUVs.clear();
-
 	window = nullptr;
 }
 
-void NCL::CSC8503::RendererSystemDOD::swapBuffers()
+void RendererSystemDOD::swapBuffers()
 {
 #ifdef _WIN32
 	if (deviceContext) {
@@ -258,19 +207,16 @@ void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererDa
 		frameData.opaqueObjectIndices.push_back(i);
 	}
 
+	// Sort using pre-calculated distances to avoid recalculation during sort
 	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(),
-		[&](size_t a, size_t b) {
-			float distA = Vector::LengthSquared(camPos - objects[a].transform.position);
-			float distB = Vector::LengthSquared(camPos - objects[b].transform.position);
-			return distA < distB;
+		[&objectDistances](size_t a, size_t b) {
+			return objectDistances[a].second < objectDistances[b].second;
 		}
 	);
 
 	std::sort(frameData.transparentObjectIndices.rbegin(), frameData.transparentObjectIndices.rend(),
-		[&](size_t a, size_t b) {
-			float distA = Vector::LengthSquared(camPos - objects[a].transform.position);
-			float distB = Vector::LengthSquared(camPos - objects[b].transform.position);
-			return distA < distB;
+		[&objectDistances](size_t a, size_t b) {
+			return objectDistances[a].second < objectDistances[b].second;
 		}
 	);
 }
@@ -294,8 +240,8 @@ void RendererSystemDOD::RenderSkyboxPass(GameTechRendererData& frameData) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, resources.skyboxTex);
 
-	glBindVertexArray(((Rendering::OGLMesh*)resources.skyboxMesh)->GetVAO());
-	glDrawElements(GL_TRIANGLES, ((Rendering::OGLMesh*)resources.skyboxMesh)->GetIndexCount(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(resources.skyboxMesh->GetVAO());
+	glDrawElements(GL_TRIANGLES,resources.skyboxMesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -358,6 +304,7 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 	int cameraLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "cameraPos");
 	int shadowTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowTex");
 	int shadowLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowMatrix");
+	int mainTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex");
 
 	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
 	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
@@ -384,7 +331,7 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex"), 0);
+			glUniform1i(mainTexLocation, 0);
 		}
 
 		Matrix4 modelMatrix = obj.transform.matrix;
@@ -424,6 +371,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	int cameraLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "cameraPos");
 	int shadowTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowTex");
 	int shadowLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "shadowMatrix");
+	int mainTexLocation = glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex");
 
 	glUniformMatrix4fv(projLocation, 1, false, (float*)&frameData.projMatrix);
 	glUniformMatrix4fv(viewLocation, 1, false, (float*)&frameData.viewMatrix);
@@ -450,7 +398,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(glGetUniformLocation(resources.defaultShader->GetProgramID(), "mainTex"), 0);
+			glUniform1i(mainTexLocation, 0);
 		}
 
 		Matrix4 modelMatrix = obj.transform.matrix;
@@ -475,28 +423,13 @@ void RendererSystemDOD::RenderFrame(GameWorldDOD& world, GameTechRendererData& f
 	glEnable(GL_CULL_FACE);
 	glClearColor(1, 1, 1, 1);
 
-	// Set up viewport and clear
 	glViewport(0, 0, resources.screenWidth, resources.screenHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Build render lists from DOD data (front-to-back sorting)
 	BuildRenderFrame(world, frameData);
 
-	// Execute render passes in order (matching OOP renderer)
 	RenderShadowMapPass(world, frameData);
 	RenderSkyboxPass(frameData);
 	RenderOpaquePass(world, frameData);
 	RenderTransparentPass(world, frameData);
-
-	// TODO: Debug rendering passes (RenderLines, RenderTextures, RenderText)
-	// glDisable(GL_CULL_FACE);
-	// glDisable(GL_BLEND);
-	// glDisable(GL_DEPTH_TEST);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// RenderLines();
-	// RenderTextures();
-	// RenderText();
-	// glDisable(GL_BLEND);
-	// glEnable(GL_DEPTH_TEST);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

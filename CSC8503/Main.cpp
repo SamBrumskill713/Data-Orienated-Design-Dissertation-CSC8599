@@ -29,6 +29,11 @@
 #include "PhysicsObjectDOD.h"
 #include "GameTechRendererDOD.h"
 
+#include "TutorialGameSOA.h"
+#include "PhysicsSystemSOA.h"
+#include "GameWorldSOA.h"
+#include "GameTechRendererSOA.h"
+
 #ifdef USEOPENGL
 #include "GameTechRenderer.h"
 #define CAN_COMPILE
@@ -47,6 +52,7 @@ using namespace CSC8503;
 #include <atomic>
 
 static std::atomic<bool> gReturnToMenu{ false };
+static std::atomic<bool> gStartSOABenchmark{ false };
 
 vector<Vector3> testNodes;
 
@@ -369,9 +375,16 @@ public:
 				return PushdownResult::Pop; // proceed to gameplay
 			}
 
-			if (choice == "DOD Benchmark") {
+			if (choice == "DOD(AOS) Benchmark") {
 				confirmPressed = false;
 				gReturnToMenu = true; // Use this flag to signal DOD mode
+				return PushdownResult::Pop;
+			}
+
+			if (choice == "DOD(SOA) Benchmark") {
+				confirmPressed = false;
+				gReturnToMenu = false;
+				gStartSOABenchmark = true;
 				return PushdownResult::Pop;
 			}
 
@@ -455,7 +468,7 @@ private:
 	Window* window = nullptr;
 	GameTechRendererInterface* renderer = nullptr;
 
-	std::vector<std::string> options{ "Play", "DOD Benchmark", "Host Online", "Join Online", "Quit" };
+	std::vector<std::string> options{ "Play", "DOD(AOS) Benchmark", "DOD(SOA) Benchmark", "Host Online", "Join Online", "Quit" };
 	int currentIndex = 0;
 	bool confirmPressed = false;
 	bool quitRequested = false;
@@ -606,20 +619,15 @@ int main() {
 			// DOD mode selected
 			gReturnToMenu = false;
 
-			// Clear OOP world and renderer state
+			// [Keep existing DOD benchmark code unchanged...]
 			world->Clear();
-			//Debug::ClearAllDebugText();
-
-			// Clear the framebuffer to black before starting DOD benchmark
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			w->UpdateWindow();  // Swap buffers to show the cleared screen
+			w->UpdateWindow();
 
 			GameWorldDOD* worldDOD = new GameWorldDOD();
 			RendererSystemDOD rendererDOD;
 			GameTechRendererData frameData;
 			rendererDOD.Initialise(w);
-			rendererDOD.SetVerticalSync(1);
+			rendererDOD.SetVerticalSync(0);
 
 			PhysicsSystemDOD* physicsDOD = new PhysicsSystemDOD(*worldDOD);
 			TutorialGameDOD* gameDOD = new TutorialGameDOD(*worldDOD, rendererDOD, *physicsDOD);
@@ -632,10 +640,8 @@ int main() {
 
 			while (w->UpdateWindow() && dodBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
-
 				gameDOD->UpdateGame(dt);
 
-				// Don't skip frames - keep them all for accurate measurement
 				if (dt > 0.5f) {
 					std::cout << "Skipping massive frame: " << dt << "s" << std::endl;
 					continue;
@@ -644,6 +650,7 @@ int main() {
 				frameData.viewMatrix = worldDOD->GetMainCamera().BuildViewMatrix();
 				frameData.projMatrix = worldDOD->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
 				frameData.cameraPos = worldDOD->GetMainCamera().GetPosition();
+
 				rendererDOD.RenderFrame(*worldDOD, frameData);
 				rendererDOD.swapBuffers();
 
@@ -651,18 +658,14 @@ int main() {
 				totalTime += dt;
 				frameTimes.push_back(dt);
 
-				// Update title every frame with current FPS
 				if (frameCount % 1 == 0) {
 					float currentFps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
 					w->SetTitle("GameTech DOD FPS: " + std::to_string((int)currentFps) +
 						" (Frame " + std::to_string(frameCount) + ")");
 				}
 
-				// Check for ESC to exit DOD benchmark
 				if (Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
-					// Calculate statistics
 					std::sort(frameTimes.begin(), frameTimes.end());
-
 					float minFrameTime = frameTimes.front();
 					float maxFrameTime = frameTimes.back();
 					float avgFrameTime = totalTime / frameCount;
@@ -682,10 +685,89 @@ int main() {
 					dodBenchmarkRunning = false;
 				}
 			}
-			rendererDOD.Destroy();
 			delete gameDOD;
+			gameDOD = nullptr;
 			delete physicsDOD;
+			physicsDOD = nullptr;
 			delete worldDOD;
+			worldDOD = nullptr;
+			rendererDOD.Destroy();
+		}
+		else if (gStartSOABenchmark.load()) {
+			// SOA benchmark mode selected
+			gStartSOABenchmark = false;
+			world->Clear();
+			w->UpdateWindow();
+
+			GameWorldSOA* worldSOA = new GameWorldSOA();
+			RendererSystemSOA rendererSOA;
+			GameTechRendererDataSOA frameData;
+			rendererSOA.Initialise(w);
+			rendererSOA.SetVerticalSync(0);
+
+			PhysicsSystemSOA* physicsSOA = new PhysicsSystemSOA(*worldSOA);
+			TutorialGameSOA* gameSOA = new TutorialGameSOA(*worldSOA, rendererSOA, *physicsSOA);
+
+			bool soaBenchmarkRunning = true;
+			int frameCount = 0;
+			double totalTime = 0.0;
+			std::vector<float> frameTimes;
+			frameTimes.reserve(500);
+
+			while (w->UpdateWindow() && soaBenchmarkRunning) {
+				float dt = w->GetTimer().GetTimeDeltaSeconds();
+				gameSOA->UpdateGame(dt);
+
+				if (dt > 0.5f) {
+					std::cout << "Skipping massive frame: " << dt << "s" << std::endl;
+					continue;
+				}
+
+				frameData.viewMatrix = worldSOA->GetMainCamera().BuildViewMatrix();
+				frameData.projMatrix = worldSOA->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
+				frameData.cameraPos = worldSOA->GetMainCamera().GetPosition();
+
+				rendererSOA.RenderFrame(*worldSOA, frameData);
+				rendererSOA.SwapBuffers();
+
+				frameCount++;
+				totalTime += dt;
+				frameTimes.push_back(dt);
+
+				if (frameCount % 1 == 0) {
+					float currentFps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
+					w->SetTitle("GameTech SOA FPS: " + std::to_string((int)currentFps) +
+						" (Frame " + std::to_string(frameCount) + ")");
+				}
+
+				if (Window::GetKeyboard()->KeyDown(KeyCodes::ESCAPE)) {
+					std::sort(frameTimes.begin(), frameTimes.end());
+					float minFrameTime = frameTimes.front();
+					float maxFrameTime = frameTimes.back();
+					float avgFrameTime = totalTime / frameCount;
+					float medianFrameTime = frameTimes[frameCount / 2];
+
+					std::cout << "\n=== SOA Benchmark Results ===" << std::endl;
+					std::cout << "Total Frames: " << frameCount << std::endl;
+					std::cout << "Total Time: " << totalTime << " seconds" << std::endl;
+					std::cout << "Average FPS: " << (frameCount / totalTime) << std::endl;
+					std::cout << "\nFrame Time Statistics:" << std::endl;
+					std::cout << "  Min: " << (minFrameTime * 1000.0f) << " ms (" << (1.0f / minFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Max: " << (maxFrameTime * 1000.0f) << " ms (" << (1.0f / maxFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Avg: " << (avgFrameTime * 1000.0f) << " ms (" << (1.0f / avgFrameTime) << " FPS)" << std::endl;
+					std::cout << "  Med: " << (medianFrameTime * 1000.0f) << " ms (" << (1.0f / medianFrameTime) << " FPS)" << std::endl;
+					std::cout << "============================\n" << std::endl;
+
+					soaBenchmarkRunning = false;
+				}
+			}
+			delete gameSOA;
+			gameSOA = nullptr;
+			delete physicsSOA;
+			physicsSOA = nullptr;
+			delete worldSOA;
+			worldSOA = nullptr;
+			rendererSOA.Destroy();
 		}
 		else {
 			// Standard gameplay

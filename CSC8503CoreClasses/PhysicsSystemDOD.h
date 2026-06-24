@@ -93,11 +93,12 @@ namespace NCL::CSC8503 {
 		GameWorldDOD& gameWorld;
 		std::vector<ActiveCollisionDOD> activeCollisions;
 		std::vector<BroadphasePair> broadphasePairs;
+		QuadTreeDOD<size_t> quadTree;
+		bool quadTreeDirty = true;
 
 		void IntegrateAccel(float dt);
 		void IntegrateVelocity(float dt);
 		void ClearForces();
-		void DetectCollisions();
 		void UpdateCollisionList();
 
 		void BroadPhase();

@@ -1,10 +1,11 @@
 #pragma once
 #include "GameWorld.h"
 #include "./CollisionDetection.h"
+#include "quadTree.h"
 
 namespace NCL {
 	namespace CSC8503 {
-		class PhysicsSystem	
+		class PhysicsSystem
 		{
 		public:
 			PhysicsSystem(GameWorld& g);
@@ -14,12 +15,12 @@ namespace NCL {
 
 			void Update(float dt);
 
-			void UseGravity(bool state) 
+			void UseGravity(bool state)
 			{
 				applyGravity = state;
 			}
 
-			void SetGlobalDamping(float d) 
+			void SetGlobalDamping(float d)
 			{
 				globalDamping = d;
 			}
@@ -34,8 +35,6 @@ namespace NCL {
 
 			void ClearIsCollided();
 
-			//void ClearTriggers();
-
 			void IntegrateAccel(float dt);
 			void IntegrateVelocity(float dt);
 
@@ -44,7 +43,7 @@ namespace NCL {
 			void UpdateCollisionList();
 			void UpdateObjectAABBs();
 
-			void ImpulseResolveCollision(GameObject& a , GameObject&b, CollisionDetection::ContactPoint& p) const;
+			void ImpulseResolveCollision(GameObject& a, GameObject& b, CollisionDetection::ContactPoint& p) const;
 
 			void ImpulseResolveCollisionCustom(GameObject& a, GameObject& b, CollisionDetection::ContactPoint& p,
 				float impulseScale, float restitution) const;
@@ -59,9 +58,11 @@ namespace NCL {
 			std::set<CollisionDetection::CollisionInfo>		allCollisions;
 			std::set<CollisionDetection::CollisionInfo>		broadphaseCollisions;
 			std::vector<CollisionDetection::CollisionInfo>	broadphaseCollisionsVec;
-			bool	useBroadPhase		= true;
-			int		numCollisionFrames	= 5;
+			bool	useBroadPhase = true;
+			int		numCollisionFrames = 5;
+
+			QuadTree<GameObject*> quadTree;
+			bool quadTreeDirty;
 		};
 	}
 }
-

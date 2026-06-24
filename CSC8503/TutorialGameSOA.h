@@ -2,9 +2,9 @@
 #include "Vector.h"
 #include "Quaternion.h"
 #include "Texture.h"
-#include "GameWorldDOD.h"
-#include "PhysicsSystemDOD.h"
-#include "GameTechRendererDOD.h"
+#include "GameWorldSOA.h"
+#include "PhysicsSystemSOA.h"
+#include "GameTechRendererSOA.h"
 
 namespace NCL {
 	class Controller;
@@ -18,20 +18,21 @@ namespace NCL {
 	namespace CSC8503 {
 		class GameTechRendererInterface;
 
-		struct TutorialGameData {
+		struct TutorialGameDataSOA {
 			size_t objectIndex;
 			size_t floorIndex;
 			float forceMagnitude;
 			bool useGravity;
 			int x;
 			int y;
+			int frameCounter;
 
-			TutorialGameData()
+			TutorialGameDataSOA()
 				:forceMagnitude(10), objectIndex((size_t)-1), floorIndex((size_t)-1) {
 			}
 		};
 
-		struct TutorialGameResources {
+		struct TutorialGameResourcesSOA {
 			Rendering::Mesh* cubeMesh;
 			Rendering::Mesh* sphereMesh;
 
@@ -40,36 +41,35 @@ namespace NCL {
 
 			GameTechMaterial checkerMaterial;
 
-			TutorialGameResources()
+			TutorialGameResourcesSOA()
 				:cubeMesh(nullptr), sphereMesh(nullptr), defaultTex(nullptr), checkerTex(nullptr) {
 			}
 		};
 
-		class TutorialGameDOD {
+		class TutorialGameSOA {
 		public:
-			TutorialGameDOD(GameWorldDOD& gameWorld, RendererSystemDOD& renderer, PhysicsSystemDOD& physics);
-			~TutorialGameDOD();
+			TutorialGameSOA(GameWorldSOA& gameWorld, RendererSystemSOA& renderer, PhysicsSystemSOA& physics);
+			~TutorialGameSOA();
 
-			TutorialGameData data;
-			TutorialGameResources resources;
+			TutorialGameDataSOA data;
+			TutorialGameResourcesSOA resources;
 
 			void InitWorld();
 			void UpdateGame(float dt);
 			void InitTest();
 
 		private:
-			GameWorldDOD& gameWorld;
-			RendererSystemDOD& rendererDOD;
-			PhysicsSystemDOD& physics;
+			GameWorldSOA& gameWorld;
+			RendererSystemSOA& rendererSOA;
+			PhysicsSystemSOA& physics;
 			Controller* controller;
 
 			void InitCamera();
 			void LoadResources();
 
-			size_t AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer = 0);
-			size_t addCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass = 10.0f, int collisionLayer = 0);
+			int AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer = 0);
+			int AddCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass = 10.0f, int collisionLayer = 0);
 			void CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims);
 		};
 	}
-
 }

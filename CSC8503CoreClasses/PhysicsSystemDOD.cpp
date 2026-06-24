@@ -10,13 +10,14 @@ const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
 
 PhysicsSystemDOD::PhysicsSystemDOD(GameWorldDOD& world)
-	: gameWorld(world) {
+	: gameWorld(world) , quadTree(Vector2(1000.0f, 1000.0f), 6, 10) {
 }
 
 void PhysicsSystemDOD::Clear() {
 	activeCollisions.clear();
 	broadphasePairs.clear();
 	data.dTOffset = 0.0f;
+	quadTreeDirty = true;
 }
 
 void PhysicsSystemDOD::Update(float dt) {
@@ -94,6 +95,7 @@ void PhysicsSystemDOD::IntegrateVelocity(float dt) {
 
 		TransformOps::UpdateMatrix(obj.transform);
 	}
+	quadTreeDirty = true;
 }
 
 void PhysicsSystemDOD::ClearForces() {
@@ -110,59 +112,77 @@ void PhysicsSystemDOD::BroadPhase() {
 
 	auto& objects = gameWorld.gameObjects.GetObjectArray();
 
-	QuadTreeDOD<size_t> quadTree(Vector2(1000.0f, 1000.0f), 6, 10);
-
-	for (size_t i = 0; i < objects.size(); ++i) {
-		if (!objects[i].isActive || objects[i].physics.inverseMass == 0.0f) {
-			continue;
-		}
-
-		Vector3 halfSize = objects[i].collision.halfSizes;
-		quadTree.Insert(i, objects[i].transform.position, halfSize * 2.0f);
-	}
-
 	std::vector<size_t> dynamicObjects;
+	dynamicObjects.reserve(objects.size());
+
 	for (size_t i = 0; i < objects.size(); ++i) {
 		if (objects[i].isActive && objects[i].physics.inverseMass != 0.0f) {
 			dynamicObjects.push_back(i);
 		}
 	}
 
-	quadTree.OperateOnContents(
-		[&](std::vector<QuadTreeEntryDOD<size_t>>& contents) {
-			for (size_t i = 0; i < contents.size(); ++i) {
-				for (size_t j = i + 1; j < contents.size(); ++j) {
-					size_t idxA = contents[i].object;
-					size_t idxB = contents[j].object;
+	if (quadTreeDirty && !dynamicObjects.empty()) {
+		quadTree.Clear();
 
-					if (idxA > idxB) {
-						std::swap(idxA, idxB);
+		for (size_t i : dynamicObjects) {
+			Vector3 halfSize = objects[i].collision.halfSizes;
+			quadTree.Insert(i, objects[i].transform.position, halfSize * 2.0f);
+		}
+		quadTreeDirty = false;
+	}
+
+	int estimatedPairs = (int)dynamicObjects.size() * 10;
+	broadphasePairs.reserve(estimatedPairs);
+
+	if (!dynamicObjects.empty()) {
+		quadTree.OperateOnContents(
+			[&](std::vector<QuadTreeEntryDOD<size_t>>& contents) {
+				for (size_t i = 0; i < contents.size(); ++i) {
+					for (size_t j = i + 1; j < contents.size(); ++j) {
+						size_t idxA = contents[i].object;
+						size_t idxB = contents[j].object;
+
+						if (idxA > idxB) {
+							std::swap(idxA, idxB);
+						}
+
+						broadphasePairs.push_back(BroadphasePair(idxA, idxB));
 					}
-
-					broadphasePairs.push_back(BroadphasePair(idxA, idxB));
 				}
 			}
-		}
-	);
+		);
+	}
+
+	std::vector<size_t> staticObjects;
+	staticObjects.reserve(objects.size() - dynamicObjects.size());
 
 	for (size_t i = 0; i < objects.size(); ++i) {
-		if (!objects[i].isActive || objects[i].physics.inverseMass != 0.0f) {
-			continue;
-		}
-
-		for (size_t j : dynamicObjects) {
-			size_t idxA = i;
-			size_t idxB = j;
-			if (idxA > idxB) {
-				std::swap(idxA, idxB);
-			}
-
-			broadphasePairs.push_back(BroadphasePair(idxA, idxB));
+		if (objects[i].isActive && objects[i].physics.inverseMass == 0.0f) {
+			staticObjects.push_back(i);
 		}
 	}
 
-	std::sort(broadphasePairs.begin(), broadphasePairs.end());
-	broadphasePairs.erase(std::unique(broadphasePairs.begin(), broadphasePairs.end()), broadphasePairs.end());
+	for (size_t staticIdx : staticObjects) {
+		const Vector3& staticPos = objects[staticIdx].transform.position;
+		const Vector3& staticSize = objects[staticIdx].collision.halfSizes * 2.0f;
+
+		for (size_t dynIdx : dynamicObjects) {
+			const Vector3& dynPos = objects[dynIdx].transform.position;
+			const Vector3& dynSize = objects[dynIdx].collision.halfSizes * 2.0f;
+
+			// Quick proximity check
+			if (std::abs(staticPos.x - dynPos.x) < (staticSize.x + dynSize.x) / 2.0f + 5.0f &&
+				std::abs(staticPos.y - dynPos.y) < (staticSize.y + dynSize.y) / 2.0f + 5.0f &&
+				std::abs(staticPos.z - dynPos.z) < (staticSize.z + dynSize.z) / 2.0f + 5.0f) {
+
+				size_t idxA = staticIdx;
+				size_t idxB = dynIdx;
+				if (idxA > idxB) std::swap(idxA, idxB);
+
+				broadphasePairs.push_back(BroadphasePair(idxA, idxB));
+			}
+		}
+	}
 }
 
 void PhysicsSystemDOD::NarrowPhase() {

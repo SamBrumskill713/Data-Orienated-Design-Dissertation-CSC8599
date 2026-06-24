@@ -1,39 +1,41 @@
+#pragma once
 #include <vector>
 #include <functional>
 #include "Vector.h"
-#include "CollisionDetectionDOD.h"
+#include "CollisionDetectionSOA.h"
+#include "GameObjectSOA.h"
 
 namespace NCL {
 	using namespace NCL::Maths;
 	namespace CSC8503 {
 
 		template<class T>
-		struct QuadTreeEntryDOD {
+		struct QuadTreeEntrySOA {
 			Vector3 pos;
 			Vector3 size;
 			T object;
 
-			QuadTreeEntryDOD() : pos(Vector3()), size(Vector3()), object(T()) {}
+			QuadTreeEntrySOA() : pos(Vector3()), size(Vector3()), object(T()) {}
 
-			QuadTreeEntryDOD(T obj, Vector3 objPos, Vector3 objSize)
+			QuadTreeEntrySOA(T obj, Vector3 objPos, Vector3 objSize)
 				: pos(objPos), size(objSize), object(obj) {
 			}
 		};
 
 		template<class T>
-		struct QuadTreeNodeDOD {
+		struct QuadTreeNodeSOA {
 			Vector2 position;
 			Vector2 size;
-			std::vector<QuadTreeEntryDOD<T>> contents;
+			std::vector<QuadTreeEntrySOA<T>> contents;
 			int childrenIndices[4];
 
-			QuadTreeNodeDOD() : position(Vector2()), size(Vector2()) {
+			QuadTreeNodeSOA() : position(Vector2()), size(Vector2()) {
 				for (int i = 0; i < 4; ++i) {
 					childrenIndices[i] = -1;
 				}
 			}
 
-			QuadTreeNodeDOD(Vector2 pos, Vector2 sz)
+			QuadTreeNodeSOA(Vector2 pos, Vector2 sz)
 				: position(pos), size(sz) {
 				for (int i = 0; i < 4; ++i) {
 					childrenIndices[i] = -1;
@@ -50,17 +52,17 @@ namespace NCL {
 		};
 
 		template<class T>
-		class QuadTreeDOD {
+		class QuadTreeSOA {
 		public:
-			typedef std::function<void(std::vector<QuadTreeEntryDOD<T>>&)> QuadTreeFunc;
+			typedef std::function<void(std::vector<QuadTreeEntrySOA<T>>&)> QuadTreeFunc;
 
-			QuadTreeDOD(Vector2 size, int maxDepth = 6, int maxSize = 5)
+			QuadTreeSOA(Vector2 size, int maxDepth = 6, int maxSize = 5)
 				: maxDepth(maxDepth), maxSize(maxSize), treeSize(size) {
 				nodes.reserve(256);
-				nodes.push_back(QuadTreeNodeDOD<T>(Vector2(), size));
+				nodes.push_back(QuadTreeNodeSOA<T>(Vector2(), size));
 			}
 
-			~QuadTreeDOD() = default;
+			~QuadTreeSOA() = default;
 
 			void Insert(T object, const Vector3& pos, const Vector3& objSize) {
 				InsertRecursive(0, object, pos, objSize, maxDepth);
@@ -72,7 +74,7 @@ namespace NCL {
 
 			void Clear() {
 				nodes.clear();
-				nodes.push_back(QuadTreeNodeDOD<T>(Vector2(), treeSize));
+				nodes.push_back(QuadTreeNodeSOA<T>(Vector2(), treeSize));
 			}
 
 			void DebugDraw() {
@@ -80,7 +82,7 @@ namespace NCL {
 			}
 
 		private:
-			std::vector<QuadTreeNodeDOD<T>> nodes;
+			std::vector<QuadTreeNodeSOA<T>> nodes;
 			int maxDepth;
 			int maxSize;
 			Vector2 treeSize;
@@ -105,7 +107,7 @@ namespace NCL {
 					return -1;
 				}
 
-				const QuadTreeNodeDOD<T>& node = nodes[nodeIndex];
+				const QuadTreeNodeSOA<T>& node = nodes[nodeIndex];
 
 				for (int i = 0; i < 4; ++i) {
 					int childIndex = node.childrenIndices[i];
@@ -113,7 +115,7 @@ namespace NCL {
 						continue;
 					}
 
-					const QuadTreeNodeDOD<T>& child = nodes[childIndex];
+					const QuadTreeNodeSOA<T>& child = nodes[childIndex];
 					Vector3 childPos(child.position.x, 0.0f, child.position.y);
 					Vector3 childSize(child.size.x, 1000.0f, child.size.y);
 
@@ -132,9 +134,9 @@ namespace NCL {
 					return;
 				}
 
-				QuadTreeNodeDOD<T>& node = nodes[nodeIndex];
+				QuadTreeNodeSOA<T>& node = nodes[nodeIndex];
 
-				if (!CollisionDetectionDOD::AABBTest(pos,
+				if (!CollisionDetectionSOA::AABBTest(pos,
 					Vector3(node.position.x, 0, node.position.y), objSize,
 					Vector3(node.size.x, 1000.0f, node.size.y))) {
 					return;
@@ -146,14 +148,14 @@ namespace NCL {
 						InsertRecursive(childIndex, object, pos, objSize, depthLeft - 1);
 					}
 					else {
-						node.contents.push_back(QuadTreeEntryDOD<T>(object, pos, objSize));
+						node.contents.push_back(QuadTreeEntrySOA<T>(object, pos, objSize));
 					}
 				}
 				else {
-					node.contents.push_back(QuadTreeEntryDOD<T>(object, pos, objSize));
+					node.contents.push_back(QuadTreeEntrySOA<T>(object, pos, objSize));
 
 					if ((int)node.contents.size() > maxSize && depthLeft > 0) {
-						std::vector<QuadTreeEntryDOD<T>> oldContents = node.contents;
+						std::vector<QuadTreeEntrySOA<T>> oldContents = node.contents;
 						node.contents.clear();
 
 						SplitNode(nodeIndex);
@@ -185,10 +187,10 @@ namespace NCL {
 				Vector2 halfSize = nodeSize / 2.0f;
 				int baseIndex = (int)nodes.size();
 
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(-halfSize.x, halfSize.y), halfSize));
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(halfSize.x, halfSize.y), halfSize));
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(-halfSize.x, -halfSize.y), halfSize));
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(halfSize.x, -halfSize.y), halfSize));
+				nodes.push_back(QuadTreeNodeSOA<T>(nodePos + Vector2(-halfSize.x, halfSize.y), halfSize));
+				nodes.push_back(QuadTreeNodeSOA<T>(nodePos + Vector2(halfSize.x, halfSize.y), halfSize));
+				nodes.push_back(QuadTreeNodeSOA<T>(nodePos + Vector2(-halfSize.x, -halfSize.y), halfSize));
+				nodes.push_back(QuadTreeNodeSOA<T>(nodePos + Vector2(halfSize.x, -halfSize.y), halfSize));
 
 				for (int i = 0; i < 4; ++i) {
 					nodes[nodeIndex].childrenIndices[i] = baseIndex + i;
@@ -200,7 +202,7 @@ namespace NCL {
 					return;
 				}
 
-				QuadTreeNodeDOD<T>& node = nodes[nodeIndex];
+				QuadTreeNodeSOA<T>& node = nodes[nodeIndex];
 
 				if (node.HasChildren()) {
 					for (int i = 0; i < 4; ++i) {

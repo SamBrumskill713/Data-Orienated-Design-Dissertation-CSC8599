@@ -30,12 +30,18 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& in
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
+	data.x = 50;
+	data.y = 50;
+
 	InitCamera();
 	LoadResources();
 	InitWorld();
 }
 
 TutorialGameDOD::~TutorialGameDOD() {
+	if (controller) {
+		delete controller;
+	}
 }
 
 void TutorialGameDOD::InitCamera() {
@@ -55,7 +61,6 @@ void TutorialGameDOD::LoadResources() {
 	resources.checkerMaterial.type = MaterialType::Opaque;
 	resources.checkerMaterial.diffuseTex = resources.checkerTex;
 
-	// Debug output
 	std::cout << "Cube Mesh: " << (resources.cubeMesh ? "LOADED" : "NULL") << std::endl;
 	std::cout << "Checker Texture: " << (resources.checkerTex ? "LOADED" : "NULL") << std::endl;
 	std::cout << "Material Type: " << (int)resources.checkerMaterial.type << std::endl;
@@ -73,9 +78,7 @@ void TutorialGameDOD::UpdateGame(float dt) {
 	physics.Update(dt);
 
 	gameWorld.OperateOnContents([this](GameObjectDOD& obj) {
-		/*if (obj.transform.position.y < -100.0f) {
-			obj.isActive = false;
-		}*/
+	
 	});
 
 	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
@@ -86,21 +89,25 @@ void TutorialGameDOD::InitTest() {
 	gameWorld.Clear();
 	physics.Clear();
 	physics.data.useBroadPhase = true;
-	AddFloorToWorld(Vector3(0, -5, 0), 2, 500);
+
+	gameWorld.gameObjects.GetObjectArray().reserve(1 + (data.x * data.y));
+
+	AddFloorToWorld(Vector3(0, -5, 0), 2, 10000);
 	std::cout << "Floor added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 
-	CreateAABBGrid(90, 90, 5.0f, 5.0f, Vector3(1, 1, 1));
+	CreateAABBGrid(data.x, data.y, 5.0f, 5.0f, Vector3(1, 1, 1));
 	std::cout << "Cubes added. Total objects: " << gameWorld.GetObjectCount() << std::endl;
 }
 
 size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, float floorHeight, float floorLength, int collisionLayer)
 {
+	int index = gameWorld.gameObjects.GetObjectCount();
 	GameObjectDOD& floorObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(floorObj.transform, position);
 	TransformOps::SetScale(floorObj.transform, Vector3(floorLength, floorHeight, floorLength));
 
-	floorObj.collision.halfSizes = Vector3(floorLength * 0.5f, floorHeight * 0.5f, floorLength * 0.5f);  // HALF SIZES!
+	floorObj.collision.halfSizes = Vector3(floorLength * 0.5f, floorHeight * 0.5f, floorLength * 0.5f);
 	floorObj.physics.inverseMass = 0.0f;
 	floorObj.render.mesh = resources.cubeMesh;
 	floorObj.render.material = resources.checkerMaterial;
@@ -108,17 +115,18 @@ size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, f
 	floorObj.isActive = true;
 
 	gameWorld.AddGameObject(floorObj);
-	return gameWorld.gameObjects.GetObjectCount() - 1;
+	return index;
 }
 
 size_t NCL::CSC8503::TutorialGameDOD::addCubeToWorld(const Vector3& position, const Vector3& cubeDims, float inverseMass, int collisionLayer)
 {
+	int index = gameWorld.gameObjects.GetObjectCount();
 	GameObjectDOD& cubeObj = gameWorld.gameObjects.AddObject();
 
 	TransformOps::SetPosition(cubeObj.transform, position);
 	TransformOps::SetScale(cubeObj.transform, cubeDims);
 
-	cubeObj.collision.halfSizes = cubeDims * 0.5f;  // HALF SIZES!
+	cubeObj.collision.halfSizes = cubeDims * 0.5f;
 	cubeObj.physics.inverseMass = inverseMass;
 	PhysicsOps::InitCubeInertia(cubeObj.physics, cubeDims);
 	PhysicsOps::UpdateInertiaTensor(cubeObj.physics, cubeObj.transform.orientation);
@@ -134,7 +142,7 @@ size_t NCL::CSC8503::TutorialGameDOD::addCubeToWorld(const Vector3& position, co
 	cubeObj.isActive = true;
 
 	gameWorld.AddGameObject(cubeObj);
-	return gameWorld.gameObjects.GetObjectCount() - 1;
+	return index;
 }
 
 void TutorialGameDOD::CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {

@@ -39,8 +39,8 @@ namespace NCL::CSC8503 {
 			UpdateMatrix(transform);
 		}
 
-		inline void SetOrientation(TransformsComp& transform, const Quaternion& newOr) {
-			transform.orientation = newOr;
+		inline void SetOrientation(TransformsComp& transform, const Quaternion& worldOrientation) {
+			transform.orientation = worldOrientation;
 			UpdateMatrix(transform);
 		}
 	}
