@@ -4,7 +4,6 @@
 #include "Texture.h"
 #include "GameWorldSOA.h"
 #include "PhysicsSystemSOA.h"
-#include "GameTechRendererDOD.h"
 #include "GameTechRendererSOA.h"
 
 namespace NCL {
@@ -26,6 +25,7 @@ namespace NCL {
 			bool useGravity;
 			int x;
 			int y;
+			int frameCounter;
 
 			TutorialGameDataSOA()
 				:forceMagnitude(10), objectIndex((size_t)-1), floorIndex((size_t)-1) {
@@ -60,7 +60,6 @@ namespace NCL {
 
 		private:
 			GameWorldSOA& gameWorld;
-			//RendererSystemDOD& rendererDOD;
 			RendererSystemSOA& rendererSOA;
 			PhysicsSystemSOA& physics;
 			Controller* controller;

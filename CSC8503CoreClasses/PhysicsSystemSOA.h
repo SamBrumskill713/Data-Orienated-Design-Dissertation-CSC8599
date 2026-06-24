@@ -18,8 +18,8 @@ namespace NCL::CSC8503 {
 		float dTOffset;
 		bool applyGravity;
 		bool useBroadPhase;
-		std::vector<int> indices;
 		int numCollisionFrames;
+		int frameCount;
 
 		PhysicsSystemDataSOA()
 			: gravity(Vector3(0.0f, -9.8f, 0.0f)), globalDamping(0.995f),
@@ -96,6 +96,8 @@ namespace NCL::CSC8503 {
 		std::vector<ActiveCollisionSOA> activeCollisions;
 		std::vector<BroadphasePairSOA> broadphasePairs;
 		std::vector<int> cachedDynamicObjects;
+		QuadTreeSOA<int> quadTree;  
+		bool quadTreeDirty = true;
 
 		void IntegrateAccel(float dt, int count);
 		void IntegrateVelocity(float dt, int count);
@@ -103,7 +105,7 @@ namespace NCL::CSC8503 {
 		void UpdateCollisionList(int count);
 
 		void BroadPhase(int count);
-		void NarrowPhase();
+		void NarrowPhase(int count);
 		void BasicCollisionDetection(int count);
 
 		void ImpulseResolveCollision(int indexA, int indexB, const Vector3& normal,

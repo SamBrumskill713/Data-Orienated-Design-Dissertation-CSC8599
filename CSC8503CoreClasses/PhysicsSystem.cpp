@@ -10,40 +10,27 @@
 #include "Window.h"
 #include <functional>
 #include <cmath>
+#include <algorithm>
 using namespace NCL;
 using namespace CSC8503;
 
-PhysicsSystem::PhysicsSystem(GameWorld& g) : gameWorld(g)
+PhysicsSystem::PhysicsSystem(GameWorld& g)
+	: gameWorld(g), quadTree(Vector2(1024, 1024), 7, 6)
 {
 	applyGravity = false;
 	useBroadPhase = false;
 	dTOffset = 0.0f;
 	globalDamping = 0.995f;
+	quadTreeDirty = true;
 	SetGravity(Vector3(0.0f, -9.8f, 0.0f));
 }
 
-PhysicsSystem::~PhysicsSystem()
-{
-}
-
-void PhysicsSystem::SetGravity(const Vector3& g)
-{
-	gravity = g;
-}
-
-/*
-
-If the 'game' is ever reset, the PhysicsSystem must be
-'cleared' to remove any old collisions that might still
-be hanging around in the collision list. If your engine
-is expanded to allow objects to be removed from the world,
-you'll need to iterate through this collisions list to remove
-any collisions they are in.
-
-*/
 void PhysicsSystem::Clear()
 {
 	allCollisions.clear();
+	broadphaseCollisions.clear();
+	broadphaseCollisionsVec.clear();
+	quadTreeDirty = true;
 }
 
 /*
@@ -350,31 +337,84 @@ compare the collisions that we absolutely need to.
 */
 void PhysicsSystem::BroadPhase()
 {
-	broadphaseCollisions.clear();
-	QuadTree<GameObject*> tree(Vector2(1024, 1024), 7, 6);
+	broadphaseCollisionsVec.clear();
+
+	std::vector<GameObject*> dynamicObjects;
+	std::vector<GameObject*> staticObjects;
 
 	std::vector<GameObject*>::const_iterator first;
 	std::vector<GameObject*>::const_iterator last;
 	gameWorld.GetObjectIterators(first, last);
+
 	for (auto i = first; i != last; ++i) {
-		Vector3 halfSizes;
-		if (!(*i)->GetBroadphaseAABB(halfSizes)) {
+		GameObject* obj = *i;
+		if (obj->GetPhysicsObject() == nullptr) {
 			continue;
 		}
-		Vector3 pos = (*i)->GetTransform().GetPosition();
-		tree.Insert(*i, pos, halfSizes);
+
+		if (obj->GetPhysicsObject()->GetInverseMass() > 0.0f) {
+			dynamicObjects.push_back(obj);
+		}
+		else {
+			staticObjects.push_back(obj);
+		}
 	}
-	tree.OperateOnContents(
-	[&](std::list<QuadTreeEntry<GameObject*>>& data) {
-		CollisionDetection::CollisionInfo info;
-		for (auto i = data.begin(); i != data.end(); ++i) {
-			for (auto j = std::next(i); j != data.end(); ++j) {
-				info.a = std::min((*i).object, (*j).object);
-				info.b = std::max((*i).object, (*j).object);
-				broadphaseCollisions.insert(info);
+
+	if (quadTreeDirty) {
+		quadTree = QuadTree<GameObject*>(Vector2(1024, 1024), 7, 6);
+
+		for (GameObject* obj : dynamicObjects) {
+			Vector3 halfSizes;
+			if (!obj->GetBroadphaseAABB(halfSizes)) {
+				continue;
+			}
+			quadTree.Insert(obj, obj->GetTransform().GetPosition(), halfSizes);
+		}
+
+		quadTreeDirty = false;
+	}
+
+	quadTree.OperateOnContents(
+		[&](std::list<QuadTreeEntry<GameObject*>>& data) {
+			for (auto i = data.begin(); i != data.end(); ++i) {
+				for (auto j = std::next(i); j != data.end(); ++j) {
+					CollisionDetection::CollisionInfo info;
+					info.a = std::min((*i).object, (*j).object);
+					info.b = std::max((*i).object, (*j).object);
+					broadphaseCollisionsVec.push_back(info);
+				}
+			}
+		});
+
+	for (GameObject* staticObj : staticObjects) {
+		Vector3 staticHalfSizes;
+		if (!staticObj->GetBroadphaseAABB(staticHalfSizes)) {
+			continue;
+		}
+
+		Vector3 staticPos = staticObj->GetTransform().GetPosition();
+		Vector3 staticSize = staticHalfSizes * 2.0f;
+
+		for (GameObject* dynamicObj : dynamicObjects) {
+			Vector3 dynamicHalfSizes;
+			if (!dynamicObj->GetBroadphaseAABB(dynamicHalfSizes)) {
+				continue;
+			}
+
+			Vector3 dynamicPos = dynamicObj->GetTransform().GetPosition();
+			Vector3 dynamicSize = dynamicHalfSizes * 2.0f;
+
+			if (std::abs(staticPos.x - dynamicPos.x) < (staticSize.x + dynamicSize.x) / 2.0f + 5.0f &&
+				std::abs(staticPos.y - dynamicPos.y) < (staticSize.y + dynamicSize.y) / 2.0f + 5.0f &&
+				std::abs(staticPos.z - dynamicPos.z) < (staticSize.z + dynamicSize.z) / 2.0f + 5.0f) {
+
+				CollisionDetection::CollisionInfo info;
+				info.a = std::min(staticObj, dynamicObj);
+				info.b = std::max(staticObj, dynamicObj);
+				broadphaseCollisionsVec.push_back(info);
 			}
 		}
-	});
+	}
 }
 
 /*
@@ -384,25 +424,23 @@ and work out if they are truly colliding, and if so, add them into the main coll
 */
 void PhysicsSystem::NarrowPhase()
 {
-	for (std::set<CollisionDetection::CollisionInfo>::iterator
-		i = broadphaseCollisions.begin();
-		i != broadphaseCollisions.end(); ++i) {
-		CollisionDetection::CollisionInfo info = *i;
-		if (CollisionDetection::ObjectIntersection(info.a, info.b, info)) {
-			info.a->setIsCollided(true);
-			info.b->setIsCollided(true);
-			if (!info.a->GetBoundingVolume()->isTrigger && !info.b->GetBoundingVolume()->isTrigger) {
-				const int layerA = info.a->GetBoundingVolume()->collisionLayer;
-				const int layerB = info.b->GetBoundingVolume()->collisionLayer;
+	for (const auto& info : broadphaseCollisionsVec) {
+		CollisionDetection::CollisionInfo collisionInfo = info;
+		if (CollisionDetection::ObjectIntersection(collisionInfo.a, collisionInfo.b, collisionInfo)) {
+			collisionInfo.a->setIsCollided(true);
+			collisionInfo.b->setIsCollided(true);
+			if (!collisionInfo.a->GetBoundingVolume()->isTrigger && !collisionInfo.b->GetBoundingVolume()->isTrigger) {
+				const int layerA = collisionInfo.a->GetBoundingVolume()->collisionLayer;
+				const int layerB = collisionInfo.b->GetBoundingVolume()->collisionLayer;
 				const bool playerEnemy =
 					(layerA == playerLayer && layerB == enemyLayer) ||
 					(layerA == enemyLayer && layerB == playerLayer);
 
 				if (playerEnemy) {
-					ImpulseResolveCollisionCustom(*info.a, *info.b, info.point, 1.5, 0.66);
+					ImpulseResolveCollisionCustom(*collisionInfo.a, *collisionInfo.b, collisionInfo.point, 1.5, 0.66);
 				}
 				else {
-					ImpulseResolveCollision(*info.a, *info.b, info.point);
+					ImpulseResolveCollision(*collisionInfo.a, *collisionInfo.b, collisionInfo.point);
 				}
 			}
 		}
@@ -492,6 +530,8 @@ void PhysicsSystem::IntegrateVelocity(float dt)
 		angVel = angVel * frameAngularDamping;
 		object->SetAngularVelocity(angVel);
 	}
+
+	quadTreeDirty = true;
 }
 
 /*
@@ -533,4 +573,9 @@ void PhysicsSystem::UpdateConstraints(float dt)
 	for (auto i = first; i != last; ++i) {
 		(*i)->UpdateConstraint(dt);
 	}
+}
+
+void PhysicsSystem::SetGravity(const Vector3& g)
+{
+	gravity = g;
 }

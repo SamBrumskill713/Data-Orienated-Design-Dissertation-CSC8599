@@ -8,12 +8,13 @@
 #include "TransformSOA.h"
 #include "PhysicsSystemSOA.h"
 #include "GameObjectSOA.h"
+#include <chrono>
 
 using namespace NCL;
 using namespace CSC8503;
 
 TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& inRenderer, PhysicsSystemSOA& inPhysics)
-	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics) {
+	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics){
 	data.useGravity = true;
 
 	physics.UseGravity(data.useGravity);
@@ -31,8 +32,8 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 90;
-	data.y = 90;
+	data.x = 50;
+	data.y = 50;
 
 	InitCamera();
 	LoadResources();
@@ -81,9 +82,6 @@ void TutorialGameSOA::UpdateGame(float dt) {
 	gameWorld.OperateOnContents([this](int objIndex) {
 
 	});
-
-	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
-	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);
 }
 
 void TutorialGameSOA::InitTest() {

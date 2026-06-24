@@ -30,8 +30,8 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& in
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 90;
-	data.y = 90;
+	data.x = 50;
+	data.y = 50;
 
 	InitCamera();
 	LoadResources();
@@ -61,7 +61,6 @@ void TutorialGameDOD::LoadResources() {
 	resources.checkerMaterial.type = MaterialType::Opaque;
 	resources.checkerMaterial.diffuseTex = resources.checkerTex;
 
-	// Debug output
 	std::cout << "Cube Mesh: " << (resources.cubeMesh ? "LOADED" : "NULL") << std::endl;
 	std::cout << "Checker Texture: " << (resources.checkerTex ? "LOADED" : "NULL") << std::endl;
 	std::cout << "Material Type: " << (int)resources.checkerMaterial.type << std::endl;
@@ -79,9 +78,7 @@ void TutorialGameDOD::UpdateGame(float dt) {
 	physics.Update(dt);
 
 	gameWorld.OperateOnContents([this](GameObjectDOD& obj) {
-		/*if (obj.transform.position.y < -100.0f) {
-			obj.isActive = false;
-		}*/
+	
 	});
 
 	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
@@ -110,7 +107,7 @@ size_t NCL::CSC8503::TutorialGameDOD::AddFloorToWorld(const Vector3& position, f
 	TransformOps::SetPosition(floorObj.transform, position);
 	TransformOps::SetScale(floorObj.transform, Vector3(floorLength, floorHeight, floorLength));
 
-	floorObj.collision.halfSizes = Vector3(floorLength * 0.5f, floorHeight * 0.5f, floorLength * 0.5f);  // HALF SIZES!
+	floorObj.collision.halfSizes = Vector3(floorLength * 0.5f, floorHeight * 0.5f, floorLength * 0.5f);
 	floorObj.physics.inverseMass = 0.0f;
 	floorObj.render.mesh = resources.cubeMesh;
 	floorObj.render.material = resources.checkerMaterial;
@@ -129,7 +126,7 @@ size_t NCL::CSC8503::TutorialGameDOD::addCubeToWorld(const Vector3& position, co
 	TransformOps::SetPosition(cubeObj.transform, position);
 	TransformOps::SetScale(cubeObj.transform, cubeDims);
 
-	cubeObj.collision.halfSizes = cubeDims * 0.5f;  // HALF SIZES!
+	cubeObj.collision.halfSizes = cubeDims * 0.5f;
 	cubeObj.physics.inverseMass = inverseMass;
 	PhysicsOps::InitCubeInertia(cubeObj.physics, cubeDims);
 	PhysicsOps::UpdateInertiaTensor(cubeObj.physics, cubeObj.transform.orientation);
