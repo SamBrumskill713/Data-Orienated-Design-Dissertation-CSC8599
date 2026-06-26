@@ -86,15 +86,15 @@ void TutorialGameDOD::UpdateGame(float dt) {
 	}
 	data.averageFPS = data.frameTimeSamples.size() / totalTime;
 
+	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("Avg FPS: " + std::to_string((int)data.averageFPS), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 15), Debug::WHITE);
+
 	physics.Update(dt);
 
 	gameWorld.OperateOnContents([this](GameObjectDOD& obj) {
 	
 	});
-
-	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
-	Debug::Print("Avg FPS: " + std::to_string((int)data.averageFPS), Vector2(0, 10), Debug::WHITE);
-	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 15), Debug::WHITE);
 }
 
 void TutorialGameDOD::InitTest() {
