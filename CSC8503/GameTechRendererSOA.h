@@ -18,10 +18,9 @@
 #endif
 
 namespace NCL {
-	namespace CSC8503{
+	namespace CSC8503 {
 
 		struct ShaderUniformCache {
-			// Default shader uniforms
 			GLint defaultShader_proj = -1;
 			GLint defaultShader_view = -1;
 			GLint defaultShader_model = -1;
@@ -36,12 +35,10 @@ namespace NCL {
 			GLint defaultShader_shadowMatrix = -1;
 			GLint defaultShader_mainTex = -1;
 
-			// Skybox shader uniforms
 			GLint skyboxShader_proj = -1;
 			GLint skyboxShader_view = -1;
 			GLint skyboxShader_cubeTex = -1;
 
-			// Shadow shader uniforms
 			GLint shadowShader_mvp = -1;
 		};
 
@@ -60,13 +57,13 @@ namespace NCL {
 		};
 
 		struct GameTechRendererResourcesSOA {
-			Rendering::OGLMesh* skyboxMesh;
-			Rendering::OGLMesh* debugTextMesh;
+			Rendering::OGLMesh* skyboxMesh = nullptr;
+			Rendering::OGLMesh* debugTextMesh = nullptr;
 
-			Rendering::OGLShader* defaultShader;
-			Rendering::OGLShader* skyboxShader;
-			Rendering::OGLShader* shadowShader;
-			Rendering::OGLShader* debugShader;
+			Rendering::OGLShader* defaultShader = nullptr;
+			Rendering::OGLShader* skyboxShader = nullptr;
+			Rendering::OGLShader* shadowShader = nullptr;
+			Rendering::OGLShader* debugShader = nullptr;
 
 			std::vector<Vector4> debugTextColours;
 			std::vector<Vector3> debugLineData;
@@ -75,19 +72,22 @@ namespace NCL {
 
 			Matrix4 shadowMatrix;
 
-			size_t lineCount;
-			size_t textCount;
+			size_t lineCount = 0;
+			size_t textCount = 0;
 
-			GLuint skyboxTex;
-			GLuint shadowTex;
-			GLuint shadowFBO;
-			GLuint lineVAO;
-			GLuint lineVertVBO;
-			GLuint lineColourVBO;
-			GLuint textTexVBO;
+			GLuint skyboxTex = 0;
+			GLuint shadowTex = 0;
+			GLuint shadowFBO = 0;
+			GLuint lineVAO = 0;
+			GLuint lineVertVBO = 0;
+			GLuint lineColourVBO = 0;
+			GLuint textVAO = 0;
+			GLuint textVertVBO = 0;
+			GLuint textColourVBO = 0;
+			GLuint textTexVBO = 0;
 
-			int screenWidth;
-			int screenHeight;
+			int screenWidth = 0;
+			int screenHeight = 0;
 
 			ShaderUniformCache uniformCache;
 		};
@@ -109,6 +109,9 @@ namespace NCL {
 			Texture* LoadTexture(const std::string& name);
 
 			void CacheUniformLocations();
+			void SetDebugStringBufferSizes(size_t newVertCount);
+			void RenderText();
+
 			void UpdateMeshCache(GameWorldSOA& world, GameTechRendererDataSOA& frameData);
 			void BuildTextureBatches(GameWorldSOA& world, GameTechRendererDataSOA& frameData);
 			void BuildRenderFrame(GameWorldSOA& world, GameTechRendererDataSOA& frameData);

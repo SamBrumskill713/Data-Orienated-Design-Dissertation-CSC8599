@@ -127,6 +127,14 @@ void RendererSystemSOA::Initialise(Window* winPtr) {
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
+	glGenVertexArrays(1, &SOAResources.textVAO);
+	glGenBuffers(1, &SOAResources.textVertVBO);
+	glGenBuffers(1, &SOAResources.textColourVBO);
+	glGenBuffers(1, &SOAResources.textTexVBO);
+	SetDebugStringBufferSizes(10000);
+
+	Debug::CreateDebugFont("PressStart2P.fnt", *LoadTexture("PressStart2P.png"));
+
 	CacheUniformLocations();
 }
 
@@ -215,6 +223,11 @@ void RendererSystemSOA::Destroy() {
 		glDeleteFramebuffers(1, &SOAResources.shadowFBO);
 		SOAResources.shadowFBO = 0;
 	}
+
+	if (SOAResources.textTexVBO != 0) { glDeleteBuffers(1, &SOAResources.textTexVBO); SOAResources.textTexVBO = 0; }
+	if (SOAResources.textColourVBO != 0) { glDeleteBuffers(1, &SOAResources.textColourVBO); SOAResources.textColourVBO = 0; }
+	if (SOAResources.textVertVBO != 0) { glDeleteBuffers(1, &SOAResources.textVertVBO); SOAResources.textVertVBO = 0; }
+	if (SOAResources.textVAO != 0) { glDeleteVertexArrays(1, &SOAResources.textVAO); SOAResources.textVAO = 0; }
 
 	window = nullptr;
 }
@@ -471,4 +484,111 @@ void NCL::CSC8503::RendererSystemSOA::RenderFrame(GameWorldSOA& world, GameTechR
 	RenderSkyBoxPass(frameData);
 	RenderOpaquePass(world, frameData);
 	RenderTransparenetPass(world, frameData);
+	RenderText();
+}
+
+void RendererSystemSOA::SetDebugStringBufferSizes(size_t newVertCount) {
+	if (newVertCount <= SOAResources.textCount) {
+		return;
+	}
+
+	SOAResources.textCount = newVertCount;
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textVertVBO);
+	glBufferData(GL_ARRAY_BUFFER, SOAResources.textCount * sizeof(Vector3), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textColourVBO);
+	glBufferData(GL_ARRAY_BUFFER, SOAResources.textCount * sizeof(Vector4), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textTexVBO);
+	glBufferData(GL_ARRAY_BUFFER, SOAResources.textCount * sizeof(Vector2), nullptr, GL_DYNAMIC_DRAW);
+
+	SOAResources.debugTextPos.reserve(SOAResources.textCount);
+	SOAResources.debugTextColours.reserve(SOAResources.textCount);
+	SOAResources.debugTextUVs.reserve(SOAResources.textCount);
+
+	glBindVertexArray(SOAResources.textVAO);
+
+	glVertexAttribFormat(0, 3, GL_FLOAT, false, 0);
+	glVertexAttribBinding(0, 0);
+	glBindVertexBuffer(0, SOAResources.textVertVBO, 0, sizeof(Vector3));
+
+	glVertexAttribFormat(1, 4, GL_FLOAT, false, 0);
+	glVertexAttribBinding(1, 1);
+	glBindVertexBuffer(1, SOAResources.textColourVBO, 0, sizeof(Vector4));
+
+	glVertexAttribFormat(2, 2, GL_FLOAT, false, 0);
+	glVertexAttribBinding(2, 2);
+	glBindVertexBuffer(2, SOAResources.textTexVBO, 0, sizeof(Vector2));
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+}
+
+void RendererSystemSOA::RenderText() {
+	const std::vector<Debug::DebugStringEntry>& strings = Debug::GetDebugStrings();
+	if (strings.empty() || Debug::GetDebugFont() == nullptr) {
+		return;
+	}
+
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glUseProgram(SOAResources.debugShader->GetProgramID());
+
+	OGLTexture* fontTex = (OGLTexture*)Debug::GetDebugFont()->GetTexture();
+	if (fontTex) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fontTex->GetObjectID());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		GLuint mainTexSlot = glGetUniformLocation(SOAResources.debugShader->GetProgramID(), "mainTex");
+		glUniform1i(mainTexSlot, 0);
+	}
+
+	Matrix4 proj = Matrix::Orthographic(0.0f, 100.0f, 100.0f, 0.0f, -1.0f, 1.0f);
+
+	int matSlot = glGetUniformLocation(SOAResources.debugShader->GetProgramID(), "viewProjMatrix");
+	glUniformMatrix4fv(matSlot, 1, false, (float*)proj.array);
+
+	GLuint texSlot = glGetUniformLocation(SOAResources.debugShader->GetProgramID(), "useTexture");
+	glUniform1i(texSlot, 1);
+
+	SOAResources.debugTextPos.clear();
+	SOAResources.debugTextColours.clear();
+	SOAResources.debugTextUVs.clear();
+
+	int frameVertCount = 0;
+	for (const auto& s : strings) {
+		frameVertCount += Debug::GetDebugFont()->GetVertexCountForString(s.data);
+	}
+	SetDebugStringBufferSizes(frameVertCount);
+
+	for (const auto& s : strings) {
+		Debug::GetDebugFont()->BuildVerticesForString(
+			s.data, s.position, s.colour, 20.0f,
+			SOAResources.debugTextPos, SOAResources.debugTextUVs, SOAResources.debugTextColours
+		);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textVertVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector3), SOAResources.debugTextPos.data());
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textColourVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector4), SOAResources.debugTextColours.data());
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textTexVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector2), SOAResources.debugTextUVs.data());
+
+	glBindVertexArray(SOAResources.textVAO);
+	glDrawArrays(GL_TRIANGLES, 0, frameVertCount);
+	glBindVertexArray(0);
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 }

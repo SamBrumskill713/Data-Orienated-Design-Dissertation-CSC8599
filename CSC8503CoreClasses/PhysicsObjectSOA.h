@@ -119,37 +119,6 @@ namespace NCL::CSC8503 {
 			bodyData.inverseMassSOA[index] = mass;
 		}
 
-		inline void UpdateAllIntertiaTensors(PhysicsObjectCompSOA& bodyData, std::vector<Quaternion>& orientations) {
-			int count = GetCount(bodyData);
-			for (int i = 0; i < count && i < (int)orientations.size(); ++i) {
-				UpdateInertiaTensor(bodyData, orientations[i], i);
-			}
-		}
-
-		inline void ApplyAllLinearImpulses(PhysicsObjectCompSOA& bodyData, const std::vector<Vector3>& impulses) {
-			for (size_t i = 0; i < bodyData.inverseMassSOA.size(); ++i) {
-				ApplyLinearImpulse(bodyData, impulses[i], i);
-			}
-		}
-
-		inline void ApplyAllAngularImpulses(PhysicsObjectCompSOA& bodyData, const std::vector<Vector3>& angularImpulses) {
-			for (size_t i = 0; i < bodyData.inverseMassSOA.size(); ++i) {
-				ApplyAngularImpulse(bodyData, angularImpulses[i], i);
-			}
-		}
-
-		inline void AddAllForces(PhysicsObjectCompSOA& bodyData, const std::vector<Vector3>& forces) {
-			for (size_t i = 0; i < bodyData.inverseMassSOA.size(); ++i) {
-				AddForce(bodyData, forces[i], i);
-			}
-		}
-
-		inline void ApplyAllTorques(PhysicsObjectCompSOA& bodyData, const std::vector<Vector3>& torques) {
-			for (size_t i = 0; i < bodyData.inverseMassSOA.size(); ++i) {
-				AddTorque(bodyData, torques[i], i);
-			}
-		}
-
 		inline void ClearAllForces(PhysicsObjectCompSOA& bodyData) {
 			int count = GetCount(bodyData);
 			for (int i = 0; i < count; ++i) {

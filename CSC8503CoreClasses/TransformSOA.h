@@ -69,30 +69,5 @@ namespace NCL::CSC8503 {
 			Transforms.orientations[index] = worldOrientations;
 			UpdateMatrixSOA(Transforms, index);
 		}
-
-		inline void UpdateAllMatrices(TransformCompSOA& Transforms) {
-			int count = GetCount(Transforms);
-			for (int i = 0; i < count; ++i) {
-				UpdateMatrixSOA(Transforms, i);
-			}
-		}
-
-		inline void SetAllPositions(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Positions) {
-			for (size_t i = 0; i < indices.size(); ++i) {
-				SetScaleSOA(Transforms, Positions[i], indices[i]);
-			}
-		}
-
-		inline void SetAllScales(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Scales) {
-			for (size_t i = 0; i < indices.size(); ++i) {
-				SetScaleSOA(Transforms, Scales[i], indices[i]);
-			}
-		}
-
-		inline void SetAllOrientations(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Quaternion>& Orientations) {
-			for (size_t i = 0; i < indices.size(); ++i) {
-				SetOrientationSOA(Transforms, Orientations[i], indices[i]);
-			}
-		}
 	}
 }

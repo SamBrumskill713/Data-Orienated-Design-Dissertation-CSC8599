@@ -653,6 +653,7 @@ int main() {
 
 				rendererDOD.RenderFrame(*worldDOD, frameData);
 				rendererDOD.swapBuffers();
+				Debug::UpdateRenderables(dt);
 
 				frameCount++;
 				totalTime += dt;
@@ -729,6 +730,7 @@ int main() {
 
 				rendererSOA.RenderFrame(*worldSOA, frameData);
 				rendererSOA.SwapBuffers();
+				Debug::UpdateRenderables(dt);
 
 				frameCount++;
 				totalTime += dt;

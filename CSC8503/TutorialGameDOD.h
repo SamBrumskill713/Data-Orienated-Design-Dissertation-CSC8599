@@ -19,12 +19,17 @@ namespace NCL {
 		class GameTechRendererInterface;
 
 		struct TutorialGameData {
+			std::vector<float> frameTimeSamples;
 			size_t objectIndex;
 			size_t floorIndex;
 			float forceMagnitude;
 			bool useGravity;
 			int x;
 			int y;
+			static constexpr int FPS_SAMPLE_SIZE = 60;
+			int frameCount = 0;
+			float fpsUpdateTimer = 0.0f;
+			float averageFPS = 0.0f;
 
 			TutorialGameData()
 				:forceMagnitude(10), objectIndex((size_t)-1), floorIndex((size_t)-1) {
