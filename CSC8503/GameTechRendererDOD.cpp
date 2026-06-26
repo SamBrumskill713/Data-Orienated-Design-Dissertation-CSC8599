@@ -174,33 +174,35 @@ void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererDa
 	frameData.transparentObjectIndices.clear();
 
 	Vector3 camPos = frameData.cameraPos;
-
 	auto& objects = world.gameObjects.GetObjectArray();
-	std::vector<std::pair<size_t, float>> objectDistances; 
-	objectDistances.reserve(objects.size());
+
+	std::vector<float> objectDistances(objects.size(), 0.0f);
 
 	for (size_t i = 0; i < objects.size(); ++i) {
 		const GameObjectDOD& obj = objects[i];
-		if (!obj.isActive) continue;
+		if (!obj.isActive) {
+			continue;
+		}
 
-		float distSq = Vector::LengthSquared(camPos - obj.transform.position);
-		objectDistances.emplace_back(i, distSq);
+		objectDistances[i] = Vector::LengthSquared(camPos - obj.transform.position);
 
-		frameData.opaqueObjectIndices.push_back(i);
+		if (obj.render.material.type == MaterialType::Transparent) {
+			frameData.transparentObjectIndices.push_back(i);
+		}
+		else {
+			frameData.opaqueObjectIndices.push_back(i);
+		}
 	}
 
-	// Sort using pre-calculated distances to avoid recalculation during sort
 	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(),
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
-		}
-	);
+		[&](size_t a, size_t b) {
+			return objectDistances[a] < objectDistances[b];
+		});
 
-	std::sort(frameData.transparentObjectIndices.rbegin(), frameData.transparentObjectIndices.rend(),
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
-		}
-	);
+	std::sort(frameData.transparentObjectIndices.begin(), frameData.transparentObjectIndices.end(),
+		[&](size_t a, size_t b) {
+			return objectDistances[a] > objectDistances[b];
+		});
 }
 
 void RendererSystemDOD::RenderSkyboxPass(GameTechRendererData& frameData) {
@@ -306,6 +308,7 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 	glUniform1i(shadowTexLocation, 1);
 
 	auto& objects = world.gameObjects.GetObjectArray();
+
 	for (size_t idx : frameData.opaqueObjectIndices) {
 		const GameObjectDOD& obj = objects[idx];
 		OGLTexture* diffuseTex = (OGLTexture*)obj.render.material.diffuseTex;
@@ -323,7 +326,7 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 		glUniformMatrix4fv(shadowLocation, 1, false, (float*)&fullShadowMat);
 
 		glUniform4fv(colourLocation, 1, (float*)&obj.render.colour);
-		glUniform1i(hasVColLocation, 0); 
+		glUniform1i(hasVColLocation, 0);
 		glUniform1i(hasTexLocation, diffuseTex ? 1 : 0);
 
 		glBindVertexArray(((Rendering::OGLMesh*)obj.render.mesh)->GetVAO());
@@ -336,6 +339,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	glEnable(GL_BLEND);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
 
 	glUseProgram(resources.defaultShader->GetProgramID());
 
@@ -373,6 +377,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	glUniform1i(shadowTexLocation, 1);
 
 	auto& objects = world.gameObjects.GetObjectArray();
+
 	for (size_t idx : frameData.transparentObjectIndices) {
 		const GameObjectDOD& obj = objects[idx];
 		OGLTexture* diffuseTex = (OGLTexture*)obj.render.material.diffuseTex;
