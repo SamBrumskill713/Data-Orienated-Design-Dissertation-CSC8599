@@ -10,6 +10,7 @@
 #include "MshLoader.h"
 #include "Debug.h"
 #include <vector>
+#include <unordered_map>
 
 #ifdef _WIN32
 #include <windows.h>
