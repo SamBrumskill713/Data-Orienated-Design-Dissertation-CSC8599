@@ -388,21 +388,44 @@ void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world
 
 	auto& objects = world.gameObjects;
 
+	// Instrumentation counters
+	int transparentCount = (int)frameData.transparentObjectIndices.size();
+	int drawCalls = 0;
+	int vaoBinds = 0;
+	int texBinds = 0;
+
+	// Mesh batching for transparent objects too
 	OGLMesh* lastMesh = nullptr;
+	OGLTexture* lastTex = nullptr;
+
+	// If blending required turn it on here
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE); // disable depth writes for correct blending
 
 	for (size_t idx : frameData.transparentObjectIndices) {
 		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
 		OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
 
+		// Only rebind mesh if it changed
 		if (mesh != lastMesh) {
 			glBindVertexArray(mesh->GetVAO());
 			lastMesh = mesh;
+			++vaoBinds;
 		}
 
-		if (diffuseTex) {
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
+		// Only rebind texture if it changed
+		if (diffuseTex != lastTex) {
+			if (diffuseTex) {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
+				glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
+			}
+			else {
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+			lastTex = diffuseTex;
+			++texBinds;
 		}
 
 		const Matrix4& modelMat = objects.transforms.matrices[idx];
@@ -416,7 +439,19 @@ void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world
 		glUniform1i(SOAResources.uniformCache.defaultShader_hasTexture, diffuseTex ? 1 : 0);
 
 		glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
+		++drawCalls;
 	}
+
+	// restore state
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+
+	// Log instrumentation once per frame (or accumulate and print every N frames)
+	// Avoid spamming — you can change to periodic logging if needed.
+	std::cout << "[TransparentPass] objects=" << transparentCount
+		<< " draws=" << drawCalls
+		<< " vaoBinds=" << vaoBinds
+		<< " texBinds=" << texBinds << std::endl;
 }
 
 void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {
