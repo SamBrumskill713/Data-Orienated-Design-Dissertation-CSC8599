@@ -18,7 +18,7 @@ namespace NCL::CSC8503 {
 		std::vector<float> inverseMassSOA;
 		std::vector<float> elasticitySOA;
 		std::vector<float> frictionSOA;
-		std::vector<bool> isCollidedSOA;
+		std::vector<char> isCollidedSOA;
 	};
 
 	namespace PhysicsOpsSOA {

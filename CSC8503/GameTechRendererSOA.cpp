@@ -242,26 +242,41 @@ void NCL::CSC8503::RendererSystemSOA::BuildRenderFrame(GameWorldSOA& world, Game
 	int count = world.GetObjectCount();
 	auto& objects = world.gameObjects;
 
-	std::vector<std::pair<size_t, float>> objectDistances;
-	objectDistances.reserve(count);
+	std::vector<float> distSqByIndex(count, FLT_MAX);
 
-	// Pre-calculate all distances once
+	frameData.opaqueObjectIndices.reserve(count);
+	frameData.transparentObjectIndices.reserve(16);
+
 	for (int i = 0; i < count; ++i) {
 		if (!objects.isActive[i]) continue;
+
 		float distSq = Vector::LengthSquared(camPos - objects.transforms.positions[i]);
-		objectDistances.emplace_back(i, distSq);
-		frameData.opaqueObjectIndices.push_back(i);
+		distSqByIndex[i] = distSq;
+
+		bool isTransparent = false;
+		if (i < (int)objects.render.materialTypes.size()) {
+			isTransparent = (objects.render.materialTypes[i] != MaterialType::Opaque);
+		}
+		if (!isTransparent && i < (int)objects.render.colours.size()) {
+			isTransparent = (objects.render.colours[i].w < 1.0f);
+		}
+
+		if (isTransparent) {
+			frameData.transparentObjectIndices.push_back(i);
+		}
+		else {
+			frameData.opaqueObjectIndices.push_back(i);
+		}
 	}
 
-	// Sort using pre-calculated distances to avoid recalculation during sort
 	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(),
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
+		[&distSqByIndex](size_t a, size_t b) {
+			return distSqByIndex[a] < distSqByIndex[b];
 		});
 
 	std::sort(frameData.transparentObjectIndices.begin(), frameData.transparentObjectIndices.end(),
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
+		[&distSqByIndex](size_t a, size_t b) {
+			return distSqByIndex[a] > distSqByIndex[b];
 		});
 
 	frameData.textureBatchDirty = true;
@@ -313,34 +328,27 @@ void NCL::CSC8503::RendererSystemSOA::RenderOpaquePass(GameWorldSOA& world, Game
 
 	auto& objects = world.gameObjects;
 
-	// Build texture batches if needed
 	BuildTextureBatches(world, frameData);
 
-	// Render all objects grouped by texture, then by mesh
 	for (const auto& [texKey, indices] : frameData.textureToObjectIndices) {
 		OGLTexture* diffuseTex = reinterpret_cast<OGLTexture*>(texKey);
 
-		// Bind texture once for the entire batch
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
 			glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
 		}
 
-		// Further batch by mesh to reduce VAO binding calls
 		OGLMesh* lastMesh = nullptr;
 
-		// Render all objects using this texture
 		for (size_t idx : indices) {
 			OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
 
-			// Only rebind VAO if mesh changed
 			if (mesh != lastMesh) {
 				glBindVertexArray(mesh->GetVAO());
 				lastMesh = mesh;
 			}
 
-			// Per-object uniforms (only these change per draw call)
 			const Matrix4& modelMat = objects.transforms.matrices[idx];
 			glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_model, 1, false, (float*)&modelMat);
 
@@ -380,14 +388,12 @@ void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world
 
 	auto& objects = world.gameObjects;
 
-	// Mesh batching for transparent objects too
 	OGLMesh* lastMesh = nullptr;
 
 	for (size_t idx : frameData.transparentObjectIndices) {
 		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
 		OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
 
-		// Only rebind mesh if it changed
 		if (mesh != lastMesh) {
 			glBindVertexArray(mesh->GetVAO());
 			lastMesh = mesh;
@@ -427,18 +433,15 @@ void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, G
 	Matrix4 shadowProjMatrix = Matrix::Perspective(100.0f, 500.0f, 1.0f, 45.0f);
 
 	Matrix4 mvMatrix = shadowProjMatrix * shadowViewMatrix;
-	// Store the biased shadow matrix for later use in opaque/transparent passes
 	SOAResources.shadowMatrix = biasMatrix * mvMatrix;
 
 	auto& objects = world.gameObjects;
 
-	// Mesh batching for shadow pass too
 	OGLMesh* lastMesh = nullptr;
 
 	for (size_t idx : frameData.opaqueObjectIndices) {
 		OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
 
-		// Only rebind mesh if it changed
 		if (mesh != lastMesh) {
 			glBindVertexArray(mesh->GetVAO());
 			lastMesh = mesh;

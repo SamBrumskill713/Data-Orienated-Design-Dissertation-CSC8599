@@ -14,8 +14,8 @@ namespace NCL::CSC8503 {
 	struct GameObjectCompSOA {
 		std::vector<int> worldIDs;
 		std::vector<GameObjectType> objectTypes;
-		std::vector<bool> isActive;
-		std::vector<bool> isCollided;
+		std::vector<char> isActive;
+		std::vector<char> isCollided;
 		std::vector<int> collisionLayers;
 		std::vector<Vector3> broadphaseAABBs;
 

@@ -123,8 +123,8 @@ void GameWorldSOA::ShuffleGameObjects() {
 
 	std::vector<int> tempWorldIDs = gameObjects.worldIDs;
 	std::vector<GameObjectType> tempTypes = gameObjects.objectTypes;
-	std::vector<bool> tempActive = gameObjects.isActive;
-	std::vector<bool> tempCollided = gameObjects.isCollided;
+	std::vector<char> tempActive = gameObjects.isActive;
+	std::vector<char> tempCollided = gameObjects.isCollided;
 	std::vector<int> tempLayers = gameObjects.collisionLayers;
 	std::vector<Vector3> tempBroadphaseAABBs = gameObjects.broadphaseAABBs;
 
@@ -142,7 +142,7 @@ void GameWorldSOA::ShuffleGameObjects() {
 	std::vector<float> tempInverseMass = gameObjects.physics.inverseMassSOA;
 	std::vector<float> tempElasticity = gameObjects.physics.elasticitySOA;
 	std::vector<float> tempFriction = gameObjects.physics.frictionSOA;
-	std::vector<bool> tempPhysicsCollided = gameObjects.physics.isCollidedSOA;
+	std::vector<char> tempPhysicsCollided = gameObjects.physics.isCollidedSOA;
 
 	std::vector<Mesh*> tempMeshes = gameObjects.render.meshes;
 	std::vector<MaterialType> tempMatTypes = gameObjects.render.materialTypes;
