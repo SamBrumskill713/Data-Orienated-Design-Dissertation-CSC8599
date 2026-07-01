@@ -8,6 +8,7 @@
 #include "TransformSOA.h"
 #include "PhysicsSystemSOA.h"
 #include "GameObjectSOA.h"
+#include <chrono>
 
 using namespace NCL;
 using namespace CSC8503;
@@ -31,8 +32,8 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 70;
-	data.y = 70;
+	data.x = 100;
+	data.y = 100;
 
 	InitCamera();
 	LoadResources();
@@ -75,9 +76,7 @@ void TutorialGameSOA::InitWorld() {
 
 void TutorialGameSOA::UpdateGame(float dt) {
 	gameWorld.GetMainCamera().UpdateCamera(dt);
-
 	physics.Update(dt);
-
 	gameWorld.OperateOnContents([this](int objIndex) {
 
 	});

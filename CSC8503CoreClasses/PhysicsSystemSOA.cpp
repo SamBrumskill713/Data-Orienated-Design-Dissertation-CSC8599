@@ -7,6 +7,7 @@
 
 using namespace NCL;
 using namespace NCL::CSC8503;
+using namespace std::chrono;
 
 const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
@@ -28,13 +29,25 @@ void PhysicsSystemSOA::Update(float dt) {
 	int count = gameWorld.GetObjectCount();
 
 	while (data.dTOffset > realDT) {
+		auto t0 = std::chrono::high_resolution_clock::now();
 		IntegrateAccel(realDT, count);
+
+		auto t1 = std::chrono::high_resolution_clock::now();
 		BroadPhase(count);
+
+		auto t2 = std::chrono::high_resolution_clock::now();
 		NarrowPhase(count);
+
+		auto t3 = std::chrono::high_resolution_clock::now();
 		IntegrateVelocity(realDT, count);
+
+		auto t4 = std::chrono::high_resolution_clock::now();
 		ClearForces();
+
+		auto t5 = std::chrono::high_resolution_clock::now();
 		UpdateCollisionList(count);
 		data.dTOffset -= realDT;
+
 	}
 }
 
@@ -241,26 +254,24 @@ void PhysicsSystemSOA::BasicCollisionDetection(int count) {
 				ImpulseResolveCollision(i, j, collisionInfo.normal, collisionInfo.localA, collisionInfo.localB, collisionInfo.penetration);
 
 				activeCollisions.push_back(
-					ActiveCollisionSOA(i, j, data.numCollisionFrames)
-				);
+					ActiveCollisionSOA(i, j, data.numCollisionFrames));
 			}
 		}
 	}
 }
 
-void PhysicsSystemSOA::UpdateCollisionList(int count) {
+void PhysicsSystemSOA::UpdateCollisionList(int count)
+{
 	auto& objects = gameWorld.gameObjects;
 
-	for (auto it = activeCollisions.begin(); it != activeCollisions.end(); ) {
-		it->framesLeft--;
-
-		if (it->framesLeft < 0) {
-			it = activeCollisions.erase(it);
-		}
-		else {
-			++it;
-		}
+	for (auto& c : activeCollisions) {
+		--c.framesLeft;
 	}
+
+	std::erase_if(activeCollisions,
+		[](const ActiveCollisionSOA& c) {
+			return c.framesLeft < 0;
+		});
 
 	for (int i = 0; i < count; ++i) {
 		objects.isCollided[i] = false;

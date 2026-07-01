@@ -445,13 +445,6 @@ void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world
 	// restore state
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
-
-	// Log instrumentation once per frame (or accumulate and print every N frames)
-	// Avoid spamming — you can change to periodic logging if needed.
-	std::cout << "[TransparentPass] objects=" << transparentCount
-		<< " draws=" << drawCalls
-		<< " vaoBinds=" << vaoBinds
-		<< " texBinds=" << texBinds << std::endl;
 }
 
 void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {

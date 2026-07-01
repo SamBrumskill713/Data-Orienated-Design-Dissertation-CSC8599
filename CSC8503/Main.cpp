@@ -640,12 +640,13 @@ int main() {
 
 			while (w->UpdateWindow() && dodBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
-				gameDOD->UpdateGame(dt);
 
-				if (dt > 0.5f) {
+				if (dt > 0.1f) {
 					std::cout << "Skipping massive frame: " << dt << "s" << std::endl;
 					continue;
 				}
+
+				gameDOD->UpdateGame(dt);
 
 				frameData.viewMatrix = worldDOD->GetMainCamera().BuildViewMatrix();
 				frameData.projMatrix = worldDOD->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
@@ -717,12 +718,13 @@ int main() {
 
 			while (w->UpdateWindow() && soaBenchmarkRunning) {
 				float dt = w->GetTimer().GetTimeDeltaSeconds();
-				gameSOA->UpdateGame(dt);
 
-				if (dt > 0.5f) {
+				if (dt > 0.1f) {
 					std::cout << "Skipping massive frame: " << dt << "s" << std::endl;
 					continue;
 				}
+
+				gameSOA->UpdateGame(dt);
 
 				frameData.viewMatrix = worldSOA->GetMainCamera().BuildViewMatrix();
 				frameData.projMatrix = worldSOA->GetMainCamera().BuildProjectionMatrix(w->GetScreenAspect());
