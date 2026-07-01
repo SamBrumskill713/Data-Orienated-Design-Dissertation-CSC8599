@@ -263,7 +263,7 @@ void PhysicsSystemSOA::BasicCollisionDetection(int count) {
 void PhysicsSystemSOA::UpdateCollisionList(int count)
 {
 	auto& objects = gameWorld.gameObjects;
-
+			
 	for (auto& c : activeCollisions) {
 		--c.framesLeft;
 	}

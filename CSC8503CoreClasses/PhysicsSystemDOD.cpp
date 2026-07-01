@@ -251,16 +251,14 @@ void PhysicsSystemDOD::BasicCollisionDetection() {
 void PhysicsSystemDOD::UpdateCollisionList() {
 	auto& objects = gameWorld.gameObjects.GetObjectArray();
 
-	for (auto it = activeCollisions.begin(); it != activeCollisions.end(); ) {
-		it->framesLeft--;
-
-		if (it->framesLeft < 0) {
-			it = activeCollisions.erase(it);
-		}
-		else {
-			++it;
-		}
+	for (auto& it : activeCollisions ) {
+		--it.framesLeft;
 	}
+
+	std::erase_if(activeCollisions,
+		[](const ActiveCollisionDOD& c) {
+			return c.framesLeft < 0;
+		});
 
 	for (auto& obj : objects) {
 		obj.isCollided = false;
