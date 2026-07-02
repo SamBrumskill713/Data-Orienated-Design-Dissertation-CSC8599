@@ -32,8 +32,8 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 90;
-	data.y = 90;
+	data.x = 10;
+	data.y = 10;
 
 	InitCamera();
 	LoadResources();
