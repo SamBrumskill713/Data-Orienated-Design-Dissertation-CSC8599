@@ -30,8 +30,8 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& in
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 100;
-	data.y = 100;
+	data.x = 90;
+	data.y = 90;
 
 	InitCamera();
 	LoadResources();
@@ -78,8 +78,23 @@ void TutorialGameDOD::UpdateGame(float dt) {
 	physics.Update(dt);
 
 	gameWorld.OperateOnContents([this](GameObjectDOD& obj) {
-	
-	});
+
+		});
+
+	data.frameTimeSamples.push_back(dt);
+	if (data.frameTimeSamples.size() > data.FPS_SAMPLE_SIZE) {
+		data.frameTimeSamples.erase(data.frameTimeSamples.begin());
+	}
+
+	float totalTime = 0.0f;
+	for (float sample : data.frameTimeSamples) {
+		totalTime += sample;
+	}
+	data.averageFPS = data.frameTimeSamples.size() / totalTime;
+
+	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("Avg FPS: " + std::to_string((int)data.averageFPS), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 15), Debug::WHITE);
 }
 
 void TutorialGameDOD::InitTest() {

@@ -29,22 +29,16 @@ void PhysicsSystemSOA::Update(float dt) {
 	int count = gameWorld.GetObjectCount();
 
 	while (data.dTOffset > realDT) {
-		auto t0 = std::chrono::high_resolution_clock::now();
 		IntegrateAccel(realDT, count);
 
-		auto t1 = std::chrono::high_resolution_clock::now();
 		BroadPhase(count);
 
-		auto t2 = std::chrono::high_resolution_clock::now();
 		NarrowPhase(count);
 
-		auto t3 = std::chrono::high_resolution_clock::now();
 		IntegrateVelocity(realDT, count);
 
-		auto t4 = std::chrono::high_resolution_clock::now();
 		ClearForces();
 
-		auto t5 = std::chrono::high_resolution_clock::now();
 		UpdateCollisionList(count);
 		data.dTOffset -= realDT;
 

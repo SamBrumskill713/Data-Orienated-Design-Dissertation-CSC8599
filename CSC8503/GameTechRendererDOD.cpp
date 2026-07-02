@@ -110,6 +110,14 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	glGenVertexArrays(1, &resources.textVAO);
+	glGenBuffers(1, &resources.textVertVBO);
+	glGenBuffers(1, &resources.textColourVBO);
+	glGenBuffers(1, &resources.textTexVBO);
+	SetDebugStringBufferSizes(10000);
+
+	Debug::CreateDebugFont("PressStart2P.fnt", *LoadTexture("PressStart2P.png"));
 }
 
 Mesh* RendererSystemDOD::LoadMesh(const std::string& name) {
@@ -474,4 +482,111 @@ void RendererSystemDOD::RenderFrame(GameWorldDOD& world, GameTechRendererData& f
 	RenderSkyboxPass(frameData);
 	RenderOpaquePass(world, frameData);
 	RenderTransparentPass(world, frameData);
+	RenderText();
+}
+
+void RendererSystemDOD::SetDebugStringBufferSizes(size_t newVertCount) {
+	if (newVertCount <= resources.textCount) {
+		return;
+	}
+
+	resources.textCount = newVertCount;
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textVertVBO);
+	glBufferData(GL_ARRAY_BUFFER, resources.textCount * sizeof(Vector3), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textColourVBO);
+	glBufferData(GL_ARRAY_BUFFER, resources.textCount * sizeof(Vector4), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textTexVBO);
+	glBufferData(GL_ARRAY_BUFFER, resources.textCount * sizeof(Vector2), nullptr, GL_DYNAMIC_DRAW);
+
+	resources.debugTextPos.reserve(resources.textCount);
+	resources.debugTextColours.reserve(resources.textCount);
+	resources.debugTextUVs.reserve(resources.textCount);
+
+	glBindVertexArray(resources.textVAO);
+
+	glVertexAttribFormat(0, 3, GL_FLOAT, false, 0);
+	glVertexAttribBinding(0, 0);
+	glBindVertexBuffer(0, resources.textVertVBO, 0, sizeof(Vector3));
+
+	glVertexAttribFormat(1, 4, GL_FLOAT, false, 0);
+	glVertexAttribBinding(1, 1);
+	glBindVertexBuffer(1, resources.textColourVBO, 0, sizeof(Vector4));
+
+	glVertexAttribFormat(2, 2, GL_FLOAT, false, 0);
+	glVertexAttribBinding(2, 2);
+	glBindVertexBuffer(2, resources.textTexVBO, 0, sizeof(Vector2));
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+}
+
+void RendererSystemDOD::RenderText() {
+	const std::vector<Debug::DebugStringEntry>& strings = Debug::GetDebugStrings();
+	if (strings.empty() || Debug::GetDebugFont() == nullptr) {
+		return;
+	}
+
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glUseProgram(resources.debugShader->GetProgramID());
+
+	OGLTexture* fontTex = (OGLTexture*)Debug::GetDebugFont()->GetTexture();
+	if (fontTex) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fontTex->GetObjectID());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		GLuint mainTexSlot = glGetUniformLocation(resources.debugShader->GetProgramID(), "mainTex");
+		glUniform1i(mainTexSlot, 0);
+	}
+
+	Matrix4 proj = Matrix::Orthographic(0.0f, 100.0f, 100.0f, 0.0f, -1.0f, 1.0f);
+
+	int matSlot = glGetUniformLocation(resources.debugShader->GetProgramID(), "viewProjMatrix");
+	glUniformMatrix4fv(matSlot, 1, false, (float*)proj.array);
+
+	GLuint texSlot = glGetUniformLocation(resources.debugShader->GetProgramID(), "useTexture");
+	glUniform1i(texSlot, 1);
+
+	resources.debugTextPos.clear();
+	resources.debugTextColours.clear();
+	resources.debugTextUVs.clear();
+
+	int frameVertCount = 0;
+	for (const auto& s : strings) {
+		frameVertCount += Debug::GetDebugFont()->GetVertexCountForString(s.data);
+	}
+	SetDebugStringBufferSizes(frameVertCount);
+
+	for (const auto& s : strings) {
+		Debug::GetDebugFont()->BuildVerticesForString(
+			s.data, s.position, s.colour, 20.0f,
+			resources.debugTextPos, resources.debugTextUVs, resources.debugTextColours
+		);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textVertVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector3), resources.debugTextPos.data());
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textColourVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector4), resources.debugTextColours.data());
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textTexVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector2), resources.debugTextUVs.data());
+
+	glBindVertexArray(resources.textVAO);
+	glDrawArrays(GL_TRIANGLES, 0, frameVertCount);
+	glBindVertexArray(0);
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 }
