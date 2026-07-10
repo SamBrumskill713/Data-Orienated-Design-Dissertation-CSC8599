@@ -82,7 +82,7 @@ namespace NCL::CSC8503 {
 			outIndices.clear();
 			for (size_t i = 0; i < objects.size(); ++i) {
 				if (objects[i].objectType == type) {
-					outIndices.push_back(i);
+					outIndices.emplace_back(i);
 				}
 			}
 		}
@@ -91,7 +91,7 @@ namespace NCL::CSC8503 {
 			outIndices.clear();
 			for (size_t i = 0; i < objects.size(); ++i) {
 				if (objects[i].isActive) {
-					outIndices.push_back(i);
+					outIndices.emplace_back(i);
 				}
 			}
 		}

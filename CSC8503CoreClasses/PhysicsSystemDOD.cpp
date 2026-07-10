@@ -117,7 +117,7 @@ void PhysicsSystemDOD::BroadPhase() {
 
 	for (size_t i = 0; i < objects.size(); ++i) {
 		if (objects[i].isActive && objects[i].physics.inverseMass != 0.0f) {
-			dynamicObjects.push_back(i);
+			dynamicObjects.emplace_back(i);
 		}
 	}
 
@@ -146,7 +146,7 @@ void PhysicsSystemDOD::BroadPhase() {
 							std::swap(idxA, idxB);
 						}
 
-						broadphasePairs.push_back(BroadphasePair(idxA, idxB));
+						broadphasePairs.emplace_back(BroadphasePair(idxA, idxB));
 					}
 				}
 			}
@@ -158,7 +158,7 @@ void PhysicsSystemDOD::BroadPhase() {
 
 	for (size_t i = 0; i < objects.size(); ++i) {
 		if (objects[i].isActive && objects[i].physics.inverseMass == 0.0f) {
-			staticObjects.push_back(i);
+			staticObjects.emplace_back(i);
 		}
 	}
 
@@ -179,7 +179,7 @@ void PhysicsSystemDOD::BroadPhase() {
 				size_t idxB = dynIdx;
 				if (idxA > idxB) std::swap(idxA, idxB);
 
-				broadphasePairs.push_back(BroadphasePair(idxA, idxB));
+				broadphasePairs.emplace_back(BroadphasePair(idxA, idxB));
 			}
 		}
 	}
@@ -212,7 +212,7 @@ void PhysicsSystemDOD::NarrowPhase() {
 			ImpulseResolveCollision(objA.physics, objB.physics, objA.transform, objB.transform,
 				collisionInfo.normal, collisionInfo.localA, collisionInfo.localB, collisionInfo.penetration);
 
-			activeCollisions.push_back(
+			activeCollisions.emplace_back(
 				ActiveCollisionDOD(pair.indexA, pair.indexB, data.numCollisionFrames)
 			);
 		}
@@ -240,7 +240,7 @@ void PhysicsSystemDOD::BasicCollisionDetection() {
 				ImpulseResolveCollision(objects[i].physics, objects[j].physics, objects[i].transform, objects[j].transform,
 					collisionInfo.normal, collisionInfo.localA, collisionInfo.localB, collisionInfo.penetration);
 
-				activeCollisions.push_back(
+				activeCollisions.emplace_back(
 					ActiveCollisionDOD(i, j, data.numCollisionFrames)
 				);
 			}

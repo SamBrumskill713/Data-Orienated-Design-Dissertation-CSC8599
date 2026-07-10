@@ -59,7 +59,7 @@ void CollisionDetectionSOA::DetectAllCollisions(GameObjectCompSOA& gameObjects,
 			CollisionInfoSOA collisionInfo(idxA, idxB);
 			if (ObjectIntersection(gameObjects, idxA, idxB, collisionInfo)) {
 				collisionInfo.isActive = true;
-				outCollisions.push_back(collisionInfo);
+				outCollisions.emplace_back(collisionInfo);
 
 				gameObjects.isCollided[idxA] = true;
 				gameObjects.isCollided[idxB] = true;

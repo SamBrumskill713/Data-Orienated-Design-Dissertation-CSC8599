@@ -174,7 +174,7 @@ void NCL::CSC8503::RendererSystemSOA::BuildTextureBatches(GameWorldSOA& world, G
 	for (size_t idx : frameData.opaqueObjectIndices) {
 		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
 		size_t texKey = reinterpret_cast<size_t>(diffuseTex);
-		frameData.textureToObjectIndices[texKey].push_back(idx);
+		frameData.textureToObjectIndices[texKey].emplace_back(idx);
 	}
 
 	// Sort each texture group by mesh pointer to maximize mesh batching
@@ -270,10 +270,10 @@ void NCL::CSC8503::RendererSystemSOA::BuildRenderFrame(GameWorldSOA& world, Game
 		}
 
 		if (isTransparent) {
-			frameData.transparentObjectIndices.push_back(i);
+			frameData.transparentObjectIndices.emplace_back(i);
 		}
 		else {
-			frameData.opaqueObjectIndices.push_back(i);
+			frameData.opaqueObjectIndices.emplace_back(i);
 		}
 	}
 

@@ -35,12 +35,12 @@ namespace NCL::CSC8503 {
 			GameObjectType objectType = GameObjectType::Default) {
 			int index = GetObjectCount(gameObjects);
 
-			gameObjects.worldIDs.push_back(-1);
-			gameObjects.objectTypes.push_back(objectType);
-			gameObjects.isActive.push_back(true);
-			gameObjects.isCollided.push_back(false);
-			gameObjects.collisionLayers.push_back(0);
-			gameObjects.broadphaseAABBs.push_back(Vector3(0, 0, 0));
+			gameObjects.worldIDs.emplace_back(-1);
+			gameObjects.objectTypes.emplace_back(objectType);
+			gameObjects.isActive.emplace_back(true);
+			gameObjects.isCollided.emplace_back(false);
+			gameObjects.collisionLayers.emplace_back(0);
+			gameObjects.broadphaseAABBs.emplace_back(Vector3(0, 0, 0));
 
 			TransformOpsSOA::AddTransform(gameObjects.transforms);
 			PhysicsOpsSOA::AddPhysicsBody(gameObjects.physics);
@@ -83,7 +83,7 @@ namespace NCL::CSC8503 {
 			int count = GetObjectCount(gameObjects);
 			for (int i = 0; i < count; ++i) {
 				if (gameObjects.objectTypes[i] == type) {
-					outIndices.push_back(i);
+					outIndices.emplace_back(i);
 				}
 			}
 		}
@@ -93,7 +93,7 @@ namespace NCL::CSC8503 {
 			int count = GetObjectCount(gameObjects);
 			for (int i = 0; i < count; ++i) {
 				if (gameObjects.isActive[i]) {
-					outIndices.push_back(i);
+					outIndices.emplace_back(i);
 				}
 			}
 		}

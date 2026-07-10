@@ -36,11 +36,11 @@ namespace NCL {
 				Texture* bumpTex = nullptr,
 				const Vector4& colour = Vector4(1.0f, 1.0f, 1.0f, 1.0f)) {
 				int index = GetCount(render);
-				render.meshes.push_back(mesh);
-				render.materialTypes.push_back(materialType);
-				render.diffuseTextures.push_back(diffuseTex);
-				render.bumpTextures.push_back(bumpTex);
-				render.colours.push_back(colour);
+				render.meshes.emplace_back(mesh);
+				render.materialTypes.emplace_back(materialType);
+				render.diffuseTextures.emplace_back(diffuseTex);
+				render.bumpTextures.emplace_back(bumpTex);
+				render.colours.emplace_back(colour);
 				return index;
 			}
 

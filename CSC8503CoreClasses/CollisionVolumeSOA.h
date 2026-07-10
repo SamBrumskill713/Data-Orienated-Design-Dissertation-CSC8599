@@ -38,12 +38,12 @@ namespace NCL::CSC8503 {
 		int CreateAABB(const Vector3& halfSizes, int layer, bool trigger = false) {
 			int volumeIndex = dataSOA.typeSOA.size();
 
-			dataSOA.typeSOA.push_back(VolumeTypeSOA::AABB);
-			dataSOA.collisionLayerSOA.push_back(layer);
-			dataSOA.isTriggerSOA.push_back(trigger);
+			dataSOA.typeSOA.emplace_back(VolumeTypeSOA::AABB);
+			dataSOA.collisionLayerSOA.emplace_back(layer);
+			dataSOA.isTriggerSOA.emplace_back(trigger);
 
-			AABBDataSOA.halfSizesSOA.push_back(halfSizes);
-			typeDataIndex.push_back((int)AABBDataSOA.halfSizesSOA.size() - 1);
+			AABBDataSOA.halfSizesSOA.emplace_back(halfSizes);
+			typeDataIndex.emplace_back((int)AABBDataSOA.halfSizesSOA.size() - 1);
 
 			return volumeIndex;
 		}

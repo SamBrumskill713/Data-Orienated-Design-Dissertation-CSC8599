@@ -21,10 +21,10 @@ namespace NCL::CSC8503 {
 			const Quaternion& Orientation = Quaternion(),
 			const Vector3& scale = Vector3(1, 1, 1)) {
 			int index = Transforms.positions.size();
-			Transforms.positions.push_back(Position);
-			Transforms.orientations.push_back(Orientation);
-			Transforms.scales.push_back(scale);
-			Transforms.matrices.push_back(Matrix4());
+			Transforms.positions.emplace_back(Position);
+			Transforms.orientations.emplace_back(Orientation);
+			Transforms.scales.emplace_back(scale);
+			Transforms.matrices.emplace_back(Matrix4());
 			return index;
 		}
 

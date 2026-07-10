@@ -31,7 +31,7 @@ void CollisionDetectionDOD::DetectAllCollisions(GameObjectStorage& storage, std:
 
 			CollisionInfoDOD collision(i, j);
 			if (ObjectIntersection(objects[i], objects[j], i, j, collision)) {
-				outCollisions.push_back(collision);
+				outCollisions.emplace_back(collision);
 			}
 		}
 	}
