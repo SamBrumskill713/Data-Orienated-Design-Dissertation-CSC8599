@@ -30,8 +30,8 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& in
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 90;
-	data.y = 90;
+	data.x = 100;
+	data.y = 100;
 
 	InitCamera();
 	LoadResources();
@@ -81,7 +81,7 @@ void TutorialGameDOD::UpdateGame(float dt) {
 
 		});
 
-	data.frameTimeSamples.push_back(dt);
+	data.frameTimeSamples.emplace_back(dt);
 	if (data.frameTimeSamples.size() > data.FPS_SAMPLE_SIZE) {
 		data.frameTimeSamples.erase(data.frameTimeSamples.begin());
 	}

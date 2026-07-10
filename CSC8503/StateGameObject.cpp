@@ -139,10 +139,6 @@ void NCL::CSC8503::EnemyObject::moveEnemy()
 
 void NCL::CSC8503::EnemyObject::Update(float dt)
 {
-	if (net && net->IsClient()) {
-		return;
-	}
-
     enemyStateMachine->Update(dt);
     if (hitPlayer) {
         cooldownTimer -= dt;
@@ -169,9 +165,7 @@ void NCL::CSC8503::EnemyObject::OnCollisionBegin(GameObject* other)
 void NCL::CSC8503::EnemyObject::chasePlayer(float dt)
 {
 	GameObject* target = nullptr;
-	if (net) {
-		target = net->FindClosestServerPlayerFrom(this);
-	} else if (player) {
+	if (player) {
 		target = player;
 	}
 	if (!target) {
@@ -213,10 +207,7 @@ bool NCL::CSC8503::EnemyObject::canSeePlayer()
 {
 	std::vector<int> ignoreList;
 	GameObject* target = nullptr;
-	if (net) {
-		target = net->FindClosestServerPlayerFrom(this);
-
-	} else if (player) {
+	if (player) {
 		target = player;
 
 	}

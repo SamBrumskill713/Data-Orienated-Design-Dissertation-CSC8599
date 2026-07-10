@@ -6,7 +6,7 @@ namespace NCL {
 	namespace CSC8503 {
 		class NetworkedGame;
 
-		class NetworkPlayer : public GameObject 
+		class NetworkPlayer : public GameObject
 		{
 		public:
 			NetworkPlayer(NetworkedGame* game, int num);
@@ -24,4 +24,3 @@ namespace NCL {
 		};
 	}
 }
-

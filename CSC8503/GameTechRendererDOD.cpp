@@ -213,10 +213,10 @@ void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererDa
 		objectDistances[i] = Vector::LengthSquared(camPos - obj.transform.position);
 
 		if (obj.render.material.type == MaterialType::Transparent) {
-			frameData.transparentObjectIndices.push_back(i);
+			frameData.transparentObjectIndices.emplace_back(i);
 		}
 		else {
-			frameData.opaqueObjectIndices.push_back(i);
+			frameData.opaqueObjectIndices.emplace_back(i);
 		}
 	}
 

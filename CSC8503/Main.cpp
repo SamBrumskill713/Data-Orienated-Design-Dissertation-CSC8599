@@ -13,7 +13,6 @@
 #include "NavigationMesh.h"
 
 #include "TutorialGame.h"
-#include "NetworkedGame.h"
 
 #include "PushdownMachine.h"
 
@@ -68,7 +67,7 @@ void TestPathfinding() {
 
 	Vector3 pos;
 	while (outPath.PopWaypoint(pos)) {
-		testNodes.push_back(pos);
+		testNodes.emplace_back(pos);
 	}
 }
 
@@ -295,64 +294,6 @@ void TestPushdownAutomata(Window* w) {
 	}
 }
 
-class TestPacketReceiver : public PacketReceiver
-{
-public:
-	TestPacketReceiver(std::string name)
-	{
-		this->name = name;
-	}
-
-	void ReceivePacket(int type, GamePacket* payload, int source)
-	{
-		if (type == String_Message)
-		{
-			StringPacket* realPacket = (StringPacket*)payload;
-
-			std::string msg = realPacket->GetStringFromData();
-
-			std::cout << name << " recieved message: " << msg << std::endl;
-		}
-	}
-protected:
-	std::string name;
-};
-
-void TestNetworking()
-{
-	///*
-	NetworkBase::Initialise();
-
-	TestPacketReceiver serverReceiver("Server");
-	TestPacketReceiver clientReceiver("Client");
-
-	int port = NetworkBase::GetDefaultPort();
-
-	GameServer* server = new GameServer(port, 1);
-	GameClient* client = new GameClient();
-
-	server->RegisterPacketHandler(String_Message, &serverReceiver);
-	client->RegisterPacketHandler(String_Message, &clientReceiver);
-
-	bool canConnect = client->Connect(127, 0, 0, 1, port);
-
-	for (int i = 0; i < 100; i++)
-	{
-		StringPacket p("Server says hello! " + std::to_string(i));
-		server->SendGlobalPacket(p);
-
-		p = StringPacket("Client says hello! " + std::to_string(i));
-		client->SendPacket(p);
-
-		server->UpdateServer();
-		client->UpdateClient();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
-	NetworkBase::Destroy();
-	//*/
-}
-
 class IntroMenuState : public PushdownState {
 public:
 	explicit IntroMenuState(TutorialGame*& game, GameWorld* gw, PhysicsSystem* phys, Window* win,
@@ -385,30 +326,6 @@ public:
 				confirmPressed = false;
 				gReturnToMenu = false;
 				gStartSOABenchmark = true;
-				return PushdownResult::Pop;
-			}
-
-			if (choice == "Host Online") {
-				// Swap TutorialGame -> NetworkedGame and host
-				if (gameRefPtr) {
-					delete gameRefPtr;
-					gameRefPtr = nullptr;
-				}
-				gameRefPtr = new NetworkedGame(*world, *renderer, *physics);
-				static_cast<NetworkedGame*>(gameRefPtr)->StartAsServer();
-				confirmPressed = false;
-				return PushdownResult::Pop;
-			}
-
-			if (choice == "Join Online") {
-				// Swap TutorialGame -> NetworkedGame and connect to localhost
-				if (gameRefPtr) {
-					delete gameRefPtr;
-					gameRefPtr = nullptr;
-				}
-				gameRefPtr = new NetworkedGame(*world, *renderer, *physics);
-				static_cast<NetworkedGame*>(gameRefPtr)->StartAsClient(127, 0, 0, 1);
-				confirmPressed = false;
 				return PushdownResult::Pop;
 			}
 
@@ -468,7 +385,7 @@ private:
 	Window* window = nullptr;
 	GameTechRendererInterface* renderer = nullptr;
 
-	std::vector<std::string> options{ "Play", "DOD(AOS) Benchmark", "DOD(SOA) Benchmark", "Host Online", "Join Online", "Quit" };
+	std::vector<std::string> options{ "Play", "DOD(AOS) Benchmark", "DOD(SOA) Benchmark", "Quit" };
 	int currentIndex = 0;
 	bool confirmPressed = false;
 	bool quitRequested = false;
@@ -493,17 +410,11 @@ public:
 
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::RETURN) ||
 			Window::GetKeyboard()->KeyPressed(KeyCodes::SPACE)) {
-			if (gameRef) {
-				gameRef->ClearEndState(); // re-init world and clear flags
-			}
 			return PushdownResult::Pop; // back to gameplay
 		}
 
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::M)) {
 			// Clear end flags and let GamePlayState push the menu
-			if (gameRef) {
-				gameRef->ClearEndState();
-			}
 			gReturnToMenu = true;
 			return PushdownResult::Pop; // remove EndGameState from stack
 		}

@@ -353,10 +353,10 @@ void PhysicsSystem::BroadPhase()
 		}
 
 		if (obj->GetPhysicsObject()->GetInverseMass() > 0.0f) {
-			dynamicObjects.push_back(obj);
+			dynamicObjects.emplace_back(obj);
 		}
 		else {
-			staticObjects.push_back(obj);
+			staticObjects.emplace_back(obj);
 		}
 	}
 
@@ -381,7 +381,7 @@ void PhysicsSystem::BroadPhase()
 					CollisionDetection::CollisionInfo info;
 					info.a = std::min((*i).object, (*j).object);
 					info.b = std::max((*i).object, (*j).object);
-					broadphaseCollisionsVec.push_back(info);
+					broadphaseCollisionsVec.emplace_back(info);
 				}
 			}
 		});
@@ -411,7 +411,7 @@ void PhysicsSystem::BroadPhase()
 				CollisionDetection::CollisionInfo info;
 				info.a = std::min(staticObj, dynamicObj);
 				info.b = std::max(staticObj, dynamicObj);
-				broadphaseCollisionsVec.push_back(info);
+				broadphaseCollisionsVec.emplace_back(info);
 			}
 		}
 	}
