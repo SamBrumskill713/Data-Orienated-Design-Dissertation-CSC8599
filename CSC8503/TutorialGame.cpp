@@ -24,10 +24,13 @@ using namespace CSC8503;
 TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRenderer, PhysicsSystem& inPhysics)
 	: world(inWorld),
 	renderer(inRenderer),
-	physics(inPhysics)
+	physics(inPhysics),
+	performanceLogger("performance_OOP.csv")
 {
 	forceMagnitude = 10.0f;
 	useGravity = true;
+
+	performanceLogger.SetLogInterval(1.0);  // Log every 1 second
 
 	controller = new KeyboardMouseController(*Window::GetWindow()->GetKeyboard(), *Window::GetWindow()->GetMouse());
 
@@ -45,7 +48,6 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 
 	cubeMesh = renderer.LoadMesh("cube.msh");
 
-	//defaultTex = renderer.LoadTexture("Default.png");
 	checkerTex = renderer.LoadTexture("checkerboard.png");
 
 	checkerMaterial.type = MaterialType::Opaque;
@@ -56,6 +58,7 @@ TutorialGame::TutorialGame(GameWorld& inWorld, GameTechRendererInterface& inRend
 }
 
 TutorialGame::~TutorialGame() {
+	performanceLogger.Flush();
 	if (controller) {
 		delete controller;
 		controller = nullptr;
@@ -63,30 +66,40 @@ TutorialGame::~TutorialGame() {
 }
 
 void TutorialGame::UpdateGame(float dt) {
+	// Record the actual frame time from the timer
+	timingDisplay.RecordFrameTime(dt);
 
 	world.GetMainCamera().UpdateCamera(dt);
 	if (useGravity) physics.UseGravity(useGravity);
 
-	frameTimeSamples.emplace_back(dt);
-	if (frameTimeSamples.size() > FPS_SAMPLE_SIZE) {
-		frameTimeSamples.erase(frameTimeSamples.begin());
-	}
+	// Physics timing
+	timingDisplay.StartPhysicsTiming();
+	physics.Update(dt);
+	timingDisplay.EndPhysicsTiming();
 
-	float totalTime = 0.0f;
-	for (float sample : frameTimeSamples) {
-		totalTime += sample;
-	}
-	averageFPS = frameTimeSamples.size() / totalTime;
+	// Rendering timing
+	timingDisplay.StartRenderTiming();
+	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
+	timingDisplay.EndRenderTiming();
 
-	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
-	Debug::Print("Avg FPS: " + std::to_string((int)averageFPS), Vector2(0, 10), Debug::WHITE);
+	// Get object count
 	GameObjectIterator first, last;
 	world.GetObjectIterators(first, last);
 	int objectCount = std::distance(first, last);
-	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 15), Debug::WHITE);
 
-	physics.Update(dt);
-	world.OperateOnContents([dt](GameObject* o) { o->Update(dt); });
+	// Log performance data
+	performanceLogger.Update(dt, timingDisplay, objectCount);
+
+	// Display timing information
+	const auto& timingData = timingDisplay.GetTimingData();
+
+	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("Avg FPS: " + TimingDisplay::FormatFPS(timingData.averageFPS), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Avg Frame Time: " + TimingDisplay::FormatTime(timingData.averageFrameTimeMs) + " ms", Vector2(0, 15), Debug::WHITE);
+	Debug::Print("Avg Physics Time: " + TimingDisplay::FormatTime(timingData.averagePhysicsTimeMs) + " ms", Vector2(0, 20), Debug::WHITE);
+	Debug::Print("Avg Render Time: " + TimingDisplay::FormatTime(timingData.averageRenderTimeMs) + " ms", Vector2(0, 25), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 30), Debug::WHITE);
+	Debug::Print("Logged Records: " + std::to_string(performanceLogger.GetRecordCount()), Vector2(0, 35), Debug::WHITE);
 }
 
 void TutorialGame::InitCamera() {
@@ -96,8 +109,6 @@ void TutorialGame::InitCamera() {
 	world.GetMainCamera().SetYaw(315.0f);
 	world.GetMainCamera().SetPosition(Vector3(-60, 40, 60));
 }
-
-
 
 void TutorialGame::InitWorld() {
 	world.ClearAndErase();
@@ -163,7 +174,6 @@ void NCL::CSC8503::TutorialGame::InitFPSTest()
 	physics.Clear();
 	AddFloorToWorld(Vector3(0, -5, 0), 10000, 10000);
 	CreateAABBGrid(50, 50, 5.0f, 5.0f, Vector3(1, 1, 1));
-	
 }
 
 void TutorialGame::CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {

@@ -5,6 +5,9 @@
 #include "GameWorldSOA.h"
 #include "PhysicsSystemSOA.h"
 #include "GameTechRendererSOA.h"
+#include "TimingDisplay.h"
+#include "PerformanceLogger.h"
+#include <chrono>
 
 namespace NCL {
 	class Controller;
@@ -67,6 +70,9 @@ namespace NCL {
 			RendererSystemSOA& rendererSOA;
 			PhysicsSystemSOA& physics;
 			Controller* controller;
+
+			TimingDisplay timingDisplay;
+			PerformanceLogger performanceLogger{ "performance_SoA.csv" };
 
 			void InitCamera();
 			void LoadResources();

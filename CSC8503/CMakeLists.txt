@@ -10,6 +10,8 @@ set(PROJECT_NAME CSC8503)
 #    "NetworkPlayer.h"
 #    "StateGameObject.h"
 #    "TutorialGame.h"
+#    "TimingDisplay.h"
+#    "PerformanceLogger.h"
 #)
 file(GLOB Header_Files *.h)
 source_group("Header Files" FILES ${Header_Files})

@@ -5,6 +5,9 @@
 #include "GameWorldDOD.h"
 #include "PhysicsSystemDOD.h"
 #include "GameTechRendererDOD.h"
+#include "TimingDisplay.h"
+#include "PerformanceLogger.h"
+#include <chrono>
 
 namespace NCL {
 	class Controller;
@@ -67,6 +70,9 @@ namespace NCL {
 			RendererSystemDOD& rendererDOD;
 			PhysicsSystemDOD& physics;
 			Controller* controller;
+
+			TimingDisplay timingDisplay;
+			PerformanceLogger performanceLogger{ "performance_AoS.csv" };
 
 			void InitCamera();
 			void LoadResources();

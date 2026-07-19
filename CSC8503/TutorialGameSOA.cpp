@@ -14,8 +14,10 @@ using namespace NCL;
 using namespace CSC8503;
 
 TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& inRenderer, PhysicsSystemSOA& inPhysics)
-	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics){
+	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics), performanceLogger("performance_SoA.csv") {
 	data.useGravity = true;
+
+	performanceLogger.SetLogInterval(1.0);  // Log every 1 second
 
 	physics.UseGravity(data.useGravity);
 
@@ -41,6 +43,7 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 }
 
 TutorialGameSOA::~TutorialGameSOA() {
+	performanceLogger.Flush();
 	if (controller) {
 		delete controller;
 	}
@@ -75,28 +78,37 @@ void TutorialGameSOA::InitWorld() {
 }
 
 void TutorialGameSOA::UpdateGame(float dt) {
+	timingDisplay.RecordFrameTime(dt);
+
 	gameWorld.GetMainCamera().UpdateCamera(dt);
 
+	// Physics timing
+	timingDisplay.StartPhysicsTiming();
 	physics.Update(dt);
+	timingDisplay.EndPhysicsTiming();
 
+	// Rendering/Game Object Update timing
+	timingDisplay.StartRenderTiming();
 	gameWorld.OperateOnContents([this](int objIndex) {
+		// Game object updates here
+		});
+	timingDisplay.EndRenderTiming();
 
-	});
+	int objectCount = gameWorld.GetObjectCount();
 
-	data.frameTimeSamples.emplace_back(dt);
-	if (data.frameTimeSamples.size() > data.FPS_SAMPLE_SIZE) {
-		data.frameTimeSamples.erase(data.frameTimeSamples.begin());
-	}
+	// Log performance data
+	performanceLogger.Update(dt, timingDisplay, objectCount);
 
-	float totalTime = 0.0f;
-	for (float sample : data.frameTimeSamples) {
-		totalTime += sample;
-	}
-	data.averageFPS = data.frameTimeSamples.size() / totalTime;
+	// Display timing information
+	const auto& timingData = timingDisplay.GetTimingData();
 
 	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
-	Debug::Print("Avg FPS: " + std::to_string((int)data.averageFPS), Vector2(0, 10), Debug::WHITE);
-	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 15), Debug::WHITE);
+	Debug::Print("Avg FPS: " + TimingDisplay::FormatFPS(timingData.averageFPS), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Avg Frame Time: " + TimingDisplay::FormatTime(timingData.averageFrameTimeMs) + " ms", Vector2(0, 15), Debug::WHITE);
+	Debug::Print("Avg Physics Time: " + TimingDisplay::FormatTime(timingData.averagePhysicsTimeMs) + " ms", Vector2(0, 20), Debug::WHITE);
+	Debug::Print("Avg Render Time: " + TimingDisplay::FormatTime(timingData.averageRenderTimeMs) + " ms", Vector2(0, 25), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 30), Debug::WHITE);
+	Debug::Print("Logged Records: " + std::to_string(performanceLogger.GetRecordCount()), Vector2(0, 35), Debug::WHITE);
 }
 
 void TutorialGameSOA::InitTest() {

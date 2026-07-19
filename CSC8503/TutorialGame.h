@@ -2,6 +2,10 @@
 #include "RenderObject.h"
 #include "../CSC8503CoreClasses/CollisionVolume.h"
 #include "../CSC8503CoreClasses/GameObject.h"
+#include "TimingDisplay.h"
+#include "PerformanceLogger.h"
+#include <chrono>
+
 namespace NCL {
 	class Controller;
 
@@ -35,11 +39,11 @@ namespace NCL {
 			*/
 			void CreateAABBGrid(int numRows, int numCols, float rowSpacing, float colSpacing, const NCL::Maths::Vector3& cubeDims);
 
-			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength, 
+			GameObject* AddFloorToWorld(const NCL::Maths::Vector3& position, float floorHeight, float floorLength,
 				bool isTrigger = false, int collisionLayer = terrainLayer);
 
-			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions, 
-				float inverseMass = 10.0f,bool isTrigger = false, int collisionLayer = defaultLayer);
+			GameObject* AddCubeToWorld(const NCL::Maths::Vector3& position, NCL::Maths::Vector3 dimensions,
+				float inverseMass = 10.0f, bool isTrigger = false, int collisionLayer = defaultLayer);
 
 			GameWorld& world;
 			GameTechRendererInterface& renderer;
@@ -47,20 +51,16 @@ namespace NCL {
 			Controller* controller;
 
 			bool useGravity;
+			float forceMagnitude;
 
-			float		forceMagnitude;
-
-			Rendering::Mesh* cubeMesh		= nullptr;
-
-			Rendering::Texture* checkerTex	= nullptr;
+			Rendering::Mesh* cubeMesh = nullptr;
+			Rendering::Texture* checkerTex = nullptr;
 
 			GameTechMaterial checkerMaterial;
 
-			float fpsUpdateTimer = 0.0f;
-			int frameCount = 0;
-			float averageFPS = 0.0f;
-			std::vector<float> frameTimeSamples;
-			static constexpr int FPS_SAMPLE_SIZE = 60;
-		};	
+			TimingDisplay timingDisplay;
+
+			PerformanceLogger performanceLogger{ "performance_OOP.csv" };
+		};
 	}
 }
