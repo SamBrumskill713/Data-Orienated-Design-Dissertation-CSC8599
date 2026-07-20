@@ -14,10 +14,10 @@ using namespace NCL;
 using namespace CSC8503;
 
 TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& inRenderer, PhysicsSystemSOA& inPhysics)
-	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics), performanceLogger("performance_SoA.csv") {
+	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics), performanceLogger("performance_SOA.csv") {
 	data.useGravity = true;
 
-	performanceLogger.SetLogInterval(1.0);  // Log every 1 second
+	performanceLogger.SetLogInterval(1.0);
 
 	physics.UseGravity(data.useGravity);
 
@@ -34,8 +34,8 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 100;
-	data.y = 100;
+	data.x = 150;
+	data.y = 150;
 
 	InitCamera();
 	LoadResources();
@@ -87,19 +87,34 @@ void TutorialGameSOA::UpdateGame(float dt) {
 	physics.Update(dt);
 	timingDisplay.EndPhysicsTiming();
 
-	// Rendering/Game Object Update timing
+	// Rendering timing - SoA advantage
+	// Multiple passes but ONLY accessing position arrays
 	timingDisplay.StartRenderTiming();
-	gameWorld.OperateOnContents([this](int objIndex) {
-		// Game object updates here
-		});
-	timingDisplay.EndRenderTiming();
 
 	int objectCount = gameWorld.GetObjectCount();
+	volatile float accumulator = 0.0f;
+	int iterationCount = 0;
 
-	// Log performance data
+	// Same 4 passes, but garbage data not touched
+	for (int pass = 0; pass < 4; ++pass) {
+		for (int i = 0; i < objectCount; ++i) {
+			if (gameWorld.gameObjects.isActive[i]) {
+				// Access ONLY position - garbage arrays never loaded
+				const Vector3& pos = gameWorld.gameObjects.transforms.positions[i];
+				accumulator += pos.x + pos.y + pos.z;
+
+				accumulator = sinf(accumulator) * cosf(accumulator);
+				iterationCount++;
+			}
+		}
+	}
+
+	timingDisplay.EndRenderTiming();
+
+	objectCount = gameWorld.GetObjectCount();
+
 	performanceLogger.Update(dt, timingDisplay, objectCount);
 
-	// Display timing information
 	const auto& timingData = timingDisplay.GetTimingData();
 
 	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
@@ -108,7 +123,8 @@ void TutorialGameSOA::UpdateGame(float dt) {
 	Debug::Print("Avg Physics Time: " + TimingDisplay::FormatTime(timingData.averagePhysicsTimeMs) + " ms", Vector2(0, 20), Debug::WHITE);
 	Debug::Print("Avg Render Time: " + TimingDisplay::FormatTime(timingData.averageRenderTimeMs) + " ms", Vector2(0, 25), Debug::WHITE);
 	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 30), Debug::WHITE);
-	Debug::Print("Logged Records: " + std::to_string(performanceLogger.GetRecordCount()), Vector2(0, 35), Debug::WHITE);
+	Debug::Print("Iterations/Frame: " + std::to_string(iterationCount), Vector2(0, 35), Debug::WHITE);
+	Debug::Print("Garbage: 512 bytes/obj: ", Vector2(0, 40), Debug::WHITE);
 }
 
 void TutorialGameSOA::InitTest() {

@@ -10,7 +10,7 @@ const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
 
 PhysicsSystemDOD::PhysicsSystemDOD(GameWorldDOD& world)
-	: gameWorld(world) , quadTree(Vector2(1000.0f, 1000.0f), 6, 10) {
+	: gameWorld(world) , quadTree(Vector2(1024.0f, 1024.0f), 7, 6) {
 }
 
 void PhysicsSystemDOD::Clear() {

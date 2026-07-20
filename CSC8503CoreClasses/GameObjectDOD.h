@@ -18,9 +18,23 @@ namespace NCL::CSC8503 {
 		Obstacle = 4
 	};
 
+	// Garbage data structure to simulate padding/overhead
+	// This represents unused/unused data that still takes up cache lines
+	struct GarbageDataDOD {
+		static constexpr size_t GARBAGE_SIZE = 256;  // 256 bytes of padding per object
+		uint8_t padding[GARBAGE_SIZE] = {};
+
+		GarbageDataDOD() {
+			// Fill with recognizable pattern for analysis
+			for (size_t i = 0; i < GARBAGE_SIZE; ++i) {
+				padding[i] = static_cast<uint8_t>(0xAB);
+			}
+		}
+	};
+
 	struct GameObjectDOD {
 		PhysicsObjectComp physics;
-		TransformsComp transform;        
+		TransformsComp transform;
 		RenderObjectComp render;
 		Vector3 broadphaseAABB;
 		AABBComp collision;
@@ -30,16 +44,20 @@ namespace NCL::CSC8503 {
 		bool isCollided;
 		GameObjectType objectType;
 
+		// GARBAGE DATA - Simulates real-world overhead
+		// This padding is loaded into cache with every object access
+		GarbageDataDOD garbageData;
+
 		GameObjectDOD()
 			:isActive(true), isCollided(false), worldID(-1),
 			broadphaseAABB(Vector3(0, 0, 0)), objectType(GameObjectType::Default),
-			collisionLayer(0){
+			collisionLayer(0) {
 		}
 
 		GameObjectDOD(const std::string& objName, GameObjectType type = GameObjectType::Default)
 			:isActive(true), isCollided(false), worldID(-1),
 			broadphaseAABB(Vector3(0, 0, 0)), objectType(type),
-			collisionLayer(0){
+			collisionLayer(0) {
 		}
 	};
 
@@ -52,10 +70,21 @@ namespace NCL::CSC8503 {
 			return objects.back();
 		}
 
-		void RemoveObject(size_t index) {
-			if (index < objects.size()) {
-				objects.erase(objects.begin() + index);
+		// Swap-and-pop removal: O(1), maintains cache locality
+		size_t RemoveObject(size_t index) {
+			if (index >= objects.size()) {
+				return static_cast<size_t>(-1);
 			}
+
+			size_t lastIndex = objects.size() - 1;
+			if (index != lastIndex) {
+				std::swap(objects[index], objects[lastIndex]);
+				objects.pop_back();
+				return index;
+			}
+
+			objects.pop_back();
+			return static_cast<size_t>(-1);
 		}
 
 		size_t GetObjectCount() const {
@@ -81,7 +110,7 @@ namespace NCL::CSC8503 {
 		void GetObjectsByType(GameObjectType type, std::vector<size_t>& outIndices) const {
 			outIndices.clear();
 			for (size_t i = 0; i < objects.size(); ++i) {
-				if (objects[i].objectType == type) {
+				if (objects[i].isActive && objects[i].objectType == type) {
 					outIndices.emplace_back(i);
 				}
 			}

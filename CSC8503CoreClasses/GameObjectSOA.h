@@ -23,6 +23,11 @@ namespace NCL::CSC8503 {
 		PhysicsObjectCompSOA physics;
 		RenderObjectCompSOA render;
 		CollisionVolumeSysSOA collision;
+
+		// GARBAGE DATA - Separate arrays that don't pollute hot data cache lines
+		// Each array holds 256 bytes per entity
+		std::vector<uint8_t> garbageData1;  // 256 bytes per entity
+		std::vector<uint8_t> garbageData2;  // 256 bytes per entity
 	};
 
 	namespace GameObjectOpsSOA {
@@ -47,6 +52,12 @@ namespace NCL::CSC8503 {
 			RenderOpsSOA::AddRenderObject(gameObjects.render);
 
 			gameObjects.collision.CreateAABB(Vector3(0.5f, 0.5f, 0.5f), 0, false);
+
+			// Add garbage data (512 bytes per entity: 256 + 256)
+			for (int i = 0; i < 256; ++i) {
+				gameObjects.garbageData1.emplace_back(0xAB);
+				gameObjects.garbageData2.emplace_back(0xCD);
+			}
 
 			return index;
 		}
@@ -76,6 +87,16 @@ namespace NCL::CSC8503 {
 			PhysicsOpsSOA::RemovePhysicsBody(gameObjects.physics, index);
 			RenderOpsSOA::RemoveRenderObject(gameObjects.render, index);
 			gameObjects.collision.RemoveCollisionVolume(index);
+
+			// Remove garbage data
+			size_t startPos = index * 256;
+			size_t endPos = startPos + 256;
+			if (endPos <= gameObjects.garbageData1.size()) {
+				gameObjects.garbageData1.erase(gameObjects.garbageData1.begin() + startPos,
+					gameObjects.garbageData1.begin() + endPos);
+				gameObjects.garbageData2.erase(gameObjects.garbageData2.begin() + startPos,
+					gameObjects.garbageData2.begin() + endPos);
+			}
 		}
 
 		inline void GetObjectsByType(const GameObjectCompSOA& gameObjects, GameObjectType type, std::vector<int>& outIndices) {
@@ -129,6 +150,8 @@ namespace NCL::CSC8503 {
 			gameObjects.collision.dataSOA.isTriggerSOA.clear();
 			gameObjects.collision.AABBDataSOA.halfSizesSOA.clear();
 			gameObjects.collision.typeDataIndex.clear();
+			gameObjects.garbageData1.clear();
+			gameObjects.garbageData2.clear();
 		}
 	}
 }
