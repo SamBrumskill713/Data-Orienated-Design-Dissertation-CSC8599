@@ -55,57 +55,15 @@ namespace NCL {
 			Vector3 halfSizes;
 		};
 
-		struct SphereComp {
-			float radius;
-		};
-
-		struct OBBComp {
-			Matrix3 orientation;
-			Vector3 halfExtents;
-		};
-
-		struct CapsuleComp {
-			float radius;
-			float halfHeight;
-		};
-
 		struct CollisionVolumeSys {
-			OBBComp OBBData;
 			AABBComp AABBData;
 			CollisionVolumeComp data;
-			CapsuleComp capsuleData;
-			SphereComp sphereData;
 
 			CollisionVolumeSys CreateAABB(const Vector3& halfSizes, int layer, bool trigger = false) {
 				data.type = VolumeType::AABB;
 				data.collisionLayer = layer;
 				data.isTrigger = trigger;
 				AABBData.halfSizes = halfSizes;
-				return *this;
-			}
-
-			CollisionVolumeSys CreateSphere(float radius, int layer, bool trigger = false) {
-				data.type = VolumeType::Sphere;
-				sphereData.radius = radius;
-				data.collisionLayer = layer;
-				data.isTrigger = trigger;
-				return *this;
-			}
-
-			CollisionVolumeSys CreateOBB(const Vector3& halfExtents, int layer, bool trigger = false) {
-				OBBData.halfExtents = halfExtents;
-				data.type = VolumeType::OBB;
-				data.collisionLayer = layer;
-				data.isTrigger = false;
-				return *this;
-			}
-
-			CollisionVolumeSys CreateCapsule(float radius, float halfHeight, int layer, bool trigger = false) {
-				data.type = VolumeType::Capsule;
-				capsuleData.radius = radius;
-				capsuleData.halfHeight = halfHeight;
-				data.collisionLayer = layer;
-				data.isTrigger = trigger;
 				return *this;
 			}
 		};

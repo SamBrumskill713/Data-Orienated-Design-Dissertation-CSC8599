@@ -19,7 +19,6 @@ namespace NCL::CSC8503 {
 		float inverseMass;
 		float elasticity;
 		float friction;
-		bool isCollided;
 
 		PhysicsObjectComp()
 			: linearVelocity(Vector3()),
@@ -29,8 +28,7 @@ namespace NCL::CSC8503 {
 			inverseInertia(Vector3()),
 			inverseMass(1.0f),
 			elasticity(0.8f),
-			friction(0.8f),
-			isCollided(false) {
+			friction(0.8f) {
 		}
 	};
 
