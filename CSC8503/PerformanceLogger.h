@@ -15,17 +15,19 @@ namespace NCL::CSC8503 {
 		double averagePhysicsTimeMs = 0.0;
 		double averageRenderTimeMs = 0.0;
 		int objectCount = 0;
+		size_t wastedMemoryBytes = 0;  // For DOD/SoA garbage data tracking
 
 		std::string ToCSVLine() const {
 			char buffer[256];
 			snprintf(buffer, sizeof(buffer),
-				"%.2f,%.1f,%.2f,%.2f,%.2f,%d",
+				"%.2f,%.1f,%.2f,%.2f,%.2f,%d,%zu",
 				timestamp,
 				averageFPS,
 				averageFrameTimeMs,
 				averagePhysicsTimeMs,
 				averageRenderTimeMs,
-				objectCount
+				objectCount,
+				wastedMemoryBytes
 			);
 			return std::string(buffer);
 		}
@@ -52,16 +54,16 @@ namespace NCL::CSC8503 {
 			logInterval = intervalSeconds;
 		}
 
-		void Update(float dt, const TimingDisplay& timingDisplay, int objectCount) {
+		void Update(float dt, const TimingDisplay& timingDisplay, int objectCount, size_t wastedMemoryBytes = 0) {
 			timeSinceLastLog += dt;
 
 			if (timeSinceLastLog >= logInterval) {
-				RecordFrame(timingDisplay, objectCount);
+				RecordFrame(timingDisplay, objectCount, wastedMemoryBytes);
 				timeSinceLastLog = 0.0;
 			}
 		}
 
-		void RecordFrame(const TimingDisplay& timingDisplay, int objectCount) {
+		void RecordFrame(const TimingDisplay& timingDisplay, int objectCount, size_t wastedMemoryBytes = 0) {
 			auto now = std::chrono::high_resolution_clock::now();
 			double elapsedSeconds = std::chrono::duration<double>(now - startTime).count();
 
@@ -73,7 +75,8 @@ namespace NCL::CSC8503 {
 				timingData.averageFrameTimeMs,
 				timingData.averagePhysicsTimeMs,
 				timingData.averageRenderTimeMs,
-				objectCount
+				objectCount,
+				wastedMemoryBytes
 			};
 
 			records.push_back(record);
@@ -106,10 +109,13 @@ namespace NCL::CSC8503 {
 		void InitializeFile() {
 			csvFile.open(filename, std::ios::app);  // Append mode to avoid overwriting
 			if (csvFile.is_open()) {
-				// Write header if file is empty
+				// Check if file is empty
 				csvFile.seekp(0, std::ios::end);
-				if (csvFile.tellp() == 0) {
-					csvFile << "Elapsed_Time_s,Avg_FPS,Avg_Frame_Time_ms,Avg_Physics_Time_ms,Avg_Render_Time_ms,Object_Count\n";
+				std::streampos fileSize = csvFile.tellp();
+
+				if (fileSize == 0) {
+					// File is empty, write header with wasted memory column
+					csvFile << "Elapsed_Time_s,Avg_FPS,Avg_Frame_Time_ms,Avg_Physics_Time_ms,Avg_Render_Time_ms,Object_Count,Wasted_Memory_MB\n";
 					csvFile.flush();
 				}
 			}
