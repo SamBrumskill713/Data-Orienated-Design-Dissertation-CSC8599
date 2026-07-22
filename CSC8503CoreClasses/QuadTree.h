@@ -91,11 +91,11 @@ namespace NCL {
 						children[childIndex].Insert(object, objectPos, objectSize, depthLeft - 1, maxSize);
 					}
 					else {
-						contents.push_back(QuadTreeEntry<T>(object, objectPos, objectSize));
+						contents.emplace_back(QuadTreeEntry<T>(object, objectPos, objectSize));
 					}
 				}
 				else {
-					contents.push_back(QuadTreeEntry<T>(object, objectPos, objectSize));
+					contents.emplace_back(QuadTreeEntry<T>(object, objectPos, objectSize));
 					if ((int)contents.size() > maxSize && depthLeft > 0) {
 						if (!children) {
 							std::list<QuadTreeEntry<T>> oldContents = contents;
@@ -109,7 +109,7 @@ namespace NCL {
 										entry.size, depthLeft - 1, maxSize);
 								}
 								else {
-									contents.push_back(entry);
+									contents.emplace_back(entry);
 								}
 							}
 						}

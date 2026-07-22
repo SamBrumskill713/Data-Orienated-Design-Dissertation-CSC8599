@@ -48,7 +48,7 @@ void Debug::DrawTex(const Texture& t, const Vector2& pos, const Vector2& scale, 
 	newEntry.scale		= scale;
 	newEntry.colour		= colour;
 
-	texEntries.push_back(newEntry);
+	texEntries.emplace_back(newEntry);
 }
 
 void Debug::DrawAxisLines(const Matrix4& modelMatrix, float scaleBoost, float time) {

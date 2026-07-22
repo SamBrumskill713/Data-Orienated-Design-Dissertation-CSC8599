@@ -110,6 +110,14 @@ void RendererSystemDOD::Initialise(Window* windowPtr) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	glGenVertexArrays(1, &resources.textVAO);
+	glGenBuffers(1, &resources.textVertVBO);
+	glGenBuffers(1, &resources.textColourVBO);
+	glGenBuffers(1, &resources.textTexVBO);
+	SetDebugStringBufferSizes(10000);
+
+	Debug::CreateDebugFont("PressStart2P.fnt", *LoadTexture("PressStart2P.png"));
 }
 
 Mesh* RendererSystemDOD::LoadMesh(const std::string& name) {
@@ -192,33 +200,46 @@ void RendererSystemDOD::BuildRenderFrame(GameWorldDOD& world, GameTechRendererDa
 	frameData.transparentObjectIndices.clear();
 
 	Vector3 camPos = frameData.cameraPos;
-
 	auto& objects = world.gameObjects.GetObjectArray();
-	std::vector<std::pair<size_t, float>> objectDistances; 
-	objectDistances.reserve(objects.size());
+
+	std::vector<float> objectDistances(objects.size(), 0.0f);
 
 	for (size_t i = 0; i < objects.size(); ++i) {
 		const GameObjectDOD& obj = objects[i];
-		if (!obj.isActive) continue;
+		if (!obj.isActive) {
+			continue;
+		}
 
-		float distSq = Vector::LengthSquared(camPos - obj.transform.position);
-		objectDistances.emplace_back(i, distSq);
+		objectDistances[i] = Vector::LengthSquared(camPos - obj.transform.position);
 
-		frameData.opaqueObjectIndices.push_back(i);
+		if (obj.render.material.type == MaterialType::Transparent) {
+			frameData.transparentObjectIndices.emplace_back(i);
+		}
+		else {
+			frameData.opaqueObjectIndices.emplace_back(i);
+		}
 	}
 
-	// Sort using pre-calculated distances to avoid recalculation during sort
 	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(),
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
-		}
-	);
+		[&](size_t a, size_t b) {
+			const Texture* texA = objects[a].render.material.diffuseTex;
+			const Texture* texB = objects[b].render.material.diffuseTex;
 
-	std::sort(frameData.transparentObjectIndices.rbegin(), frameData.transparentObjectIndices.rend(),
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
-		}
-	);
+			if (texA != texB) {
+				return texA < texB;
+			}
+
+			if (objects[a].render.mesh != objects[b].render.mesh) {
+				return objects[a].render.mesh < objects[b].render.mesh;
+			}
+
+			return objectDistances[a] < objectDistances[b];
+		});
+
+	std::sort(frameData.transparentObjectIndices.begin(), frameData.transparentObjectIndices.end(),
+		[&](size_t a, size_t b) {
+			return objectDistances[a] > objectDistances[b];
+		});
 }
 
 void RendererSystemDOD::RenderSkyboxPass(GameTechRendererData& frameData) {
@@ -241,7 +262,7 @@ void RendererSystemDOD::RenderSkyboxPass(GameTechRendererData& frameData) {
 	glBindTexture(GL_TEXTURE_CUBE_MAP, resources.skyboxTex);
 
 	glBindVertexArray(resources.skyboxMesh->GetVAO());
-	glDrawElements(GL_TRIANGLES,resources.skyboxMesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, resources.skyboxMesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -324,14 +345,30 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 	glUniform1i(shadowTexLocation, 1);
 
 	auto& objects = world.gameObjects.GetObjectArray();
+	const Texture* lastTex = nullptr;
+	const Mesh* lastMesh = nullptr;
+
 	for (size_t idx : frameData.opaqueObjectIndices) {
 		const GameObjectDOD& obj = objects[idx];
 		OGLTexture* diffuseTex = (OGLTexture*)obj.render.material.diffuseTex;
+		OGLMesh* mesh = (OGLMesh*)obj.render.mesh;
 
-		if (diffuseTex) {
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(mainTexLocation, 0);
+		if (diffuseTex != lastTex) {
+			if (diffuseTex) {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
+				glUniform1i(mainTexLocation, 0);
+			}
+			else {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+			lastTex = diffuseTex;
+		}
+
+		if (mesh != lastMesh) {
+			glBindVertexArray(mesh->GetVAO());
+			lastMesh = mesh;
 		}
 
 		Matrix4 modelMatrix = obj.transform.matrix;
@@ -341,12 +378,10 @@ void RendererSystemDOD::RenderOpaquePass(GameWorldDOD& world, GameTechRendererDa
 		glUniformMatrix4fv(shadowLocation, 1, false, (float*)&fullShadowMat);
 
 		glUniform4fv(colourLocation, 1, (float*)&obj.render.colour);
-		glUniform1i(hasVColLocation, 0); 
+		glUniform1i(hasVColLocation, 0);
 		glUniform1i(hasTexLocation, diffuseTex ? 1 : 0);
 
-		glBindVertexArray(((Rendering::OGLMesh*)obj.render.mesh)->GetVAO());
-		GLuint indexCount = ((Rendering::OGLMesh*)obj.render.mesh)->GetIndexCount();
-		glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
 	}
 }
 
@@ -354,6 +389,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	glEnable(GL_BLEND);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
 
 	glUseProgram(resources.defaultShader->GetProgramID());
 
@@ -391,14 +427,30 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 	glUniform1i(shadowTexLocation, 1);
 
 	auto& objects = world.gameObjects.GetObjectArray();
+	const Texture* lastTex = nullptr;
+	const Mesh* lastMesh = nullptr;
+
 	for (size_t idx : frameData.transparentObjectIndices) {
 		const GameObjectDOD& obj = objects[idx];
 		OGLTexture* diffuseTex = (OGLTexture*)obj.render.material.diffuseTex;
+		OGLMesh* mesh = (OGLMesh*)obj.render.mesh;
 
-		if (diffuseTex) {
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(mainTexLocation, 0);
+		if (diffuseTex != lastTex) {
+			if (diffuseTex) {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
+				glUniform1i(mainTexLocation, 0);
+			}
+			else {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+			lastTex = diffuseTex;
+		}
+
+		if (mesh != lastMesh) {
+			glBindVertexArray(mesh->GetVAO());
+			lastMesh = mesh;
 		}
 
 		Matrix4 modelMatrix = obj.transform.matrix;
@@ -411,9 +463,7 @@ void RendererSystemDOD::RenderTransparentPass(GameWorldDOD& world, GameTechRende
 		glUniform1i(hasVColLocation, 0);
 		glUniform1i(hasTexLocation, diffuseTex ? 1 : 0);
 
-		glBindVertexArray(((Rendering::OGLMesh*)obj.render.mesh)->GetVAO());
-		GLuint indexCount = ((Rendering::OGLMesh*)obj.render.mesh)->GetIndexCount();
-		glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
 	}
 
 	glDisable(GL_BLEND);
@@ -432,4 +482,111 @@ void RendererSystemDOD::RenderFrame(GameWorldDOD& world, GameTechRendererData& f
 	RenderSkyboxPass(frameData);
 	RenderOpaquePass(world, frameData);
 	RenderTransparentPass(world, frameData);
+	RenderText();
+}
+
+void RendererSystemDOD::SetDebugStringBufferSizes(size_t newVertCount) {
+	if (newVertCount <= resources.textCount) {
+		return;
+	}
+
+	resources.textCount = newVertCount;
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textVertVBO);
+	glBufferData(GL_ARRAY_BUFFER, resources.textCount * sizeof(Vector3), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textColourVBO);
+	glBufferData(GL_ARRAY_BUFFER, resources.textCount * sizeof(Vector4), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textTexVBO);
+	glBufferData(GL_ARRAY_BUFFER, resources.textCount * sizeof(Vector2), nullptr, GL_DYNAMIC_DRAW);
+
+	resources.debugTextPos.reserve(resources.textCount);
+	resources.debugTextColours.reserve(resources.textCount);
+	resources.debugTextUVs.reserve(resources.textCount);
+
+	glBindVertexArray(resources.textVAO);
+
+	glVertexAttribFormat(0, 3, GL_FLOAT, false, 0);
+	glVertexAttribBinding(0, 0);
+	glBindVertexBuffer(0, resources.textVertVBO, 0, sizeof(Vector3));
+
+	glVertexAttribFormat(1, 4, GL_FLOAT, false, 0);
+	glVertexAttribBinding(1, 1);
+	glBindVertexBuffer(1, resources.textColourVBO, 0, sizeof(Vector4));
+
+	glVertexAttribFormat(2, 2, GL_FLOAT, false, 0);
+	glVertexAttribBinding(2, 2);
+	glBindVertexBuffer(2, resources.textTexVBO, 0, sizeof(Vector2));
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+}
+
+void RendererSystemDOD::RenderText() {
+	const std::vector<Debug::DebugStringEntry>& strings = Debug::GetDebugStrings();
+	if (strings.empty() || Debug::GetDebugFont() == nullptr) {
+		return;
+	}
+
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glUseProgram(resources.debugShader->GetProgramID());
+
+	OGLTexture* fontTex = (OGLTexture*)Debug::GetDebugFont()->GetTexture();
+	if (fontTex) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fontTex->GetObjectID());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		GLuint mainTexSlot = glGetUniformLocation(resources.debugShader->GetProgramID(), "mainTex");
+		glUniform1i(mainTexSlot, 0);
+	}
+
+	Matrix4 proj = Matrix::Orthographic(0.0f, 100.0f, 100.0f, 0.0f, -1.0f, 1.0f);
+
+	int matSlot = glGetUniformLocation(resources.debugShader->GetProgramID(), "viewProjMatrix");
+	glUniformMatrix4fv(matSlot, 1, false, (float*)proj.array);
+
+	GLuint texSlot = glGetUniformLocation(resources.debugShader->GetProgramID(), "useTexture");
+	glUniform1i(texSlot, 1);
+
+	resources.debugTextPos.clear();
+	resources.debugTextColours.clear();
+	resources.debugTextUVs.clear();
+
+	int frameVertCount = 0;
+	for (const auto& s : strings) {
+		frameVertCount += Debug::GetDebugFont()->GetVertexCountForString(s.data);
+	}
+	SetDebugStringBufferSizes(frameVertCount);
+
+	for (const auto& s : strings) {
+		Debug::GetDebugFont()->BuildVerticesForString(
+			s.data, s.position, s.colour, 20.0f,
+			resources.debugTextPos, resources.debugTextUVs, resources.debugTextColours
+		);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textVertVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector3), resources.debugTextPos.data());
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textColourVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector4), resources.debugTextColours.data());
+	glBindBuffer(GL_ARRAY_BUFFER, resources.textTexVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector2), resources.debugTextUVs.data());
+
+	glBindVertexArray(resources.textVAO);
+	glDrawArrays(GL_TRIANGLES, 0, frameVertCount);
+	glBindVertexArray(0);
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 }

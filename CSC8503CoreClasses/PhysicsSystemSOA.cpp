@@ -7,12 +7,13 @@
 
 using namespace NCL;
 using namespace NCL::CSC8503;
+using namespace std::chrono;
 
 const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
 
 PhysicsSystemSOA::PhysicsSystemSOA(GameWorldSOA& world)
-	: gameWorld(world), quadTree(Vector2(1000.0f, 1000.0f), 6, 10) {
+	: gameWorld(world), quadTree(Vector2(1024.0f, 1024.0f), 7, 6) {
 }
 
 void PhysicsSystemSOA::Clear() {
@@ -29,12 +30,18 @@ void PhysicsSystemSOA::Update(float dt) {
 
 	while (data.dTOffset > realDT) {
 		IntegrateAccel(realDT, count);
+
 		BroadPhase(count);
+
 		NarrowPhase(count);
+
 		IntegrateVelocity(realDT, count);
+
 		ClearForces();
+
 		UpdateCollisionList(count);
 		data.dTOffset -= realDT;
+
 	}
 }
 
@@ -112,7 +119,7 @@ void PhysicsSystemSOA::BroadPhase(int count) {
 
 	for (int i = 0; i < count; ++i) {
 		if (isActive[i] && inverseMass[i] != 0.0f) {
-			cachedDynamicObjects.push_back(i);
+			cachedDynamicObjects.emplace_back(i);
 		}
 	}
 
@@ -142,7 +149,7 @@ void PhysicsSystemSOA::BroadPhase(int count) {
 					int idxA = contents[i].object;
 					int idxB = contents[j].object;
 					if (idxA > idxB) std::swap(idxA, idxB);
-					broadphasePairs.push_back(BroadphasePairSOA(idxA, idxB));
+					broadphasePairs.emplace_back(BroadphasePairSOA(idxA, idxB));
 				}
 			}
 		}
@@ -153,7 +160,7 @@ void PhysicsSystemSOA::BroadPhase(int count) {
 
 	for (int i = 0; i < count; ++i) {
 		if (isActive[i] && inverseMass[i] == 0.0f) {
-			staticObjects.push_back(i);
+			staticObjects.emplace_back(i);
 		}
 	}
 
@@ -179,7 +186,7 @@ void PhysicsSystemSOA::BroadPhase(int count) {
 				int idxA = staticIdx;
 				int idxB = dynIdx;
 				if (idxA > idxB) std::swap(idxA, idxB);
-				broadphasePairs.push_back(BroadphasePairSOA(idxA, idxB));
+				broadphasePairs.emplace_back(BroadphasePairSOA(idxA, idxB));
 			}
 		}
 	}
@@ -209,7 +216,7 @@ void PhysicsSystemSOA::NarrowPhase(int count) {
 			ImpulseResolveCollision(pair.indexA, pair.indexB, collisionInfo.normal,
 				collisionInfo.localA, collisionInfo.localB, collisionInfo.penetration);
 
-			activeCollisions.push_back(
+			activeCollisions.emplace_back(
 				ActiveCollisionSOA(pair.indexA, pair.indexB, data.numCollisionFrames)
 			);
 		}
@@ -240,27 +247,25 @@ void PhysicsSystemSOA::BasicCollisionDetection(int count) {
 
 				ImpulseResolveCollision(i, j, collisionInfo.normal, collisionInfo.localA, collisionInfo.localB, collisionInfo.penetration);
 
-				activeCollisions.push_back(
-					ActiveCollisionSOA(i, j, data.numCollisionFrames)
-				);
+				activeCollisions.emplace_back(
+					ActiveCollisionSOA(i, j, data.numCollisionFrames));
 			}
 		}
 	}
 }
 
-void PhysicsSystemSOA::UpdateCollisionList(int count) {
+void PhysicsSystemSOA::UpdateCollisionList(int count)
+{
 	auto& objects = gameWorld.gameObjects;
-
-	for (auto it = activeCollisions.begin(); it != activeCollisions.end(); ) {
-		it->framesLeft--;
-
-		if (it->framesLeft < 0) {
-			it = activeCollisions.erase(it);
-		}
-		else {
-			++it;
-		}
+			
+	for (auto& c : activeCollisions) {
+		--c.framesLeft;
 	}
+
+	std::erase_if(activeCollisions,
+		[](const ActiveCollisionSOA& c) {
+			return c.framesLeft < 0;
+		});
 
 	for (int i = 0; i < count; ++i) {
 		objects.isCollided[i] = false;

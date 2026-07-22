@@ -5,6 +5,9 @@
 #include "GameWorldSOA.h"
 #include "PhysicsSystemSOA.h"
 #include "GameTechRendererSOA.h"
+#include "TimingDisplay.h"
+#include "PerformanceLogger.h"
+#include <chrono>
 
 namespace NCL {
 	class Controller;
@@ -19,13 +22,17 @@ namespace NCL {
 		class GameTechRendererInterface;
 
 		struct TutorialGameDataSOA {
+			std::vector<float> frameTimeSamples;
 			size_t objectIndex;
 			size_t floorIndex;
 			float forceMagnitude;
 			bool useGravity;
 			int x;
 			int y;
-			int frameCounter;
+			static constexpr int FPS_SAMPLE_SIZE = 60;
+			int frameCount = 0;
+			float fpsUpdateTimer = 0.0f;
+			float averageFPS = 0.0f;
 
 			TutorialGameDataSOA()
 				:forceMagnitude(10), objectIndex((size_t)-1), floorIndex((size_t)-1) {
@@ -63,6 +70,9 @@ namespace NCL {
 			RendererSystemSOA& rendererSOA;
 			PhysicsSystemSOA& physics;
 			Controller* controller;
+
+			TimingDisplay timingDisplay;
+			PerformanceLogger performanceLogger{ "performance_SoA.csv" };
 
 			void InitCamera();
 			void LoadResources();

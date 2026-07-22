@@ -127,6 +127,14 @@ void RendererSystemSOA::Initialise(Window* winPtr) {
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
+	glGenVertexArrays(1, &SOAResources.textVAO);
+	glGenBuffers(1, &SOAResources.textVertVBO);
+	glGenBuffers(1, &SOAResources.textColourVBO);
+	glGenBuffers(1, &SOAResources.textTexVBO);
+	SetDebugStringBufferSizes(10000);
+
+	Debug::CreateDebugFont("PressStart2P.fnt", *LoadTexture("PressStart2P.png"));
+
 	CacheUniformLocations();
 }
 
@@ -166,7 +174,7 @@ void NCL::CSC8503::RendererSystemSOA::BuildTextureBatches(GameWorldSOA& world, G
 	for (size_t idx : frameData.opaqueObjectIndices) {
 		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
 		size_t texKey = reinterpret_cast<size_t>(diffuseTex);
-		frameData.textureToObjectIndices[texKey].push_back(idx);
+		frameData.textureToObjectIndices[texKey].emplace_back(idx);
 	}
 
 	// Sort each texture group by mesh pointer to maximize mesh batching
@@ -242,26 +250,41 @@ void NCL::CSC8503::RendererSystemSOA::BuildRenderFrame(GameWorldSOA& world, Game
 	int count = world.GetObjectCount();
 	auto& objects = world.gameObjects;
 
-	std::vector<std::pair<size_t, float>> objectDistances;
-	objectDistances.reserve(count);
+	std::vector<float> distSqByIndex(count, FLT_MAX);
 
-	// Pre-calculate all distances once
+	frameData.opaqueObjectIndices.reserve(count);
+	frameData.transparentObjectIndices.reserve(16);
+
 	for (int i = 0; i < count; ++i) {
 		if (!objects.isActive[i]) continue;
+
 		float distSq = Vector::LengthSquared(camPos - objects.transforms.positions[i]);
-		objectDistances.emplace_back(i, distSq);
-		frameData.opaqueObjectIndices.push_back(i);
+		distSqByIndex[i] = distSq;
+
+		bool isTransparent = false;
+		if (i < (int)objects.render.materialTypes.size()) {
+			isTransparent = (objects.render.materialTypes[i] != MaterialType::Opaque);
+		}
+		if (!isTransparent && i < (int)objects.render.colours.size()) {
+			isTransparent = (objects.render.colours[i].w < 1.0f);
+		}
+
+		if (isTransparent) {
+			frameData.transparentObjectIndices.emplace_back(i);
+		}
+		else {
+			frameData.opaqueObjectIndices.emplace_back(i);
+		}
 	}
 
-	// Sort using pre-calculated distances to avoid recalculation during sort
-	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(), 
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
+	std::sort(frameData.opaqueObjectIndices.begin(), frameData.opaqueObjectIndices.end(),
+		[&distSqByIndex](size_t a, size_t b) {
+			return distSqByIndex[a] < distSqByIndex[b];
 		});
 
-	std::sort(frameData.transparentObjectIndices.begin(), frameData.transparentObjectIndices.end(), 
-		[&objectDistances](size_t a, size_t b) {
-			return objectDistances[a].second < objectDistances[b].second;
+	std::sort(frameData.transparentObjectIndices.begin(), frameData.transparentObjectIndices.end(),
+		[&distSqByIndex](size_t a, size_t b) {
+			return distSqByIndex[a] > distSqByIndex[b];
 		});
 
 	frameData.textureBatchDirty = true;
@@ -313,34 +336,27 @@ void NCL::CSC8503::RendererSystemSOA::RenderOpaquePass(GameWorldSOA& world, Game
 
 	auto& objects = world.gameObjects;
 
-	// Build texture batches if needed
 	BuildTextureBatches(world, frameData);
 
-	// Render all objects grouped by texture, then by mesh
 	for (const auto& [texKey, indices] : frameData.textureToObjectIndices) {
 		OGLTexture* diffuseTex = reinterpret_cast<OGLTexture*>(texKey);
 
-		// Bind texture once for the entire batch
 		if (diffuseTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
 			glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
 		}
 
-		// Further batch by mesh to reduce VAO binding calls
 		OGLMesh* lastMesh = nullptr;
 
-		// Render all objects using this texture
 		for (size_t idx : indices) {
 			OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
 
-			// Only rebind VAO if mesh changed
 			if (mesh != lastMesh) {
 				glBindVertexArray(mesh->GetVAO());
 				lastMesh = mesh;
 			}
 
-			// Per-object uniforms (only these change per draw call)
 			const Matrix4& modelMat = objects.transforms.matrices[idx];
 			glUniformMatrix4fv(SOAResources.uniformCache.defaultShader_model, 1, false, (float*)&modelMat);
 
@@ -380,8 +396,20 @@ void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world
 
 	auto& objects = world.gameObjects;
 
+	// Instrumentation counters
+	int transparentCount = (int)frameData.transparentObjectIndices.size();
+	int drawCalls = 0;
+	int vaoBinds = 0;
+	int texBinds = 0;
+
 	// Mesh batching for transparent objects too
 	OGLMesh* lastMesh = nullptr;
+	OGLTexture* lastTex = nullptr;
+
+	// If blending required turn it on here
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE); // disable depth writes for correct blending
 
 	for (size_t idx : frameData.transparentObjectIndices) {
 		OGLTexture* diffuseTex = (OGLTexture*)objects.render.diffuseTextures[idx];
@@ -391,12 +419,21 @@ void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world
 		if (mesh != lastMesh) {
 			glBindVertexArray(mesh->GetVAO());
 			lastMesh = mesh;
+			++vaoBinds;
 		}
 
-		if (diffuseTex) {
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
-			glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
+		// Only rebind texture if it changed
+		if (diffuseTex != lastTex) {
+			if (diffuseTex) {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, diffuseTex->GetObjectID());
+				glUniform1i(SOAResources.uniformCache.defaultShader_mainTex, 0);
+			}
+			else {
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+			lastTex = diffuseTex;
+			++texBinds;
 		}
 
 		const Matrix4& modelMat = objects.transforms.matrices[idx];
@@ -410,7 +447,12 @@ void NCL::CSC8503::RendererSystemSOA::RenderTransparenetPass(GameWorldSOA& world
 		glUniform1i(SOAResources.uniformCache.defaultShader_hasTexture, diffuseTex ? 1 : 0);
 
 		glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, 0);
+		++drawCalls;
 	}
+
+	// restore state
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
 }
 
 void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, GameTechRendererDataSOA& frameData) {
@@ -427,18 +469,15 @@ void NCL::CSC8503::RendererSystemSOA::RenderShadowMapPass(GameWorldSOA& world, G
 	Matrix4 shadowProjMatrix = Matrix::Perspective(100.0f, 500.0f, 1.0f, 45.0f);
 
 	Matrix4 mvMatrix = shadowProjMatrix * shadowViewMatrix;
-	// Store the biased shadow matrix for later use in opaque/transparent passes
 	SOAResources.shadowMatrix = biasMatrix * mvMatrix;
 
 	auto& objects = world.gameObjects;
 
-	// Mesh batching for shadow pass too
 	OGLMesh* lastMesh = nullptr;
 
 	for (size_t idx : frameData.opaqueObjectIndices) {
 		OGLMesh* mesh = frameData.cachedMeshPtrs[idx];
 
-		// Only rebind mesh if it changed
 		if (mesh != lastMesh) {
 			glBindVertexArray(mesh->GetVAO());
 			lastMesh = mesh;
@@ -471,4 +510,111 @@ void NCL::CSC8503::RendererSystemSOA::RenderFrame(GameWorldSOA& world, GameTechR
 	RenderSkyBoxPass(frameData);
 	RenderOpaquePass(world, frameData);
 	RenderTransparenetPass(world, frameData);
+	RenderText();
+}
+
+void RendererSystemSOA::SetDebugStringBufferSizes(size_t newVertCount) {
+	if (newVertCount <= SOAResources.textCount) {
+		return;
+	}
+
+	SOAResources.textCount = newVertCount;
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textVertVBO);
+	glBufferData(GL_ARRAY_BUFFER, SOAResources.textCount * sizeof(Vector3), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textColourVBO);
+	glBufferData(GL_ARRAY_BUFFER, SOAResources.textCount * sizeof(Vector4), nullptr, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textTexVBO);
+	glBufferData(GL_ARRAY_BUFFER, SOAResources.textCount * sizeof(Vector2), nullptr, GL_DYNAMIC_DRAW);
+
+	SOAResources.debugTextPos.reserve(SOAResources.textCount);
+	SOAResources.debugTextColours.reserve(SOAResources.textCount);
+	SOAResources.debugTextUVs.reserve(SOAResources.textCount);
+
+	glBindVertexArray(SOAResources.textVAO);
+
+	glVertexAttribFormat(0, 3, GL_FLOAT, false, 0);
+	glVertexAttribBinding(0, 0);
+	glBindVertexBuffer(0, SOAResources.textVertVBO, 0, sizeof(Vector3));
+
+	glVertexAttribFormat(1, 4, GL_FLOAT, false, 0);
+	glVertexAttribBinding(1, 1);
+	glBindVertexBuffer(1, SOAResources.textColourVBO, 0, sizeof(Vector4));
+
+	glVertexAttribFormat(2, 2, GL_FLOAT, false, 0);
+	glVertexAttribBinding(2, 2);
+	glBindVertexBuffer(2, SOAResources.textTexVBO, 0, sizeof(Vector2));
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+}
+
+void RendererSystemSOA::RenderText() {
+	const std::vector<Debug::DebugStringEntry>& strings = Debug::GetDebugStrings();
+	if (strings.empty() || Debug::GetDebugFont() == nullptr) {
+		return;
+	}
+
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glUseProgram(SOAResources.debugShader->GetProgramID());
+
+	OGLTexture* fontTex = (OGLTexture*)Debug::GetDebugFont()->GetTexture();
+	if (fontTex) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fontTex->GetObjectID());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		GLuint mainTexSlot = glGetUniformLocation(SOAResources.debugShader->GetProgramID(), "mainTex");
+		glUniform1i(mainTexSlot, 0);
+	}
+
+	Matrix4 proj = Matrix::Orthographic(0.0f, 100.0f, 100.0f, 0.0f, -1.0f, 1.0f);
+
+	int matSlot = glGetUniformLocation(SOAResources.debugShader->GetProgramID(), "viewProjMatrix");
+	glUniformMatrix4fv(matSlot, 1, false, (float*)proj.array);
+
+	GLuint texSlot = glGetUniformLocation(SOAResources.debugShader->GetProgramID(), "useTexture");
+	glUniform1i(texSlot, 1);
+
+	SOAResources.debugTextPos.clear();
+	SOAResources.debugTextColours.clear();
+	SOAResources.debugTextUVs.clear();
+
+	int frameVertCount = 0;
+	for (const auto& s : strings) {
+		frameVertCount += Debug::GetDebugFont()->GetVertexCountForString(s.data);
+	}
+	SetDebugStringBufferSizes(frameVertCount);
+
+	for (const auto& s : strings) {
+		Debug::GetDebugFont()->BuildVerticesForString(
+			s.data, s.position, s.colour, 20.0f,
+			SOAResources.debugTextPos, SOAResources.debugTextUVs, SOAResources.debugTextColours
+		);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textVertVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector3), SOAResources.debugTextPos.data());
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textColourVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector4), SOAResources.debugTextColours.data());
+	glBindBuffer(GL_ARRAY_BUFFER, SOAResources.textTexVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, frameVertCount * sizeof(Vector2), SOAResources.debugTextUVs.data());
+
+	glBindVertexArray(SOAResources.textVAO);
+	glDrawArrays(GL_TRIANGLES, 0, frameVertCount);
+	glBindVertexArray(0);
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 }

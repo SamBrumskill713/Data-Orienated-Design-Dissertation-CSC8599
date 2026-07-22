@@ -10,7 +10,7 @@ const int IDEAL_HZ = 60;
 const float IDEAL_DT = 1.0f / IDEAL_HZ;
 
 PhysicsSystemDOD::PhysicsSystemDOD(GameWorldDOD& world)
-	: gameWorld(world) , quadTree(Vector2(1000.0f, 1000.0f), 6, 10) {
+	: gameWorld(world) , quadTree(Vector2(1024.0f, 1024.0f), 7, 6) {
 }
 
 void PhysicsSystemDOD::Clear() {
@@ -117,7 +117,7 @@ void PhysicsSystemDOD::BroadPhase() {
 
 	for (size_t i = 0; i < objects.size(); ++i) {
 		if (objects[i].isActive && objects[i].physics.inverseMass != 0.0f) {
-			dynamicObjects.push_back(i);
+			dynamicObjects.emplace_back(i);
 		}
 	}
 
@@ -146,7 +146,7 @@ void PhysicsSystemDOD::BroadPhase() {
 							std::swap(idxA, idxB);
 						}
 
-						broadphasePairs.push_back(BroadphasePair(idxA, idxB));
+						broadphasePairs.emplace_back(BroadphasePair(idxA, idxB));
 					}
 				}
 			}
@@ -158,7 +158,7 @@ void PhysicsSystemDOD::BroadPhase() {
 
 	for (size_t i = 0; i < objects.size(); ++i) {
 		if (objects[i].isActive && objects[i].physics.inverseMass == 0.0f) {
-			staticObjects.push_back(i);
+			staticObjects.emplace_back(i);
 		}
 	}
 
@@ -179,7 +179,7 @@ void PhysicsSystemDOD::BroadPhase() {
 				size_t idxB = dynIdx;
 				if (idxA > idxB) std::swap(idxA, idxB);
 
-				broadphasePairs.push_back(BroadphasePair(idxA, idxB));
+				broadphasePairs.emplace_back(BroadphasePair(idxA, idxB));
 			}
 		}
 	}
@@ -212,7 +212,7 @@ void PhysicsSystemDOD::NarrowPhase() {
 			ImpulseResolveCollision(objA.physics, objB.physics, objA.transform, objB.transform,
 				collisionInfo.normal, collisionInfo.localA, collisionInfo.localB, collisionInfo.penetration);
 
-			activeCollisions.push_back(
+			activeCollisions.emplace_back(
 				ActiveCollisionDOD(pair.indexA, pair.indexB, data.numCollisionFrames)
 			);
 		}
@@ -240,7 +240,7 @@ void PhysicsSystemDOD::BasicCollisionDetection() {
 				ImpulseResolveCollision(objects[i].physics, objects[j].physics, objects[i].transform, objects[j].transform,
 					collisionInfo.normal, collisionInfo.localA, collisionInfo.localB, collisionInfo.penetration);
 
-				activeCollisions.push_back(
+				activeCollisions.emplace_back(
 					ActiveCollisionDOD(i, j, data.numCollisionFrames)
 				);
 			}
@@ -251,16 +251,14 @@ void PhysicsSystemDOD::BasicCollisionDetection() {
 void PhysicsSystemDOD::UpdateCollisionList() {
 	auto& objects = gameWorld.gameObjects.GetObjectArray();
 
-	for (auto it = activeCollisions.begin(); it != activeCollisions.end(); ) {
-		it->framesLeft--;
-
-		if (it->framesLeft < 0) {
-			it = activeCollisions.erase(it);
-		}
-		else {
-			++it;
-		}
+	for (auto& it : activeCollisions ) {
+		--it.framesLeft;
 	}
+
+	std::erase_if(activeCollisions,
+		[](const ActiveCollisionDOD& c) {
+			return c.framesLeft < 0;
+		});
 
 	for (auto& obj : objects) {
 		obj.isCollided = false;

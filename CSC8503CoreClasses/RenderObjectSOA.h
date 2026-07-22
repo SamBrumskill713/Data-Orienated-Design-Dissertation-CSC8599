@@ -26,7 +26,7 @@ namespace NCL {
 		namespace RenderOpsSOA {
 
 			inline int GetCount(const RenderObjectCompSOA& render) {
-				return render.meshes.size();
+				return (int)render.meshes.size();
 			}
 
 			inline int AddRenderObject(RenderObjectCompSOA& render,
@@ -36,11 +36,11 @@ namespace NCL {
 				Texture* bumpTex = nullptr,
 				const Vector4& colour = Vector4(1.0f, 1.0f, 1.0f, 1.0f)) {
 				int index = GetCount(render);
-				render.meshes.push_back(mesh);
-				render.materialTypes.push_back(materialType);
-				render.diffuseTextures.push_back(diffuseTex);
-				render.bumpTextures.push_back(bumpTex);
-				render.colours.push_back(colour);
+				render.meshes.emplace_back(mesh);
+				render.materialTypes.emplace_back(materialType);
+				render.diffuseTextures.emplace_back(diffuseTex);
+				render.bumpTextures.emplace_back(bumpTex);
+				render.colours.emplace_back(colour);
 				return index;
 			}
 
@@ -64,100 +64,36 @@ namespace NCL {
 			}
 
 			inline void SetColour(RenderObjectCompSOA& render, int index, const Vector4& c) {
+				if (index < 0 || index >= GetCount(render)) return;
 				render.colours[index] = c;
 			}
 
 			inline void SetMesh(RenderObjectCompSOA& render, int index, Mesh* mesh) {
+				if (index < 0 || index >= GetCount(render)) return;
 				render.meshes[index] = mesh;
 			}
 
 			inline void SetDiffuseTexture(RenderObjectCompSOA& render, int index, Texture* tex) {
+				if (index < 0 || index >= GetCount(render)) return;
 				render.diffuseTextures[index] = tex;
 			}
 
 			inline void SetBumpTexture(RenderObjectCompSOA& render, int index, Texture* tex) {
+				if (index < 0 || index >= GetCount(render)) return;
 				render.bumpTextures[index] = tex;
 			}
 
 			inline void SetMaterialType(RenderObjectCompSOA& render, int index, MaterialType type) {
+				if (index < 0 || index >= GetCount(render)) return;
 				render.materialTypes[index] = type;
 			}
 
 			inline void SetMaterial(RenderObjectCompSOA& render, int index,
 				MaterialType type, Texture* diffuseTex, Texture* bumpTex) {
+				if (index < 0 || index >= GetCount(render)) return;
 				render.materialTypes[index] = type;
 				render.diffuseTextures[index] = diffuseTex;
 				render.bumpTextures[index] = bumpTex;
-			}
-
-			inline void SetColours(RenderObjectCompSOA& render,
-				const std::vector<int>& indices,
-				const std::vector<Vector4>& colours) {
-				for (size_t i = 0; i < indices.size() && i < colours.size(); ++i) {
-					render.colours[indices[i]] = colours[i];
-				}
-			}
-
-			inline void SetDiffuseTextures(RenderObjectCompSOA& render,
-				const std::vector<int>& indices,
-				const std::vector<Texture*>& textures) {
-				for (size_t i = 0; i < indices.size() && i < textures.size(); ++i) {
-					render.diffuseTextures[indices[i]] = textures[i];
-				}
-			}
-
-			inline void SetBumpTextures(RenderObjectCompSOA& render,
-				const std::vector<int>& indices,
-				const std::vector<Texture*>& textures) {
-				for (size_t i = 0; i < indices.size() && i < textures.size(); ++i) {
-					render.bumpTextures[indices[i]] = textures[i];
-				}
-			}
-
-			inline void SetMaterialTypes(RenderObjectCompSOA& render,
-				const std::vector<int>& indices,
-				const std::vector<MaterialType>& types) {
-				for (size_t i = 0; i < indices.size() && i < types.size(); ++i) {
-					render.materialTypes[indices[i]] = types[i];
-				}
-			}
-
-			inline void ApplyColourToAll(RenderObjectCompSOA& render, const Vector4& colour) {
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					render.colours[i] = colour;
-				}
-			}
-
-			inline void ApplyDiffuseTextureToAll(RenderObjectCompSOA& render, Texture* texture) {
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					render.diffuseTextures[i] = texture;
-				}
-			}
-
-			inline void ApplyBumpTextureToAll(RenderObjectCompSOA& render, Texture* texture) {
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					render.bumpTextures[i] = texture;
-				}
-			}
-
-			inline void ApplyMaterialTypeToAll(RenderObjectCompSOA& render, MaterialType type) {
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					render.materialTypes[i] = type;
-				}
-			}
-
-			inline void ApplyMaterialToAll(RenderObjectCompSOA& render,
-				MaterialType type, Texture* diffuseTex, Texture* bumpTex) {
-				int count = GetCount(render);
-				for (int i = 0; i < count; ++i) {
-					render.materialTypes[i] = type;
-					render.diffuseTextures[i] = diffuseTex;
-					render.bumpTextures[i] = bumpTex;
-				}
 			}
 		}
 	}

@@ -57,7 +57,7 @@ namespace NCL {
 			QuadTreeDOD(Vector2 size, int maxDepth = 6, int maxSize = 5)
 				: maxDepth(maxDepth), maxSize(maxSize), treeSize(size) {
 				nodes.reserve(256);
-				nodes.push_back(QuadTreeNodeDOD<T>(Vector2(), size));
+				nodes.emplace_back(QuadTreeNodeDOD<T>(Vector2(), size));
 			}
 
 			~QuadTreeDOD() = default;
@@ -72,7 +72,7 @@ namespace NCL {
 
 			void Clear() {
 				nodes.clear();
-				nodes.push_back(QuadTreeNodeDOD<T>(Vector2(), treeSize));
+				nodes.emplace_back(QuadTreeNodeDOD<T>(Vector2(), treeSize));
 			}
 
 			void DebugDraw() {
@@ -146,11 +146,11 @@ namespace NCL {
 						InsertRecursive(childIndex, object, pos, objSize, depthLeft - 1);
 					}
 					else {
-						node.contents.push_back(QuadTreeEntryDOD<T>(object, pos, objSize));
+						node.contents.emplace_back(QuadTreeEntryDOD<T>(object, pos, objSize));
 					}
 				}
 				else {
-					node.contents.push_back(QuadTreeEntryDOD<T>(object, pos, objSize));
+					node.contents.emplace_back(QuadTreeEntryDOD<T>(object, pos, objSize));
 
 					if ((int)node.contents.size() > maxSize && depthLeft > 0) {
 						std::vector<QuadTreeEntryDOD<T>> oldContents = node.contents;
@@ -164,7 +164,7 @@ namespace NCL {
 								InsertRecursive(childIndex, entry.object, entry.pos, entry.size, depthLeft - 1);
 							}
 							else {
-								nodes[nodeIndex].contents.push_back(entry);
+								nodes[nodeIndex].contents.emplace_back(entry);
 							}
 						}
 					}
@@ -185,10 +185,10 @@ namespace NCL {
 				Vector2 halfSize = nodeSize / 2.0f;
 				int baseIndex = (int)nodes.size();
 
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(-halfSize.x, halfSize.y), halfSize));
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(halfSize.x, halfSize.y), halfSize));
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(-halfSize.x, -halfSize.y), halfSize));
-				nodes.push_back(QuadTreeNodeDOD<T>(nodePos + Vector2(halfSize.x, -halfSize.y), halfSize));
+				nodes.emplace_back(QuadTreeNodeDOD<T>(nodePos + Vector2(-halfSize.x, halfSize.y), halfSize));
+				nodes.emplace_back(QuadTreeNodeDOD<T>(nodePos + Vector2(halfSize.x, halfSize.y), halfSize));
+				nodes.emplace_back(QuadTreeNodeDOD<T>(nodePos + Vector2(-halfSize.x, -halfSize.y), halfSize));
+				nodes.emplace_back(QuadTreeNodeDOD<T>(nodePos + Vector2(halfSize.x, -halfSize.y), halfSize));
 
 				for (int i = 0; i < 4; ++i) {
 					nodes[nodeIndex].childrenIndices[i] = baseIndex + i;

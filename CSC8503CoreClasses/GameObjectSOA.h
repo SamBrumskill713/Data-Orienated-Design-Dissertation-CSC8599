@@ -14,8 +14,8 @@ namespace NCL::CSC8503 {
 	struct GameObjectCompSOA {
 		std::vector<int> worldIDs;
 		std::vector<GameObjectType> objectTypes;
-		std::vector<bool> isActive;
-		std::vector<bool> isCollided;
+		std::vector<char> isActive;
+		std::vector<char> isCollided;
 		std::vector<int> collisionLayers;
 		std::vector<Vector3> broadphaseAABBs;
 
@@ -23,6 +23,11 @@ namespace NCL::CSC8503 {
 		PhysicsObjectCompSOA physics;
 		RenderObjectCompSOA render;
 		CollisionVolumeSysSOA collision;
+
+		// GARBAGE DATA - Separate arrays that don't pollute hot data cache lines
+		// Each array holds 256 bytes per entity
+		std::vector<uint8_t> garbageData1;  // 256 bytes per entity
+		std::vector<uint8_t> garbageData2;  // 256 bytes per entity
 	};
 
 	namespace GameObjectOpsSOA {
@@ -35,18 +40,24 @@ namespace NCL::CSC8503 {
 			GameObjectType objectType = GameObjectType::Default) {
 			int index = GetObjectCount(gameObjects);
 
-			gameObjects.worldIDs.push_back(-1);
-			gameObjects.objectTypes.push_back(objectType);
-			gameObjects.isActive.push_back(true);
-			gameObjects.isCollided.push_back(false);
-			gameObjects.collisionLayers.push_back(0);
-			gameObjects.broadphaseAABBs.push_back(Vector3(0, 0, 0));
+			gameObjects.worldIDs.emplace_back(-1);
+			gameObjects.objectTypes.emplace_back(objectType);
+			gameObjects.isActive.emplace_back(true);
+			gameObjects.isCollided.emplace_back(false);
+			gameObjects.collisionLayers.emplace_back(0);
+			gameObjects.broadphaseAABBs.emplace_back(Vector3(0, 0, 0));
 
 			TransformOpsSOA::AddTransform(gameObjects.transforms);
 			PhysicsOpsSOA::AddPhysicsBody(gameObjects.physics);
 			RenderOpsSOA::AddRenderObject(gameObjects.render);
 
 			gameObjects.collision.CreateAABB(Vector3(0.5f, 0.5f, 0.5f), 0, false);
+
+			// Add garbage data (512 bytes per entity: 256 + 256)
+			for (int i = 0; i < 256; ++i) {
+				gameObjects.garbageData1.emplace_back(0xAB);
+				gameObjects.garbageData2.emplace_back(0xCD);
+			}
 
 			return index;
 		}
@@ -76,6 +87,16 @@ namespace NCL::CSC8503 {
 			PhysicsOpsSOA::RemovePhysicsBody(gameObjects.physics, index);
 			RenderOpsSOA::RemoveRenderObject(gameObjects.render, index);
 			gameObjects.collision.RemoveCollisionVolume(index);
+
+			// Remove garbage data
+			size_t startPos = index * 256;
+			size_t endPos = startPos + 256;
+			if (endPos <= gameObjects.garbageData1.size()) {
+				gameObjects.garbageData1.erase(gameObjects.garbageData1.begin() + startPos,
+					gameObjects.garbageData1.begin() + endPos);
+				gameObjects.garbageData2.erase(gameObjects.garbageData2.begin() + startPos,
+					gameObjects.garbageData2.begin() + endPos);
+			}
 		}
 
 		inline void GetObjectsByType(const GameObjectCompSOA& gameObjects, GameObjectType type, std::vector<int>& outIndices) {
@@ -83,7 +104,7 @@ namespace NCL::CSC8503 {
 			int count = GetObjectCount(gameObjects);
 			for (int i = 0; i < count; ++i) {
 				if (gameObjects.objectTypes[i] == type) {
-					outIndices.push_back(i);
+					outIndices.emplace_back(i);
 				}
 			}
 		}
@@ -93,7 +114,7 @@ namespace NCL::CSC8503 {
 			int count = GetObjectCount(gameObjects);
 			for (int i = 0; i < count; ++i) {
 				if (gameObjects.isActive[i]) {
-					outIndices.push_back(i);
+					outIndices.emplace_back(i);
 				}
 			}
 		}
@@ -129,6 +150,8 @@ namespace NCL::CSC8503 {
 			gameObjects.collision.dataSOA.isTriggerSOA.clear();
 			gameObjects.collision.AABBDataSOA.halfSizesSOA.clear();
 			gameObjects.collision.typeDataIndex.clear();
+			gameObjects.garbageData1.clear();
+			gameObjects.garbageData2.clear();
 		}
 	}
 }

@@ -4,12 +4,12 @@
 using namespace NCL;
 using namespace CSC8503;
 
-NetworkPlayer::NetworkPlayer(NetworkedGame* game, int num)	{
+NetworkPlayer::NetworkPlayer(NetworkedGame* game, int num) {
 	this->game = game;
-	playerNum  = num;
+	playerNum = num;
 }
 
-NetworkPlayer::~NetworkPlayer()	{
+NetworkPlayer::~NetworkPlayer() {
 
 }
 

@@ -12,8 +12,10 @@ using namespace NCL;
 using namespace CSC8503;
 
 TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& inRenderer, PhysicsSystemDOD& inPhysics)
-	: gameWorld(inGameWold), rendererDOD(inRenderer), physics(inPhysics) {
+	: gameWorld(inGameWold), rendererDOD(inRenderer), physics(inPhysics), performanceLogger("performance_AOS.csv") {
 	data.useGravity = true;
+
+	performanceLogger.SetLogInterval(1.0);
 
 	physics.UseGravity(data.useGravity);
 
@@ -30,8 +32,8 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& in
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 50;
-	data.y = 50;
+	data.x = 150;
+	data.y = 150;
 
 	InitCamera();
 	LoadResources();
@@ -39,6 +41,7 @@ TutorialGameDOD::TutorialGameDOD(GameWorldDOD& inGameWold, RendererSystemDOD& in
 }
 
 TutorialGameDOD::~TutorialGameDOD() {
+	performanceLogger.Flush();
 	if (controller) {
 		delete controller;
 	}
@@ -73,16 +76,56 @@ void TutorialGameDOD::InitWorld() {
 }
 
 void TutorialGameDOD::UpdateGame(float dt) {
+	timingDisplay.RecordFrameTime(dt);
+
 	gameWorld.GetMainCamera().UpdateCamera(dt);
 
+	// Physics timing
+	timingDisplay.StartPhysicsTiming();
 	physics.Update(dt);
+	timingDisplay.EndPhysicsTiming();
 
-	gameWorld.OperateOnContents([this](GameObjectDOD& obj) {
-	
-	});
+	// Rendering/Game Object Update timing with garbage data access
+	timingDisplay.StartRenderTiming();
+	auto& objectArray = gameWorld.gameObjects.GetObjectArray();
+	//volatile float garbageAccumulator = 0.0f;
 
-	Debug::Print("FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
-	Debug::Print("Objects: " + std::to_string(gameWorld.GetObjectCount()), Vector2(0, 10), Debug::WHITE);
+	//for (size_t i = 0; i < objectArray.size(); ++i) {
+	//	GameObjectDOD& obj = objectArray[i];
+	//	if (obj.isActive) {
+	//		 //Access garbage data - forcing cache line loads
+	//		for (int j = 0; j < 256; ++j) {
+	//			garbageAccumulator += obj.garbageData.padding[j] * 0.001f;
+	//		}
+	//		garbageAccumulator += sinf(obj.transform.position.x) * 0.0001f;
+	//	}
+	//}
+
+	timingDisplay.EndRenderTiming();
+
+	int objectCount = gameWorld.GetObjectCount();
+
+	// Calculate actual memory usage
+	//size_t bytesPerObject = sizeof(GameObjectDOD);
+	//size_t totalBytes = objectCount * bytesPerObject;
+	//double totalMB = totalBytes / (1024.0 * 1024.0);
+	//double totalGB = totalMB / 1024.0;
+
+	// Log performance data
+	performanceLogger.Update(dt, timingDisplay, objectCount);
+
+	// Display timing information
+	const auto& timingData = timingDisplay.GetTimingData();
+
+	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("Avg FPS: " + TimingDisplay::FormatFPS(timingData.averageFPS), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Avg Frame Time: " + TimingDisplay::FormatTime(timingData.averageFrameTimeMs) + " ms", Vector2(0, 15), Debug::WHITE);
+	Debug::Print("Avg Physics Time: " + TimingDisplay::FormatTime(timingData.averagePhysicsTimeMs) + " ms", Vector2(0, 20), Debug::WHITE);
+	Debug::Print("Avg Render Time: " + TimingDisplay::FormatTime(timingData.averageRenderTimeMs) + " ms", Vector2(0, 25), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 30), Debug::WHITE);
+	Debug::Print("Logged Records: " + std::to_string(performanceLogger.GetRecordCount()), Vector2(0, 35), Debug::WHITE);
+	//Debug::Print("Memory: " + std::to_string((int)totalMB) + " MB", Vector2(0, 40), Debug::WHITE);
+	//Debug::Print("Per Object: " + std::to_string(bytesPerObject) + " bytes", Vector2(0, 45), Debug::WHITE);
 }
 
 void TutorialGameDOD::InitTest() {

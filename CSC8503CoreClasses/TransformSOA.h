@@ -21,10 +21,10 @@ namespace NCL::CSC8503 {
 			const Quaternion& Orientation = Quaternion(),
 			const Vector3& scale = Vector3(1, 1, 1)) {
 			int index = Transforms.positions.size();
-			Transforms.positions.push_back(Position);
-			Transforms.orientations.push_back(Orientation);
-			Transforms.scales.push_back(scale);
-			Transforms.matrices.push_back(Matrix4());
+			Transforms.positions.emplace_back(Position);
+			Transforms.orientations.emplace_back(Orientation);
+			Transforms.scales.emplace_back(scale);
+			Transforms.matrices.emplace_back(Matrix4());
 			return index;
 		}
 
@@ -68,31 +68,6 @@ namespace NCL::CSC8503 {
 		inline void SetOrientationSOA(TransformCompSOA& Transforms, const Quaternion& worldOrientations, int index) {
 			Transforms.orientations[index] = worldOrientations;
 			UpdateMatrixSOA(Transforms, index);
-		}
-
-		inline void UpdateAllMatrices(TransformCompSOA& Transforms) {
-			int count = GetCount(Transforms);
-			for (int i = 0; i < count; ++i) {
-				UpdateMatrixSOA(Transforms, i);
-			}
-		}
-
-		inline void SetAllPositions(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Positions) {
-			for (size_t i = 0; i < indices.size(); ++i) {
-				SetScaleSOA(Transforms, Positions[i], indices[i]);
-			}
-		}
-
-		inline void SetAllScales(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Vector3>& Scales) {
-			for (size_t i = 0; i < indices.size(); ++i) {
-				SetScaleSOA(Transforms, Scales[i], indices[i]);
-			}
-		}
-
-		inline void SetAllOrientations(TransformCompSOA& Transforms, const std::vector<int>& indices, const std::vector<Quaternion>& Orientations) {
-			for (size_t i = 0; i < indices.size(); ++i) {
-				SetOrientationSOA(Transforms, Orientations[i], indices[i]);
-			}
 		}
 	}
 }

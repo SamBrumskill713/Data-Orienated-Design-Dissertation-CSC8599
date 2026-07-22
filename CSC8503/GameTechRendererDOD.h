@@ -11,7 +11,6 @@
 #include <windows.h>
 #endif
 
-
 namespace NCL {
 	namespace Rendering {
 		class OGLMesh;
@@ -29,13 +28,13 @@ namespace NCL {
 		};
 
 		struct GameTechRendererResources {
-			Rendering::OGLMesh* skyboxMesh;
-			Rendering::OGLMesh* debugTexMesh;
+			Rendering::OGLMesh* skyboxMesh = nullptr;
+			Rendering::OGLMesh* debugTexMesh = nullptr;
 
-			Rendering::OGLShader* defaultShader;
-			Rendering::OGLShader* skyboxShader;
-			Rendering::OGLShader* shadowShader;
-			Rendering::OGLShader* debugShader;
+			Rendering::OGLShader* defaultShader = nullptr;
+			Rendering::OGLShader* skyboxShader = nullptr;
+			Rendering::OGLShader* shadowShader = nullptr;
+			Rendering::OGLShader* debugShader = nullptr;
 
 			std::vector<Vector4> debugTextColours;
 			std::vector<Vector3> debugLineData;
@@ -44,21 +43,21 @@ namespace NCL {
 
 			Matrix4 shadowMatrix;
 
-			size_t lineCount;
-			size_t textCount;
+			size_t lineCount = 0;
+			size_t textCount = 0;
 
-			GLuint skyboxTex;
-			GLuint shadowTex;
-			GLuint shadowFBO;
-			GLuint lineVAO;
-			GLuint lineVertVBO;
-			GLuint textVAO;
-			GLuint textVertVBO;
-			GLuint textColourVBO;
-			GLuint textTexVBO;
+			GLuint skyboxTex = 0;
+			GLuint shadowTex = 0;
+			GLuint shadowFBO = 0;
+			GLuint lineVAO = 0;
+			GLuint lineVertVBO = 0;
+			GLuint textVAO = 0;
+			GLuint textVertVBO = 0;
+			GLuint textColourVBO = 0;
+			GLuint textTexVBO = 0;
 
-			int screenWidth;
-			int screenHeight;
+			int screenWidth = 0;
+			int screenHeight = 0;
 		};
 
 		struct RendererSystemDOD {
@@ -77,6 +76,9 @@ namespace NCL {
 
 			Mesh* LoadMesh(const std::string& name);
 			Texture* LoadTexture(const std::string& name);
+
+			void SetDebugStringBufferSizes(size_t newVertCount);
+			void RenderText();
 
 			void BuildRenderFrame(GameWorldDOD& world, GameTechRendererData& frameData);
 			void RenderSkyboxPass(GameTechRendererData& frameData);

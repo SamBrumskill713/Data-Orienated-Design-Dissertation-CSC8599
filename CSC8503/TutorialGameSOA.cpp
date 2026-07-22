@@ -14,8 +14,10 @@ using namespace NCL;
 using namespace CSC8503;
 
 TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& inRenderer, PhysicsSystemSOA& inPhysics)
-	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics){
+	: gameWorld(inGameWorld), rendererSOA(inRenderer), physics(inPhysics), performanceLogger("performance_SOA.csv") {
 	data.useGravity = true;
+
+	performanceLogger.SetLogInterval(1.0);
 
 	physics.UseGravity(data.useGravity);
 
@@ -32,8 +34,8 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 	controller->MapAxis(3, "XLook");
 	controller->MapAxis(4, "YLook");
 
-	data.x = 50;
-	data.y = 50;
+	data.x = 150;
+	data.y = 150;
 
 	InitCamera();
 	LoadResources();
@@ -41,6 +43,7 @@ TutorialGameSOA::TutorialGameSOA(GameWorldSOA& inGameWorld, RendererSystemSOA& i
 }
 
 TutorialGameSOA::~TutorialGameSOA() {
+	performanceLogger.Flush();
 	if (controller) {
 		delete controller;
 	}
@@ -75,13 +78,51 @@ void TutorialGameSOA::InitWorld() {
 }
 
 void TutorialGameSOA::UpdateGame(float dt) {
+	timingDisplay.RecordFrameTime(dt);
+
 	gameWorld.GetMainCamera().UpdateCamera(dt);
 
+	// Physics timing
+	timingDisplay.StartPhysicsTiming();
 	physics.Update(dt);
+	timingDisplay.EndPhysicsTiming();
 
-	gameWorld.OperateOnContents([this](int objIndex) {
+	// Rendering timing
+	timingDisplay.StartRenderTiming();
+	auto& gameObjects = gameWorld.gameObjects;
+	int objectCount = GameObjectOpsSOA::GetObjectCount(gameObjects);
+	//volatile float accumulator = 0.0f;
 
-	});
+	////// Update render objects
+	//for (int i = 0; i < objectCount; ++i) {
+	//	if (gameObjects.isActive[i]) {
+	//		const Vector3& pos = gameObjects.transforms.positions[i];
+	//		float mass = gameObjects.physics.inverseMassSOA[i];
+	//		const Vector3& aabb = gameObjects.collision.AABBDataSOA.halfSizesSOA[i];
+
+	//		accumulator += pos.x + mass + aabb.x;
+	//	}
+	//}
+
+	timingDisplay.EndRenderTiming();
+
+	// SoA doesn't have garbage data in the hot path, so wasted memory is 0
+	//size_t wastedMemory = 0;
+
+	// Log performance data
+	performanceLogger.Update(dt, timingDisplay, objectCount);
+
+	// Display timing information
+	const auto& timingData = timingDisplay.GetTimingData();
+
+	Debug::Print("Current FPS: " + std::to_string((int)(1.0f / dt)), Vector2(0, 5), Debug::WHITE);
+	Debug::Print("Avg FPS: " + TimingDisplay::FormatFPS(timingData.averageFPS), Vector2(0, 10), Debug::WHITE);
+	Debug::Print("Avg Frame Time: " + TimingDisplay::FormatTime(timingData.averageFrameTimeMs) + " ms", Vector2(0, 15), Debug::WHITE);
+	Debug::Print("Avg Physics Time: " + TimingDisplay::FormatTime(timingData.averagePhysicsTimeMs) + " ms", Vector2(0, 20), Debug::WHITE);
+	Debug::Print("Avg Render Time: " + TimingDisplay::FormatTime(timingData.averageRenderTimeMs) + " ms", Vector2(0, 25), Debug::WHITE);
+	Debug::Print("Objects: " + std::to_string(objectCount), Vector2(0, 30), Debug::WHITE);
+	//Debug::Print("Wasted Memory: 0 MB", Vector2(0, 35), Debug::WHITE);
+	//Debug::Print("Logged Records: " + std::to_string(performanceLogger.GetRecordCount()), Vector2(0, 40), Debug::WHITE);
 }
 
 void TutorialGameSOA::InitTest() {
