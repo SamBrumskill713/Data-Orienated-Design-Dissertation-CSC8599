@@ -46,4 +46,4 @@ A reduction of boolean values could also show the benefits of DOD when compared 
 Other game systems such as AI and Networking could’ve also been explored in showing the difference between DOD and OOP since the dissertation mainly covers the physics and, to a lesser extent, the rendering parts of the engine.
 
 ## Video
-[[!DOD Dissertation](https://img.youtube.com/vi/b8FbDDmuNlA/0.jpg)](https://www.youtube.com/watch?v=b8FbDDmuNlA)
+[![Watch the video](https://img.youtube.com/vi/_5tFXJQIzi4/0.jpg)](https://www.youtube.com/watch?v=_5tFXJQIzi4)
