@@ -44,3 +44,6 @@ However, in another test that artificially filled AOS and SOA with garbage data,
 The main drawback of the dissertation is that multi-threading was not explored, this could also show how memory layout affects performance in a concurrent setting. 
 A reduction of boolean values could also show the benefits of DOD when compared to OOP since there would be no padding in memory alignment. 
 Other game systems such as AI and Networking could’ve also been explored in showing the difference between DOD and OOP since the dissertation mainly covers the physics and, to a lesser extent, the rendering parts of the engine.
+
+## Video
+<iframe width="560" height="315" src="https://www.youtube.com/embed/b8FbDDmuNlA?si=4JLp3zxgnowQW7jZ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
