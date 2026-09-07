@@ -3,6 +3,8 @@ For my dissertation, I decided to do a performance comparison between Data-Orien
 I did this by converting the framework made in the game technologies coursework from Object-Oriented to Data-Oriented. 
 The main reason for this was to see how game performance could be affected by a change in paradigm that focuses on efficient use of cache hierarchy and cache lines. The results showed that Data-Oriented Design was much more performant when compared to Object-Oriented Programming.
 
+![image_alt](https://github.com/SamBrumskill713/Data-Orienated-Design-Dissertation-CSC8599/blob/6c8d09a8a783ce82dde331cbf3c43c412c860a03/DOD-dissertation-screenshot.png)
+
 ## Main Concepts Covered
 - Data-Oriented Design
 - Object-Oriented Programming
