@@ -40,7 +40,7 @@ However, in another test that artificially filled AOS and SOA with garbage data,
 2. Open the folder and create a build folder.
 3. Set the project folder as the source folder and the build folder as the output for the binaries.
 4. Once it's built, open the build folder and open the CSC8503 .sln file.
-5. You should no be able to run the project.
+5. You should now be able to run the project.
 
 ## Further Work
 The main drawback of the dissertation is that multi-threading was not explored, this could also show how memory layout affects performance in a concurrent setting. 
